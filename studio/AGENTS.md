@@ -13,6 +13,15 @@ docs/                       项目相关的文档
 ├── design/                 设计文档
 │   ├── product/            产品设计
 │   ├── implementation/     实现设计
+├── openapi/                本服务对外提供的 API
 ├── references/             参考文档
-│   ├── openapi/            项目中使用到的外部开放 API
+│   ├── openapi/            项目中使用到的外部 API
 ├── src/                    源代码
+
+- 编写代码前，先读取 `ARCHITECTURE.md` 确认项目结构。
+- 编写 HTTP 接口层代码前：
+1. 检查 `docs/openapi` 下的 OpenAPI Schema 定义
+2. 更新 `src/types` 中的接口定义，再编写实现
+
+## 限制
+- `docs` 目录下的文档是系统设计的来源，不允许修改目录下的任何内容
