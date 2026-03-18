@@ -1,7 +1,7 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
 
 import { HttpError } from "../errors/http-error";
-import type { OpenClawAgentsReader } from "../services/openclaw-gateway-client";
+import type { OpenClawAgentsService } from "../services/openclaw-agents-service";
 
 /**
  * Returns the OpenClaw agent list over HTTP.
@@ -13,13 +13,13 @@ import type { OpenClawAgentsReader } from "../services/openclaw-gateway-client";
  * @returns Nothing. The response is written directly.
  */
 export async function getOpenClawAgents(
-  client: OpenClawAgentsReader,
+  service: OpenClawAgentsService,
   _request: Request,
   response: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    const result = await client.listAgents();
+    const result = await service.listAgents();
 
     response.status(200).json(result);
   } catch (error) {
@@ -34,14 +34,14 @@ export async function getOpenClawAgents(
 /**
  * Builds the OpenClaw router.
  *
- * @param client The OpenClaw gateway reader used by the route.
+ * @param service The service used by the route.
  * @returns The router exposing OpenClaw endpoints.
  */
-export function createOpenClawRouter(client: OpenClawAgentsReader): Router {
+export function createOpenClawRouter(service: OpenClawAgentsService): Router {
   const router = Router();
 
   router.get("/api/openclaw/agents", (request, response, next) => {
-    return getOpenClawAgents(client, request, response, next);
+    return getOpenClawAgents(service, request, response, next);
   });
 
   return router;

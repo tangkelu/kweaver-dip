@@ -23,6 +23,7 @@ import { getHealth } from "./routes/health";
 import { getOpenClawAgents } from "./routes/openclaw";
 import {
   asError,
+  asTransportError,
   createAgentsListRequest,
   createConnectRequest,
   createDeviceSignaturePayload,
@@ -39,9 +40,9 @@ import {
   readChallengeNonce,
   signDeviceSignature,
   toBase64Url,
-  type OpenClawAgentsReader,
   type OpenClawWebSocket
-} from "./services/openclaw-gateway-client";
+} from "./infra/openclaw-gateway-client";
+import type { OpenClawAgentsService } from "./services/openclaw-agents-service";
 import type {
   OpenClawAgentsListResult,
   OpenClawEventFrame,
@@ -112,6 +113,11 @@ class FakeWebSocket extends EventEmitter implements OpenClawWebSocket {
   public closed = false;
 
   /**
+   * Counts heartbeat pings sent through the socket.
+   */
+  public pingCount = 0;
+
+  /**
    * Sends a serialized frame.
    *
    * @param data The serialized payload.
@@ -126,6 +132,13 @@ class FakeWebSocket extends EventEmitter implements OpenClawWebSocket {
   public close(): void {
     this.closed = true;
   }
+
+  /**
+   * Captures heartbeat pings.
+   */
+  public ping(): void {
+    this.pingCount += 1;
+  }
 }
 
 describe("createApp", () => {
@@ -137,9 +150,9 @@ describe("createApp", () => {
 
   it("disables the x-powered-by header", () => {
     const app = createApp({
-      openClawAgentsReader: {
+      openClawAgentsService: {
         listAgents: vi.fn()
-      }
+      } satisfies OpenClawAgentsService
     });
 
     expect(app.get("x-powered-by")).toBe(false);
@@ -149,9 +162,9 @@ describe("createApp", () => {
     expect(
       createApp({
         enableDiagnostics: true,
-        openClawAgentsReader: {
+        openClawAgentsService: {
           listAgents: vi.fn()
-        }
+        } satisfies OpenClawAgentsService
       })
     ).toBeDefined();
   });
@@ -281,12 +294,16 @@ describe("OpenClawGatewayClient", () => {
         url: "ws://127.0.0.1:18789",
         token: "secret-token",
         timeoutMs: 1_000,
+        heartbeatIntervalMs: 0,
         deviceIdentity: createDeviceIdentityFixture(),
         now: () => 1_737_264_000_000
       },
       () => socket
     );
-    const pending = client.listAgents();
+    const pending = client.invoke(
+      createAgentsListRequest,
+      (frame) => frame.payload as OpenClawAgentsListResult
+    );
 
     socket.emit("message", JSON.stringify({
       type: "event",
@@ -311,6 +328,10 @@ describe("OpenClawGatewayClient", () => {
       }
     }));
 
+    await vi.waitFor(() => {
+      expect(socket.sentMessages).toHaveLength(2);
+    });
+
     const agentsFrame = JSON.parse(socket.sentMessages[1] ?? "{}") as {
       id: string;
     };
@@ -323,7 +344,8 @@ describe("OpenClawGatewayClient", () => {
     }));
 
     await expect(pending).resolves.toEqual(createAgentsFixture());
-    expect(socket.closed).toBe(true);
+    expect(socket.closed).toBe(false);
+    client.dispose();
   });
 
   it("converts gateway errors to HttpError", async () => {
@@ -332,11 +354,15 @@ describe("OpenClawGatewayClient", () => {
       {
         url: "ws://127.0.0.1:18789",
         timeoutMs: 1_000,
+        heartbeatIntervalMs: 0,
         deviceIdentity: createDeviceIdentityFixture()
       },
       () => socket
     );
-    const pending = client.listAgents();
+    const pending = client.invoke(
+      createAgentsListRequest,
+      (frame) => frame.payload as OpenClawAgentsListResult
+    );
 
     socket.emit("message", JSON.stringify({
       type: "event",
@@ -365,6 +391,7 @@ describe("OpenClawGatewayClient", () => {
       statusCode: 502,
       message: "token mismatch"
     });
+    client.dispose();
   });
 
   it("converts socket errors to HttpError", async () => {
@@ -373,12 +400,16 @@ describe("OpenClawGatewayClient", () => {
       {
         url: "ws://127.0.0.1:18789",
         timeoutMs: 1_000,
+        heartbeatIntervalMs: 0,
         deviceIdentity: createDeviceIdentityFixture()
       },
       () => socket
     );
 
-    const pending = client.listAgents();
+    const pending = client.invoke(
+      createAgentsListRequest,
+      (frame) => frame.payload as OpenClawAgentsListResult
+    );
 
     socket.emit("error", new Error("offline"));
 
@@ -386,6 +417,7 @@ describe("OpenClawGatewayClient", () => {
       statusCode: 502,
       message: "Failed to communicate with OpenClaw gateway: offline"
     });
+    client.dispose();
   });
 
   it("reports unexpected gateway closure", async () => {
@@ -394,12 +426,16 @@ describe("OpenClawGatewayClient", () => {
       {
         url: "ws://127.0.0.1:18789",
         timeoutMs: 1_000,
+        heartbeatIntervalMs: 0,
         deviceIdentity: createDeviceIdentityFixture()
       },
       () => socket
     );
 
-    const pending = client.listAgents();
+    const pending = client.invoke(
+      createAgentsListRequest,
+      (frame) => frame.payload as OpenClawAgentsListResult
+    );
 
     socket.emit("close");
 
@@ -407,6 +443,148 @@ describe("OpenClawGatewayClient", () => {
       statusCode: 502,
       message: "OpenClaw gateway closed the connection unexpectedly"
     });
+    client.dispose();
+  });
+
+  it("reuses the same connection across multiple RPC calls", async () => {
+    const socket = new FakeWebSocket();
+    const client = new OpenClawGatewayClient(
+      {
+        url: "ws://127.0.0.1:18789",
+        timeoutMs: 1_000,
+        heartbeatIntervalMs: 0,
+        deviceIdentity: createDeviceIdentityFixture()
+      },
+      () => socket
+    );
+
+    const firstPending = client.invoke(
+      createAgentsListRequest,
+      (frame) => frame.payload as OpenClawAgentsListResult
+    );
+
+    socket.emit("message", JSON.stringify({
+      type: "event",
+      event: "connect.challenge",
+      payload: {
+        nonce: "abc123"
+      }
+    }));
+
+    const connectFrame = JSON.parse(socket.sentMessages[0] ?? "{}") as {
+      id: string;
+    };
+
+    socket.emit("message", JSON.stringify({
+      type: "res",
+      id: connectFrame.id,
+      ok: true,
+      payload: {}
+    }));
+
+    await vi.waitFor(() => {
+      expect(socket.sentMessages).toHaveLength(2);
+    });
+
+    const firstAgentsFrame = JSON.parse(socket.sentMessages[1] ?? "{}") as {
+      id: string;
+    };
+
+    socket.emit("message", JSON.stringify({
+      type: "res",
+      id: firstAgentsFrame.id,
+      ok: true,
+      payload: createAgentsFixture()
+    }));
+
+    await expect(firstPending).resolves.toEqual(createAgentsFixture());
+
+    const secondPending = client.invoke(
+      createAgentsListRequest,
+      (frame) => frame.payload as OpenClawAgentsListResult
+    );
+
+    await vi.waitFor(() => {
+      expect(socket.sentMessages).toHaveLength(3);
+    });
+
+    const secondAgentsFrame = JSON.parse(socket.sentMessages[2] ?? "{}") as {
+      id: string;
+    };
+
+    socket.emit("message", JSON.stringify({
+      type: "res",
+      id: secondAgentsFrame.id,
+      ok: true,
+      payload: createAgentsFixture()
+    }));
+
+    await expect(secondPending).resolves.toEqual(createAgentsFixture());
+    expect(socket.sentMessages).toHaveLength(3);
+    client.dispose();
+  });
+
+  it("sends heartbeat pings when the socket supports them", async () => {
+    vi.useFakeTimers();
+
+    const socket = new FakeWebSocket();
+    const client = new OpenClawGatewayClient(
+      {
+        url: "ws://127.0.0.1:18789",
+        timeoutMs: 1_000,
+        heartbeatIntervalMs: 10,
+        deviceIdentity: createDeviceIdentityFixture()
+      },
+      () => socket
+    );
+
+    const pending = client.invoke(
+      createAgentsListRequest,
+      (frame) => frame.payload as OpenClawAgentsListResult
+    );
+
+    socket.emit("message", JSON.stringify({
+      type: "event",
+      event: "connect.challenge",
+      payload: {
+        nonce: "abc123"
+      }
+    }));
+
+    const connectFrame = JSON.parse(socket.sentMessages[0] ?? "{}") as {
+      id: string;
+    };
+
+    socket.emit("message", JSON.stringify({
+      type: "res",
+      id: connectFrame.id,
+      ok: true,
+      payload: {}
+    }));
+
+    await vi.waitFor(() => {
+      expect(socket.sentMessages).toHaveLength(2);
+    });
+
+    const agentsFrame = JSON.parse(socket.sentMessages[1] ?? "{}") as {
+      id: string;
+    };
+
+    socket.emit("message", JSON.stringify({
+      type: "res",
+      id: agentsFrame.id,
+      ok: true,
+      payload: createAgentsFixture()
+    }));
+
+    await expect(pending).resolves.toEqual(createAgentsFixture());
+
+    await vi.advanceTimersByTimeAsync(25);
+
+    expect(socket.pingCount).toBeGreaterThan(0);
+
+    client.dispose();
+    vi.useRealTimers();
   });
 });
 
@@ -650,6 +828,12 @@ describe("gateway helpers", () => {
     });
 
     expect(asError("boom").message).toBe("boom");
+    expect(
+      asTransportError(new HttpError(503, "offline"))
+    ).toMatchObject({
+      statusCode: 503,
+      message: "offline"
+    });
   });
 
   it("loads device identity from assets and derives a stable device id", () => {

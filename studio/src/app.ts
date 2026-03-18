@@ -7,9 +7,12 @@ import { notFoundHandler } from "./middleware/not-found";
 import { createHealthRouter } from "./routes/health";
 import { createOpenClawRouter } from "./routes/openclaw";
 import {
-  OpenClawGatewayClient,
-  type OpenClawAgentsReader
-} from "./services/openclaw-gateway-client";
+  OpenClawGatewayClient
+} from "./infra/openclaw-gateway-client";
+import {
+  DefaultOpenClawAgentsService,
+  type OpenClawAgentsService
+} from "./services/openclaw-agents-service";
 
 /**
  * Options for creating the Express application.
@@ -21,9 +24,9 @@ export interface AppOptions {
   enableDiagnostics?: boolean;
 
   /**
-   * Overrides the OpenClaw gateway reader.
+   * Overrides the OpenClaw agents service.
    */
-  openClawAgentsReader?: OpenClawAgentsReader;
+  openClawAgentsService?: OpenClawAgentsService;
 }
 
 /**
@@ -49,18 +52,20 @@ export function raiseDiagnosticError(
 export function createApp(options: AppOptions = {}): Express {
   const env = getEnv();
   const app = express();
-  const openClawAgentsReader =
-    options.openClawAgentsReader ??
-    new OpenClawGatewayClient({
-      url: env.openClawGatewayUrl,
-      token: env.openClawGatewayToken,
-      timeoutMs: env.openClawGatewayTimeoutMs
-    });
+  const openClawAgentsService =
+    options.openClawAgentsService ??
+    new DefaultOpenClawAgentsService(
+      OpenClawGatewayClient.getInstance({
+        url: env.openClawGatewayUrl,
+        token: env.openClawGatewayToken,
+        timeoutMs: env.openClawGatewayTimeoutMs
+      })
+    );
 
   app.disable("x-powered-by");
   app.use(express.json());
   app.use(createHealthRouter());
-  app.use(createOpenClawRouter(openClawAgentsReader));
+  app.use(createOpenClawRouter(openClawAgentsService));
 
   if (options.enableDiagnostics === true) {
     app.get("/__diagnostics/error", raiseDiagnosticError);

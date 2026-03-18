@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  OpenClawGatewayClient,
   createDeviceSignaturePayload,
   createGatewayError
 } from "./openclaw-gateway-client";
 
 afterEach(() => {
+  OpenClawGatewayClient.resetInstanceForTests();
   vi.restoreAllMocks();
   vi.resetModules();
   vi.doUnmock("node:crypto");
@@ -89,5 +91,18 @@ describe("createDeviceSignaturePayload", () => {
     ).toBe(
       "v3|device-1|gateway-client|backend|operator|operator.read,agents.read|1737264000000||nonce-1|linux|desktop"
     );
+  });
+});
+
+describe("OpenClawGatewayClient singleton", () => {
+  it("returns the same instance for repeated calls", () => {
+    const first = OpenClawGatewayClient.getInstance({
+      url: "ws://127.0.0.1:19001"
+    });
+    const second = OpenClawGatewayClient.getInstance({
+      url: "ws://127.0.0.1:19002"
+    });
+
+    expect(first).toBe(second);
   });
 });
