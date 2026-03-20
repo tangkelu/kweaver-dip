@@ -1,7 +1,8 @@
 import { EventEmitter } from "node:events";
+import { readFileSync } from "node:fs";
 
 import type { NextFunction, Request, Response } from "express";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterAll } from "vitest";
 
 import { createApp, raiseDiagnosticError } from "./app";
 import {
@@ -11,6 +12,7 @@ import {
   loadEnvFile,
   readOptionalString,
   resolveGatewayHost,
+  resolveGatewayHttpUrl,
   resolveGatewayPort,
   resolveGatewayProtocol,
   resolvePort,
@@ -814,9 +816,8 @@ describe("gateway helpers", () => {
       publicKeyPath: "assets/public.pem",
       privateKeyPath: "assets/private.pem"
     });
-    const rawPublicKey = extractRawEd25519PublicKey(
-      "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAKg2A9d8XQUDgPh2kheatQQDEGUKSy5UocLZNBM/tx8M=\n-----END PUBLIC KEY-----\n"
-    );
+    const publicKeyPem = readFileSync("assets/public.pem", "utf8");
+    const rawPublicKey = extractRawEd25519PublicKey(publicKeyPem);
 
     expect(deviceIdentity).toMatchObject({
       id: deriveDeviceIdFromPublicKey(rawPublicKey),
@@ -899,6 +900,12 @@ describe("gateway env helpers", () => {
   it("extracts error messages and validates bad inputs", () => {
     expect(asMessage(new Error("boom"))).toBe("boom");
     expect(resolveGatewayHost("   ")).toBe("127.0.0.1");
+    expect(resolveGatewayHttpUrl("ws://localhost:19001/")).toBe(
+      "http://localhost:19001/"
+    );
+    expect(resolveGatewayHttpUrl("https://gateway.example.com")).toBe(
+      "https://gateway.example.com/"
+    );
     expect(() => resolveGatewayProtocol("ftp")).toThrow(
       "Invalid OPENCLAW_GATEWAY_PROTOCOL value: ftp"
     );
@@ -923,6 +930,7 @@ describe("getEnv", () => {
     expect(getEnv()).toEqual({
       port: 4321,
       openClawGatewayUrl: "ws://127.0.0.1:19001/",
+      openClawGatewayHttpUrl: "http://127.0.0.1:19001/",
       openClawGatewayToken: undefined,
       openClawGatewayTimeoutMs: 6000
     });
@@ -936,7 +944,10 @@ describe("getEnv", () => {
     });
     process.env.OPENCLAW_GATEWAY_URL = "wss://gateway.example.com/ws";
 
-    expect(getEnv().openClawGatewayUrl).toBe("wss://gateway.example.com/ws");
+    expect(getEnv()).toMatchObject({
+      openClawGatewayUrl: "wss://gateway.example.com/ws",
+      openClawGatewayHttpUrl: "https://gateway.example.com/ws"
+    });
   });
 });
 

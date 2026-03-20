@@ -51,6 +51,7 @@ export function resolvePort(value: string | undefined): number {
 export function getEnv(): {
   port: number;
   openClawGatewayUrl: string;
+  openClawGatewayHttpUrl: string;
   openClawGatewayToken?: string;
   openClawGatewayTimeoutMs: number;
 } {
@@ -61,12 +62,14 @@ export function getEnv(): {
   );
   const gatewayHost = resolveGatewayHost(process.env.OPENCLAW_GATEWAY_HOST);
   const gatewayPort = resolveGatewayPort(process.env.OPENCLAW_GATEWAY_PORT);
+  const gatewayUrl =
+    readOptionalString(process.env.OPENCLAW_GATEWAY_URL) ??
+    buildGatewayUrl(gatewayProtocol, gatewayHost, gatewayPort);
 
   return {
     port: resolvePort(process.env.PORT),
-    openClawGatewayUrl:
-      readOptionalString(process.env.OPENCLAW_GATEWAY_URL) ??
-      buildGatewayUrl(gatewayProtocol, gatewayHost, gatewayPort),
+    openClawGatewayUrl: gatewayUrl,
+    openClawGatewayHttpUrl: resolveGatewayHttpUrl(gatewayUrl),
     openClawGatewayToken: readOptionalString(process.env.OPENCLAW_GATEWAY_TOKEN),
     openClawGatewayTimeoutMs: resolveTimeoutMs(process.env.OPENCLAW_GATEWAY_TIMEOUT_MS)
   };
@@ -152,6 +155,29 @@ export function buildGatewayUrl(
   port: number
 ): string {
   return new URL(`${protocol}://${host}:${port}`).toString();
+}
+
+/**
+ * Converts the gateway URL into an HTTP(S) base URL for REST proxies.
+ *
+ * @param url The configured gateway URL.
+ * @returns A normalized HTTP or HTTPS base URL.
+ * @throws {Error} Thrown when the protocol cannot be converted.
+ */
+export function resolveGatewayHttpUrl(url: string): string {
+  const parsed = new URL(url);
+
+  if (parsed.protocol === "ws:") {
+    parsed.protocol = "http:";
+  } else if (parsed.protocol === "wss:") {
+    parsed.protocol = "https:";
+  } else if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error(
+      `OPENCLAW_GATEWAY_URL must use ws, wss, http or https protocol: ${url}`
+    );
+  }
+
+  return parsed.toString();
 }
 
 /**
