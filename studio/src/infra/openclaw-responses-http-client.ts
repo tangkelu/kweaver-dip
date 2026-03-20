@@ -59,12 +59,14 @@ export interface OpenClawResponsesHttpClient {
    * @param digitalHumanId The target digital human identifier.
    * @param requestBody The request payload received from Studio Web.
    * @param signal The abort signal tied to the downstream connection.
+   * @param requestHeaders Optional upstream headers merged into the OpenClaw request.
    * @returns The upstream streaming HTTP response.
    */
   createResponseStream(
     digitalHumanId: string,
     requestBody: DigitalHumanResponseRequest,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    requestHeaders?: HeadersInit
   ): Promise<OpenClawResponsesHttpResult>;
 }
 
@@ -90,18 +92,20 @@ implements OpenClawResponsesHttpClient {
    * @param digitalHumanId The target digital human identifier.
    * @param requestBody The request payload received from Studio Web.
    * @param signal The abort signal tied to the downstream connection.
+   * @param requestHeaders Optional upstream headers merged into the OpenClaw request.
    * @returns The upstream streaming HTTP response.
    */
   public async createResponseStream(
     digitalHumanId: string,
     requestBody: DigitalHumanResponseRequest,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    requestHeaders?: HeadersInit
   ): Promise<OpenClawResponsesHttpResult> {
     const upstreamResponse = await this.fetchImpl(
       buildOpenClawResponsesUrl(this.options.gatewayUrl),
       {
         method: "POST",
-        headers: createOpenClawResponsesHeaders(this.options.token),
+        headers: createOpenClawResponsesHeaders(this.options.token, requestHeaders),
         body: JSON.stringify(
           createOpenClawResponsesRequestBody(digitalHumanId, requestBody)
         ),
@@ -148,9 +152,13 @@ export function buildOpenClawResponsesUrl(gatewayUrl: string): string {
  * Creates the headers used to call OpenClaw `/v1/responses`.
  *
  * @param token The optional gateway bearer token.
+ * @param requestHeaders Optional upstream headers merged into the OpenClaw request.
  * @returns The normalized request headers.
  */
-export function createOpenClawResponsesHeaders(token?: string): Headers {
+export function createOpenClawResponsesHeaders(
+  token?: string,
+  requestHeaders?: HeadersInit
+): Headers {
   const headers = new Headers({
     "content-type": "application/json",
     accept: "text/event-stream"
@@ -158,6 +166,14 @@ export function createOpenClawResponsesHeaders(token?: string): Headers {
 
   if (token !== undefined) {
     headers.set("authorization", `Bearer ${token}`);
+  }
+
+  if (requestHeaders !== undefined) {
+    const extraHeaders = new Headers(requestHeaders);
+
+    extraHeaders.forEach((value, key) => {
+      headers.set(key, value);
+    });
   }
 
   return headers;

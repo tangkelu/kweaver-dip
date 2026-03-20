@@ -23,12 +23,15 @@ describe("buildOpenClawResponsesUrl", () => {
 });
 
 describe("createOpenClawResponsesHeaders", () => {
-  it("creates JSON and SSE headers and adds bearer auth when present", () => {
-    const headers = createOpenClawResponsesHeaders("secret-token");
+  it("creates JSON and SSE headers, adds bearer auth, and merges extra headers", () => {
+    const headers = createOpenClawResponsesHeaders("secret-token", {
+      "x-openclaw-session-key": "agent:demo:session-1"
+    });
 
     expect(headers.get("content-type")).toBe("application/json");
     expect(headers.get("accept")).toBe("text/event-stream");
     expect(headers.get("authorization")).toBe("Bearer secret-token");
+    expect(headers.get("x-openclaw-session-key")).toBe("agent:demo:session-1");
   });
 });
 
@@ -116,7 +119,10 @@ describe("DefaultOpenClawResponsesHttpClient", () => {
       {
         input: "hello"
       },
-      abortController.signal
+      abortController.signal,
+      {
+        "x-openclaw-session-key": "agent:agent-1:session-1"
+      }
     );
 
     expect(fetchImpl).toHaveBeenCalledOnce();
@@ -125,6 +131,9 @@ describe("DefaultOpenClawResponsesHttpClient", () => {
       method: "POST"
     });
     expect(fetchImpl.mock.calls[0]?.[1]?.signal).toBe(abortController.signal);
+    expect(
+      new Headers(fetchImpl.mock.calls[0]?.[1]?.headers).get("x-openclaw-session-key")
+    ).toBe("agent:agent-1:session-1");
     expect(JSON.parse(String(fetchImpl.mock.calls[0]?.[1]?.body))).toEqual({
       input: "hello",
       model: "agent:agent-1",
