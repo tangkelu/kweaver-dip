@@ -5,7 +5,7 @@
 - 使用 Express 作为 HTTP 服务框架
 - 每个函数及参数都必须有文档注释
 - 单元测试行覆盖率必须达到 90% 以上
-- 每次对 routes 进行更新时，同步更新 `docs/openapi` 下的对应文档
+- 每次对 routes 进行更新时，同步更新 `docs/openapi` 下的对应文档，并更新 README.md 中的 API 部分
 
 ## 文档结构
 AGENTS.md（本文档）           项目的基本要求         
