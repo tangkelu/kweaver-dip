@@ -1,0 +1,10 @@
+{
+  "id": "archives-access",
+  "name": "Archives Access",
+  "description": "Exposes the workspace's archives directory via the gateway HTTP server.",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

@@ -3,9 +3,13 @@ import express, { type Express, type Request, type Response } from "express";
 import { HttpError } from "./errors/http-error";
 import { errorHandler } from "./middleware/error-handler";
 import { notFoundHandler } from "./middleware/not-found";
+import { createCronRouter } from "./routes/plan";
 import { createDigitalHumanResponseRouter } from "./routes/digital-human-response";
 import { createDigitalHumanRouter } from "./routes/digital-human";
 import { createHealthRouter } from "./routes/health";
+import { createLlmRouter } from "./routes/llm-router";
+import { createSessionsRouter } from "./routes/sessions";
+import { getEnv } from "./config/env";
 
 
 /**
@@ -44,6 +48,8 @@ export function createApp(options: AppOptions = {}): Express {
   app.disable("x-powered-by");
   app.use(express.json());
   app.use(createHealthRouter());
+  app.use(createCronRouter());
+  app.use(createSessionsRouter());
   app.use(createDigitalHumanRouter());
   app.use(createDigitalHumanResponseRouter());
 
