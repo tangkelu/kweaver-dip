@@ -27,58 +27,43 @@
   width: 100%;
 }
 
-.fileItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+.fileCardItem {
+  position: relative;
   width: 100%;
-  height: 32px;
-  padding: 0 10px;
-  border: 1px solid rgb(226 232 240 / 95%);
-  border-radius: 8px;
-  background: #fff;
+  overflow: visible;
 }
 
-.fileInfo {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.fileCardTooltipTarget {
+  display: block;
+}
+
+.fileCard {
+  width: 100%;
+}
+
+.fileCardName {
   min-width: 0;
-  flex: 1;
-}
-
-.fileItemIcon {
-  font-size: 14px;
-  color: #64748b;
-}
-
-.fileName {
-  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #1f2937;
-  font-size: 12px;
 }
 
-.fileRemoveBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: none;
-  background: transparent;
-  cursor: pointer;
+.fileCardRemoveAction {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  z-index: 1;
 }
 
-.fileRemoveIcon {
-  font-size: 14px;
-  color: #94a3b8;
-}
-
-.fileRemoveBtn:hover .fileRemoveIcon {
-  color: #64748b;
+.fileCardItem:hover .fileCardRemoveAction,
+.fileCardItem:focus-within .fileCardRemoveAction {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .mentionTags {

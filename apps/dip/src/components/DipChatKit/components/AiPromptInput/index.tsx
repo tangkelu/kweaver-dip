@@ -1,5 +1,5 @@
 import { CloseCircleFilled, SendOutlined } from '@ant-design/icons'
-import { Sender, type SenderProps } from '@ant-design/x'
+import { FileCard, Sender, type SenderProps } from '@ant-design/x'
 import {
   Avatar,
   Button,
@@ -92,6 +92,7 @@ const AiPromptInput: React.FC<AiPromptInputProps> = ({
   const resolvedMentionButtonLabel = mentionButtonLabel ?? intl.get('aiPromptInput.mentionButton')
   const resolvedAttachButtonTitle = attachButtonTitle ?? intl.get('aiPromptInput.attach')
   const resolvedSendButtonTitle = sendButtonTitle ?? intl.get('aiPromptInput.send')
+  const resolvedRemoveFileTitle = intl.get('aiPromptInput.removeFile')
 
   useEffect(() => {
     if (value !== undefined) {
@@ -479,22 +480,31 @@ const AiPromptInput: React.FC<AiPromptInputProps> = ({
 
               return (
                 <Col key={fileKey} span={fileColSpan}>
-                  <div className={styles.fileItem}>
-                    <div className={styles.fileInfo}>
-                      <IconFont type="icon-dip-color-txt" className={styles.fileItemIcon} />
-                      <Tooltip title={file.name}>
-                        <span className={styles.fileName}>{file.name}</span>
+                  <div className={styles.fileCardItem}>
+                    <Tooltip title={file.name}>
+                      <span className={styles.fileCardTooltipTarget}>
+                        <FileCard
+                          name={file.name}
+                          byte={file.size}
+                          size="small"
+                          className={styles.fileCard}
+                          classNames={{ name: styles.fileCardName }}
+                        />
+                      </span>
+                    </Tooltip>
+                    <div className={styles.fileCardRemoveAction}>
+                      <Tooltip title={resolvedRemoveFileTitle}>
+                        <Button
+                          type="text"
+                          size="small"
+                          aria-label={resolvedRemoveFileTitle}
+                          icon={<CloseCircleFilled />}
+                          onClick={() => {
+                            handleAttachmentRemove(fileKey)
+                          }}
+                        />
                       </Tooltip>
                     </div>
-                    <button
-                      type="button"
-                      className={styles.fileRemoveBtn}
-                      onClick={() => {
-                        handleAttachmentRemove(fileKey)
-                      }}
-                    >
-                      <CloseCircleFilled className={styles.fileRemoveIcon} />
-                    </button>
                   </div>
                 </Col>
               )
