@@ -125,6 +125,7 @@ npm --prefix studio run init:agents
 脚本当前会读取以下环境变量：
 
 - `OPENCLAW_STATE_DIR`
+- `OPENCLAW_BUILT_IN_DIR`
 - `OPENCLAW_WORKSPACE_DIR`
 - `OPENCLAW_EXTENSIONS_DIR`
 
@@ -134,6 +135,10 @@ npm --prefix studio run init:agents
   - OpenClaw 状态目录
   - 默认值：`~/.openclaw`
   - 用于定位 `openclaw.json`、`agents/main/agent/auth-profiles.json`、`plugins/`
+- `OPENCLAW_BUILT_IN_DIR`
+  - 内置智能体定义目录
+  - 默认值：`studio/built-in`
+  - 当前用于读取 `metadata.json`、`SOUL.md`、`IDENTITY.md`
 - `OPENCLAW_WORKSPACE_DIR`
   - 内置智能体 workspace 根目录
   - 默认值：`<OPENCLAW_STATE_DIR>`
@@ -152,10 +157,11 @@ OPENCLAW_STATE_DIR=/data/openclaw \
 npm --prefix studio run init:agents
 ```
 
-示例 2：同时指定状态目录和 workspace 根目录
+示例 2：同时指定状态目录、built-in 目录和 workspace 根目录
 
 ```bash
 OPENCLAW_STATE_DIR=/data/openclaw \
+OPENCLAW_BUILT_IN_DIR=/Users/yannan/docker-apps/dip-studio/studio/built-in \
 OPENCLAW_WORKSPACE_DIR=/data/openclaw/workspace \
 npm --prefix studio run init:agents
 ```
@@ -164,6 +170,7 @@ npm --prefix studio run init:agents
 
 ```bash
 OPENCLAW_STATE_DIR=/data/openclaw \
+OPENCLAW_BUILT_IN_DIR=/Users/yannan/docker-apps/dip-studio/studio/built-in \
 OPENCLAW_WORKSPACE_DIR=/data/openclaw/workspace \
 OPENCLAW_EXTENSIONS_DIR=/Users/yannan/docker-apps/dip-studio/studio/extensions \
 npm --prefix studio run init:agents
@@ -173,6 +180,7 @@ npm --prefix studio run init:agents
 
 ```bash
 export OPENCLAW_STATE_DIR=/data/openclaw
+export OPENCLAW_BUILT_IN_DIR=/Users/yannan/docker-apps/dip-studio/studio/built-in
 export OPENCLAW_WORKSPACE_DIR=/data/openclaw/workspace
 export OPENCLAW_EXTENSIONS_DIR=/Users/yannan/docker-apps/dip-studio/studio/extensions
 

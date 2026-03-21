@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const STATE_DIR = process.env.OPENCLAW_STATE_DIR || path.join(os.homedir(), ".openclaw");
-const BUILT_IN_DIR = path.join(__dirname, "../..", "built-in");
+const BUILT_IN_DIR = process.env.OPENCLAW_BUILT_IN_DIR || path.join(__dirname, "../..", "built-in");
 const EXTENSIONS_DIR = process.env.OPENCLAW_EXTENSIONS_DIR || path.join(__dirname, "../..", "extensions");
 const WORKSPACE_ROOT = path.resolve(
   process.env.OPENCLAW_WORKSPACE_DIR || STATE_DIR
