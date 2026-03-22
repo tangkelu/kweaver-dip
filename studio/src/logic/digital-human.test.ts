@@ -23,6 +23,7 @@ vi.mock("node:os", async (importOriginal) => {
 
 import {
   DefaultDigitalHumanLogic,
+  normalizeOpenClawAccountIdFromAppId,
   resolveDefaultWorkspace
 } from "./digital-human";
 
@@ -176,6 +177,84 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       soul: "Soul text\n",
       skills: ["s1"]
     });
+  });
+
+  it("normalizeOpenClawAccountIdFromAppId lowercases valid Feishu-style app ids", () => {
+    expect(normalizeOpenClawAccountIdFromAppId("CLI_a92b87f167b99cbb")).toBe(
+      "cli_a92b87f167b99cbb"
+    );
+    expect(normalizeOpenClawAccountIdFromAppId("")).toBe("default");
+  });
+
+  it("getDigitalHuman includes channel when OpenClaw config binds feishu via accounts", async () => {
+    const id = "b1b2c3d4-e5f6-7890-abcd-ef1234567890";
+    const ws = resolveDefaultWorkspace(id);
+    mkdirSync(ws, { recursive: true });
+    writeFileSync(
+      join(ws, "IDENTITY.md"),
+      "- Name: Alice\n- Creature: QA\n",
+      "utf8"
+    );
+    writeFileSync(join(ws, "SOUL.md"), "Soul text\n", "utf8");
+
+    const configPath = join(fakeHome, "openclaw.json");
+    const accountId = normalizeOpenClawAccountIdFromAppId("cli_app-1");
+    writeFileSync(
+      configPath,
+      JSON.stringify({
+        bindings: [
+          {
+            agentId: id,
+            match: { channel: "feishu", accountId }
+          }
+        ],
+        channels: {
+          feishu: {
+            enabled: true,
+            accounts: {
+              [accountId]: {
+                enabled: true,
+                appId: "cli_app-1",
+                appSecret: "secret-1"
+              }
+            }
+          }
+        }
+      }),
+      "utf8"
+    );
+    const prev = process.env.OPENCLAW_CONFIG_PATH;
+    process.env.OPENCLAW_CONFIG_PATH = configPath;
+
+    try {
+      const adapter = {
+        listAgents: vi.fn(),
+        createAgent: vi.fn(),
+        deleteAgent: vi.fn(),
+        getAgentFile: vi.fn().mockImplementation(async ({ name }: { name: string }) => ({
+          file: { content: readFileSync(join(ws, name), "utf8") }
+        })),
+        setAgentFile: vi.fn(),
+        getConfig: vi.fn(),
+        patchConfig: vi.fn()
+      };
+
+      const logic = new DefaultDigitalHumanLogic({
+        openClawAgentsAdapter: adapter as never,
+        agentSkillsLogic: stubAgentSkills()
+      });
+
+      await expect(logic.getDigitalHuman(id)).resolves.toMatchObject({
+        id,
+        channel: { type: "feishu", appId: "cli_app-1", appSecret: "secret-1" }
+      });
+    } finally {
+      if (prev === undefined) {
+        delete process.env.OPENCLAW_CONFIG_PATH;
+      } else {
+        process.env.OPENCLAW_CONFIG_PATH = prev;
+      }
+    }
   });
 
   it("getDigitalHuman includes channel when OpenClaw config binds feishu", async () => {
@@ -583,7 +662,7 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     );
   });
 
-  it("createDigitalHuman binds channel when config path is writable", async () => {
+  it("createDigitalHuman binds channel via config.patch when gateway accepts", async () => {
     const cfg = join(fakeHome, "openclaw.json");
     writeFileSync(cfg, "{}\n", "utf8");
     const prev = process.env.OPENCLAW_CONFIG_PATH;
@@ -592,6 +671,8 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     process.env.OPENCLAW_CONFIG_PATH = cfg;
 
     const createAgent = vi.fn().mockResolvedValue({ ok: true });
+    const getConfig = vi.fn().mockResolvedValue({ raw: "{}", hash: "base-hash-1" });
+    const patchConfig = vi.fn().mockResolvedValue({ ok: true });
     const logic = new DefaultDigitalHumanLogic({
       openClawAgentsAdapter: {
         listAgents: vi.fn(),
@@ -600,35 +681,62 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
         getAgentFile: vi.fn(),
         setAgentFile: vi.fn().mockResolvedValue({ ok: true }),
         listAgentFiles: vi.fn().mockResolvedValue({ agentId: "", files: [] }),
-        getConfig: vi.fn(),
-        patchConfig: vi.fn()
+        getConfig,
+        patchConfig
       } as never,
       agentSkillsLogic: stubAgentSkills()
     });
 
-    await logic.createDigitalHuman({
+    const result = await logic.createDigitalHuman({
       name: "C",
       channel: { appId: "a", appSecret: "b" }
     });
 
-    const parsed = JSON.parse(readFileSync(cfg, "utf8")) as {
-      channels: { feishu: { appId: string } };
+    expect(getConfig).toHaveBeenCalledOnce();
+    expect(patchConfig).toHaveBeenCalledOnce();
+    expect(patchConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseHash: "base-hash-1"
+      })
+    );
+    const patch = JSON.parse(
+      (patchConfig.mock.calls[0][0] as { raw: string }).raw
+    ) as {
+      channels: {
+        feishu: { accounts: Record<string, { appId: string; appSecret: string }> };
+      };
+      bindings: Array<{
+        agentId: string;
+        match: { channel: string; accountId?: string };
+      }>;
     };
-    expect(parsed.channels.feishu.appId).toBe("a");
+    const accId = normalizeOpenClawAccountIdFromAppId("a");
+    expect(patch.channels.feishu.accounts[accId].appId).toBe("a");
+    expect(patch.bindings.some((b) => b.agentId === result.id)).toBe(true);
+    expect(
+      patch.bindings.find((b) => b.agentId === result.id)?.match.channel
+    ).toBe("feishu");
+    expect(
+      patch.bindings.find((b) => b.agentId === result.id)?.match.accountId
+    ).toBe(accId);
 
     process.env.OPENCLAW_CONFIG_PATH = prev;
     process.env.OPENCLAW_STATE_DIR = prevState;
   });
 
-  it("createDigitalHuman writes channel to OPENCLAW_STATE_DIR when config path unset", async () => {
+  it("createDigitalHuman uses config.patch when OPENCLAW_STATE_DIR resolves config path", async () => {
     const stateDir = join(fakeHome, "state");
     mkdirSync(stateDir, { recursive: true });
+    const cfgPath = join(stateDir, "openclaw.json");
+    writeFileSync(cfgPath, "{}\n", "utf8");
     const prevCfg = process.env.OPENCLAW_CONFIG_PATH;
     const prevState = process.env.OPENCLAW_STATE_DIR;
     delete process.env.OPENCLAW_CONFIG_PATH;
     process.env.OPENCLAW_STATE_DIR = stateDir;
 
     const createAgent = vi.fn().mockResolvedValue({ ok: true });
+    const getConfig = vi.fn().mockResolvedValue({ raw: "{}", hash: "base-hash-2" });
+    const patchConfig = vi.fn().mockResolvedValue({ ok: true });
     const logic = new DefaultDigitalHumanLogic({
       openClawAgentsAdapter: {
         listAgents: vi.fn(),
@@ -637,28 +745,103 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
         getAgentFile: vi.fn(),
         setAgentFile: vi.fn().mockResolvedValue({ ok: true }),
         listAgentFiles: vi.fn().mockResolvedValue({ agentId: "", files: [] }),
-        getConfig: vi.fn(),
-        patchConfig: vi.fn()
+        getConfig,
+        patchConfig
       } as never,
       agentSkillsLogic: stubAgentSkills()
     });
 
-    await logic.createDigitalHuman({
+    const result = await logic.createDigitalHuman({
       name: "D",
       channel: { appId: "x", appSecret: "y" }
     });
 
-    const cfgPath = join(stateDir, "openclaw.json");
-    const parsed = JSON.parse(readFileSync(cfgPath, "utf8")) as {
-      channels: { feishu: { appId: string } };
+    expect(patchConfig).toHaveBeenCalledOnce();
+    const patch = JSON.parse(
+      (patchConfig.mock.calls[0][0] as { raw: string }).raw
+    ) as {
+      channels: {
+        feishu: { accounts: Record<string, { appId: string }> };
+      };
     };
-    expect(parsed.channels.feishu.appId).toBe("x");
+    const accX = normalizeOpenClawAccountIdFromAppId("x");
+    expect(patch.channels.feishu.accounts[accX].appId).toBe("x");
+    const raw = (patchConfig.mock.calls[0][0] as { raw: string }).raw;
+    expect(raw).toContain(result.id);
 
     process.env.OPENCLAW_CONFIG_PATH = prevCfg;
     process.env.OPENCLAW_STATE_DIR = prevState;
   });
 
-  it("getDigitalHuman includes channel when OpenClaw config binds dingtalk", async () => {
+  it("getDigitalHuman includes channel when OpenClaw config binds dingtalk via accounts", async () => {
+    const id = "f1b2c3d4-e5f6-7890-abcd-ef1234567890";
+    const ws = resolveDefaultWorkspace(id);
+    mkdirSync(ws, { recursive: true });
+    writeFileSync(
+      join(ws, "IDENTITY.md"),
+      "- Name: Alice\n- Creature: QA\n",
+      "utf8"
+    );
+    writeFileSync(join(ws, "SOUL.md"), "Soul text\n", "utf8");
+
+    const configPath = join(fakeHome, "oc-ding-acct.json");
+    const accountId = normalizeOpenClawAccountIdFromAppId("ding_app_1");
+    writeFileSync(
+      configPath,
+      JSON.stringify({
+        bindings: [
+          { agentId: id, match: { channel: "dingtalk", accountId } }
+        ],
+        channels: {
+          dingtalk: {
+            enabled: true,
+            accounts: {
+              [accountId]: {
+                enabled: true,
+                appId: "ding_app_1",
+                appSecret: "dt-sec"
+              }
+            }
+          }
+        }
+      }),
+      "utf8"
+    );
+    const prev = process.env.OPENCLAW_CONFIG_PATH;
+    process.env.OPENCLAW_CONFIG_PATH = configPath;
+
+    try {
+      const adapter = {
+        listAgents: vi.fn(),
+        createAgent: vi.fn(),
+        deleteAgent: vi.fn(),
+        getAgentFile: vi.fn().mockImplementation(async ({ name }: { name: string }) => ({
+          file: { content: readFileSync(join(ws, name), "utf8") }
+        })),
+        setAgentFile: vi.fn(),
+        getConfig: vi.fn(),
+        patchConfig: vi.fn()
+      };
+
+      const logic = new DefaultDigitalHumanLogic({
+        openClawAgentsAdapter: adapter as never,
+        agentSkillsLogic: stubAgentSkills()
+      });
+
+      await expect(logic.getDigitalHuman(id)).resolves.toMatchObject({
+        id,
+        channel: { type: "dingtalk", appId: "ding_app_1", appSecret: "dt-sec" }
+      });
+    } finally {
+      if (prev === undefined) {
+        delete process.env.OPENCLAW_CONFIG_PATH;
+      } else {
+        process.env.OPENCLAW_CONFIG_PATH = prev;
+      }
+    }
+  });
+
+  it("getDigitalHuman includes channel when OpenClaw config binds dingtalk (legacy top-level)", async () => {
     const id = "f1b2c3d4-e5f6-7890-abcd-ef1234567890";
     const ws = resolveDefaultWorkspace(id);
     mkdirSync(ws, { recursive: true });
@@ -727,6 +910,8 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     process.env.OPENCLAW_CONFIG_PATH = cfg;
 
     const createAgent = vi.fn().mockResolvedValue({ ok: true });
+    const getConfig = vi.fn().mockResolvedValue({ raw: "{}", hash: "base-hash-3" });
+    const patchConfig = vi.fn().mockResolvedValue({ ok: true });
     const logic = new DefaultDigitalHumanLogic({
       openClawAgentsAdapter: {
         listAgents: vi.fn(),
@@ -735,8 +920,8 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
         getAgentFile: vi.fn(),
         setAgentFile: vi.fn().mockResolvedValue({ ok: true }),
         listAgentFiles: vi.fn().mockResolvedValue({ agentId: "", files: [] }),
-        getConfig: vi.fn(),
-        patchConfig: vi.fn()
+        getConfig,
+        patchConfig
       } as never,
       agentSkillsLogic: stubAgentSkills()
     });
@@ -746,18 +931,181 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       channel: { type: "dingtalk", appId: "dta", appSecret: "dts" }
     });
 
-    const parsed = JSON.parse(readFileSync(cfg, "utf8")) as {
-      bindings: Array<{ agentId: string; match: { channel: string } }>;
-      channels: { dingtalk: { appId: string } };
+    const patch = JSON.parse(
+      (patchConfig.mock.calls[0][0] as { raw: string }).raw
+    ) as {
+      bindings: Array<{
+        agentId: string;
+        match: { channel: string; accountId?: string };
+      }>;
+      channels: {
+        dingtalk: { accounts: Record<string, { appId: string; appSecret: string }> };
+      };
     };
-    expect(parsed.channels.dingtalk.appId).toBe("dta");
-    expect(parsed.bindings.some((b) => b.match.channel === "dingtalk")).toBe(true);
+    const accDta = normalizeOpenClawAccountIdFromAppId("dta");
+    expect(patch.channels.dingtalk.accounts[accDta].appId).toBe("dta");
+    expect(patch.bindings.some((b) => b.match.channel === "dingtalk")).toBe(true);
+    expect(
+      patch.bindings.find((b) => b.agentId === result.id)?.match.accountId
+    ).toBe(accDta);
     expect(result.channel).toEqual({
       type: "dingtalk",
       appId: "dta",
       appSecret: "dts"
     });
 
+    process.env.OPENCLAW_CONFIG_PATH = prev;
+    process.env.OPENCLAW_STATE_DIR = prevState;
+  });
+
+  it("createDigitalHuman replaces prior agent binding when two digital humans use the same Feishu app id", async () => {
+    const cfg = join(fakeHome, "openclaw-dup-feishu.json");
+    writeFileSync(cfg, "{}\n", "utf8");
+    const prev = process.env.OPENCLAW_CONFIG_PATH;
+    const prevState = process.env.OPENCLAW_STATE_DIR;
+    delete process.env.OPENCLAW_STATE_DIR;
+    process.env.OPENCLAW_CONFIG_PATH = cfg;
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const patchConfig = vi.fn().mockRejectedValue(new Error("use file"));
+    const createAgent = vi.fn().mockResolvedValue({ ok: true });
+    const logic = new DefaultDigitalHumanLogic({
+      openClawAgentsAdapter: {
+        listAgents: vi.fn(),
+        createAgent,
+        deleteAgent: vi.fn(),
+        getAgentFile: vi.fn(),
+        setAgentFile: vi.fn().mockResolvedValue({ ok: true }),
+        listAgentFiles: vi.fn().mockResolvedValue({ agentId: "", files: [] }),
+        getConfig: vi.fn().mockResolvedValue({ raw: "{}", hash: "h" }),
+        patchConfig
+      } as never,
+      agentSkillsLogic: stubAgentSkills()
+    });
+
+    const acc = normalizeOpenClawAccountIdFromAppId("cli_shared_app");
+    await logic.createDigitalHuman({
+      id: "11111111-1111-1111-1111-111111111111",
+      name: "First",
+      channel: { appId: "cli_shared_app", appSecret: "s1" }
+    });
+    await logic.createDigitalHuman({
+      id: "22222222-2222-2222-2222-222222222222",
+      name: "Second",
+      channel: { appId: "cli_shared_app", appSecret: "s2" }
+    });
+
+    const parsed = JSON.parse(readFileSync(cfg, "utf8")) as {
+      bindings: Array<{ agentId: string; match: { channel: string; accountId?: string } }>;
+    };
+    const feishuBindings = parsed.bindings.filter((b) => b.match.channel === "feishu");
+    expect(feishuBindings.some((b) => b.agentId === "11111111-1111-1111-1111-111111111111")).toBe(
+      false
+    );
+    expect(
+      feishuBindings.find((b) => b.agentId === "22222222-2222-2222-2222-222222222222")
+        ?.match.accountId
+    ).toBe(acc);
+
+    warnSpy.mockRestore();
+    process.env.OPENCLAW_CONFIG_PATH = prev;
+    process.env.OPENCLAW_STATE_DIR = prevState;
+  });
+
+  it("createDigitalHuman replaces prior agent binding when two digital humans use the same DingTalk app id", async () => {
+    const cfg = join(fakeHome, "openclaw-dup-ding.json");
+    writeFileSync(cfg, "{}\n", "utf8");
+    const prev = process.env.OPENCLAW_CONFIG_PATH;
+    const prevState = process.env.OPENCLAW_STATE_DIR;
+    delete process.env.OPENCLAW_STATE_DIR;
+    process.env.OPENCLAW_CONFIG_PATH = cfg;
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const patchConfig = vi.fn().mockRejectedValue(new Error("use file"));
+    const createAgent = vi.fn().mockResolvedValue({ ok: true });
+    const logic = new DefaultDigitalHumanLogic({
+      openClawAgentsAdapter: {
+        listAgents: vi.fn(),
+        createAgent,
+        deleteAgent: vi.fn(),
+        getAgentFile: vi.fn(),
+        setAgentFile: vi.fn().mockResolvedValue({ ok: true }),
+        listAgentFiles: vi.fn().mockResolvedValue({ agentId: "", files: [] }),
+        getConfig: vi.fn().mockResolvedValue({ raw: "{}", hash: "h" }),
+        patchConfig
+      } as never,
+      agentSkillsLogic: stubAgentSkills()
+    });
+
+    const acc = normalizeOpenClawAccountIdFromAppId("ding_shared_app");
+    await logic.createDigitalHuman({
+      id: "33333333-3333-3333-3333-333333333333",
+      name: "First",
+      channel: { type: "dingtalk", appId: "ding_shared_app", appSecret: "s1" }
+    });
+    await logic.createDigitalHuman({
+      id: "44444444-4444-4444-4444-444444444444",
+      name: "Second",
+      channel: { type: "dingtalk", appId: "ding_shared_app", appSecret: "s2" }
+    });
+
+    const parsed = JSON.parse(readFileSync(cfg, "utf8")) as {
+      bindings: Array<{ agentId: string; match: { channel: string; accountId?: string } }>;
+    };
+    const dingBindings = parsed.bindings.filter((b) => b.match.channel === "dingtalk");
+    expect(dingBindings.some((b) => b.agentId === "33333333-3333-3333-3333-333333333333")).toBe(
+      false
+    );
+    expect(
+      dingBindings.find((b) => b.agentId === "44444444-4444-4444-4444-444444444444")?.match
+        .accountId
+    ).toBe(acc);
+
+    warnSpy.mockRestore();
+    process.env.OPENCLAW_CONFIG_PATH = prev;
+    process.env.OPENCLAW_STATE_DIR = prevState;
+  });
+
+  it("createDigitalHuman writes openclaw.json when config.patch fails", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const cfg = join(fakeHome, "openclaw-fallback.json");
+    writeFileSync(cfg, "{}\n", "utf8");
+    const prev = process.env.OPENCLAW_CONFIG_PATH;
+    const prevState = process.env.OPENCLAW_STATE_DIR;
+    delete process.env.OPENCLAW_STATE_DIR;
+    process.env.OPENCLAW_CONFIG_PATH = cfg;
+
+    const createAgent = vi.fn().mockResolvedValue({ ok: true });
+    const getConfig = vi.fn().mockResolvedValue({ raw: "{}", hash: "h" });
+    const patchConfig = vi.fn().mockRejectedValue(new Error("validation failed"));
+    const logic = new DefaultDigitalHumanLogic({
+      openClawAgentsAdapter: {
+        listAgents: vi.fn(),
+        createAgent,
+        deleteAgent: vi.fn(),
+        getAgentFile: vi.fn(),
+        setAgentFile: vi.fn().mockResolvedValue({ ok: true }),
+        listAgentFiles: vi.fn().mockResolvedValue({ agentId: "", files: [] }),
+        getConfig,
+        patchConfig
+      } as never,
+      agentSkillsLogic: stubAgentSkills()
+    });
+
+    const result = await logic.createDigitalHuman({
+      name: "F",
+      channel: { appId: "fb", appSecret: "sec" }
+    });
+
+    const parsed = JSON.parse(readFileSync(cfg, "utf8")) as {
+      channels: { feishu: { accounts: Record<string, { appId: string }> } };
+      bindings: Array<{ agentId: string }>;
+    };
+    const accFb = normalizeOpenClawAccountIdFromAppId("fb");
+    expect(parsed.channels.feishu.accounts[accFb].appId).toBe("fb");
+    expect(parsed.bindings.some((b) => b.agentId === result.id)).toBe(true);
+
+    warnSpy.mockRestore();
     process.env.OPENCLAW_CONFIG_PATH = prev;
     process.env.OPENCLAW_STATE_DIR = prevState;
   });

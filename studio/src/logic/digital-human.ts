@@ -205,7 +205,8 @@ export class DefaultDigitalHumanLogic implements DigitalHumanLogic {
    * 2. Create the agent in OpenClaw (`agents.create`)
    * 3. Update IDENTITY.md and SOUL.md via `agents.files.list` then `agents.files.set`
    * 4. Configure skills via {@link AgentSkillsLogic.updateAgentSkills}
-   * 5. (optional) Bind channel on disk when requested
+   * 5. (optional) Bind channel via `config.patch` WS RPC, or fall back to writing
+   *    `openclaw.json` when the gateway rejects the patch (one agent ↔ one binding row).
    *
    * @param request The creation request payload.
    * @returns The created digital human summary.
@@ -231,7 +232,7 @@ export class DefaultDigitalHumanLogic implements DigitalHumanLogic {
 
     if (request.channel) {
       try {
-        await this.bindChannel(uuid, request.channel);
+        await this.bindChannelForAgent(uuid, request.channel);
       } catch (err) {
         console.error("[digital-human] channel binding failed (non-fatal):", err);
       }
@@ -318,7 +319,7 @@ export class DefaultDigitalHumanLogic implements DigitalHumanLogic {
 
     if (patch.channel) {
       try {
-        await this.bindChannel(id, patch.channel);
+        await this.bindChannelForAgent(id, patch.channel);
       } catch (err) {
         console.error("[digital-human] channel binding failed (non-fatal):", err);
       }
@@ -367,61 +368,48 @@ export class DefaultDigitalHumanLogic implements DigitalHumanLogic {
   }
 
   /**
-   * Binds a messaging channel to the agent by directly modifying the
-   * OpenClaw config file on disk.
+   * Binds channel credentials and routing: Feishu and DingTalk use
+   * `channels.<feishu|dingtalk>.accounts.<accountId>` (derived from `appId`) and
+   * `match.accountId` so multiple apps can coexist; each account may only be bound to one
+   * agent (other agents' claims on that account are removed). Tries `config.patch` first;
+   * falls back to writing `openclaw.json` if the gateway rejects the patch.
    *
-   * We bypass the WS `config.patch` RPC because:
-   * 1. The gateway validates the merged config against installed plugins.
-   *    If the target channel plugin (e.g. feishu / dingtalk) is not installed, the
-   *    patch is rejected with a validation error.
-   * 2. Writing directly avoids gateway plugin validation when the channel
-   *    plugin is not installed.
-   *
-   * @param agentId The agent to bind.
+   * @param agentId The OpenClaw agent id.
    * @param channel The channel configuration.
    */
-  private async bindChannel(
+  private async bindChannelForAgent(
     agentId: string,
     channel: ChannelConfig
   ): Promise<void> {
     const configPath = resolveOpenClawConfigPath();
-    let currentConfig: Record<string, unknown> = {};
+    const merged = await loadOpenClawConfigForMerge(configPath);
+    applyAgentChannelBinding(merged, agentId, channel);
 
     try {
-      const raw = await readFile(configPath, "utf-8");
-      currentConfig = JSON.parse(raw) as Record<string, unknown>;
-    } catch {
-      // Config file missing or unparseable — start with empty config.
+      const { hash } = await this.openClawAgentsAdapter.getConfig();
+      const channelKey = resolveOpenClawChannelKey(channel);
+      const channelPayload = getChannelPatchPayload(merged, channelKey);
+      const patchObject: Record<string, unknown> = {
+        channels: {
+          [channelKey]: channelPayload
+        },
+        bindings: merged.bindings ?? []
+      };
+      await this.openClawAgentsAdapter.patchConfig({
+        raw: JSON.stringify(patchObject),
+        baseHash: hash
+      });
+    } catch (err) {
+      console.warn(
+        "[digital-human] config.patch failed; writing openclaw.json directly:",
+        err
+      );
+      await writeFile(
+        configPath,
+        JSON.stringify(merged, null, 2) + "\n",
+        "utf-8"
+      );
     }
-
-    const channelKey = resolveOpenClawChannelKey(channel);
-    const binding = { agentId, match: { channel: channelKey } };
-    const existingBindings = Array.isArray(currentConfig.bindings)
-      ? (currentConfig.bindings as unknown[])
-      : [];
-    const filteredBindings = existingBindings.filter((entry) => {
-      if (typeof entry === "object" && entry !== null && "agentId" in entry) {
-        return (entry as { agentId: string }).agentId !== agentId;
-      }
-      return true;
-    });
-
-    const existingChannels =
-      typeof currentConfig.channels === "object" && currentConfig.channels !== null
-        ? (currentConfig.channels as Record<string, unknown>)
-        : {};
-
-    currentConfig.bindings = [...filteredBindings, binding];
-    currentConfig.channels = {
-      ...existingChannels,
-      [channelKey]: {
-        enabled: true,
-        appId: channel.appId,
-        appSecret: channel.appSecret
-      }
-    };
-
-    await writeFile(configPath, JSON.stringify(currentConfig, null, 2) + "\n", "utf-8");
   }
 }
 
@@ -490,6 +478,168 @@ function normalizeChannelForResponse(channel: ChannelConfig): ChannelConfig {
 }
 
 /**
+ * Loads the local OpenClaw JSON object for merging (unredacted), or `{}` if missing.
+ *
+ * @param configPath Absolute path to `openclaw.json`.
+ */
+async function loadOpenClawConfigForMerge(
+  configPath: string
+): Promise<Record<string, unknown>> {
+  try {
+    const raw = await readFile(configPath, "utf-8");
+    return JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+const OPENCLAW_DEFAULT_ACCOUNT_ID = "default";
+
+const BLOCKED_ACCOUNT_KEYS = new Set([
+  "__proto__",
+  "constructor",
+  "prototype"
+]);
+
+/**
+ * Derives a stable OpenClaw channel `accountId` from a provider app id (Feishu `cli_*`,
+ * DingTalk app keys, etc.).
+ * Aligns with OpenClaw's account-id normalization so bindings match gateway routing.
+ */
+export function normalizeOpenClawAccountIdFromAppId(appId: string): string {
+  const trimmed = appId.trim();
+  if (!trimmed) {
+    return OPENCLAW_DEFAULT_ACCOUNT_ID;
+  }
+  const VALID_ID_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
+  if (VALID_ID_RE.test(trimmed)) {
+    const lower = trimmed.toLowerCase();
+    if (!BLOCKED_ACCOUNT_KEYS.has(lower)) {
+      return lower;
+    }
+  }
+  const INVALID_CHARS_RE = /[^a-z0-9_-]+/gi;
+  const LEADING_DASH_RE = /^-+/;
+  const TRAILING_DASH_RE = /-+$/;
+  let canonical = trimmed
+    .toLowerCase()
+    .replace(INVALID_CHARS_RE, "-")
+    .replace(LEADING_DASH_RE, "")
+    .replace(TRAILING_DASH_RE, "")
+    .slice(0, 64);
+  if (!canonical || BLOCKED_ACCOUNT_KEYS.has(canonical)) {
+    return OPENCLAW_DEFAULT_ACCOUNT_ID;
+  }
+  return canonical;
+}
+
+function bindingAccountKeyForChannel(
+  match: { channel?: string; accountId?: string } | undefined,
+  expectedChannel: "feishu" | "dingtalk"
+): string | null {
+  if (!match || match.channel !== expectedChannel) {
+    return null;
+  }
+  const raw = typeof match.accountId === "string" ? match.accountId.trim() : "";
+  if (!raw) {
+    return OPENCLAW_DEFAULT_ACCOUNT_ID;
+  }
+  return normalizeOpenClawAccountIdFromAppId(raw);
+}
+
+/**
+ * Mutates config so this agent has exactly one channel binding row. Feishu and DingTalk use
+ * `channels.<provider>.accounts.<accountId>` (one app id → one account → one agent). Other
+ * agents' bindings are preserved except when they claim the same account on that channel
+ * as this bind (then they are removed).
+ *
+ * @param currentConfig Parsed config root.
+ * @param agentId Target agent id.
+ * @param channel Channel credentials and type.
+ */
+function applyAgentChannelBinding(
+  currentConfig: Record<string, unknown>,
+  agentId: string,
+  channel: ChannelConfig
+): void {
+  const channelKey = resolveOpenClawChannelKey(channel);
+  const existingBindings = Array.isArray(currentConfig.bindings)
+    ? (currentConfig.bindings as unknown[])
+    : [];
+
+  const withoutThisAgent = existingBindings.filter((entry) => {
+    if (typeof entry === "object" && entry !== null && "agentId" in entry) {
+      return (entry as { agentId: string }).agentId !== agentId;
+    }
+    return true;
+  });
+
+  const existingChannels =
+    typeof currentConfig.channels === "object" && currentConfig.channels !== null
+      ? (currentConfig.channels as Record<string, unknown>)
+      : {};
+
+  const accountId = normalizeOpenClawAccountIdFromAppId(channel.appId);
+  const filteredBindings = withoutThisAgent.filter((entry) => {
+    if (typeof entry !== "object" || entry === null || !("match" in entry)) {
+      return true;
+    }
+    const m = (entry as { match?: { channel?: string; accountId?: string } }).match;
+    const acc = bindingAccountKeyForChannel(m, channelKey);
+    if (acc === null || acc !== accountId) {
+      return true;
+    }
+    return false;
+  });
+
+  const prevBlock =
+    typeof existingChannels[channelKey] === "object" &&
+    existingChannels[channelKey] !== null
+      ? (existingChannels[channelKey] as Record<string, unknown>)
+      : {};
+  const prevAccounts: Record<string, unknown> =
+    typeof prevBlock.accounts === "object" && prevBlock.accounts !== null
+      ? { ...(prevBlock.accounts as Record<string, unknown>) }
+      : {};
+
+  prevAccounts[accountId] = {
+    enabled: true,
+    appId: channel.appId.trim(),
+    appSecret: channel.appSecret
+  };
+
+  currentConfig.bindings = [
+    ...filteredBindings,
+    {
+      agentId,
+      match: { channel: channelKey, accountId }
+    }
+  ];
+  currentConfig.channels = {
+    ...existingChannels,
+    [channelKey]: {
+      ...prevBlock,
+      enabled: prevBlock.enabled !== false,
+      accounts: prevAccounts
+    }
+  };
+}
+
+function getChannelPatchPayload(
+  merged: Record<string, unknown>,
+  channelKey: "feishu" | "dingtalk"
+): unknown {
+  const ch = merged.channels;
+  if (typeof ch === "object" && ch !== null) {
+    const block = (ch as Record<string, unknown>)[channelKey];
+    if (block !== undefined) {
+      return block;
+    }
+  }
+  return {};
+}
+
+/**
  * Reads channel credentials from disk when the agent has a matching
  * `bindings` entry (same shape as channel binding on create/update).
  */
@@ -540,8 +690,31 @@ async function readChannelForAgent(
     return undefined;
   }
   const f = block as Record<string, unknown>;
-  const appId = typeof f.appId === "string" ? f.appId.trim() : "";
-  const appSecret = typeof f.appSecret === "string" ? f.appSecret.trim() : "";
+
+  let appId = "";
+  let appSecret = "";
+  const accountIdRaw = (match as { accountId?: string }).accountId;
+  const accountKey =
+    typeof accountIdRaw === "string" && accountIdRaw.trim().length > 0
+      ? normalizeOpenClawAccountIdFromAppId(accountIdRaw)
+      : OPENCLAW_DEFAULT_ACCOUNT_ID;
+  const accounts =
+    typeof f.accounts === "object" && f.accounts !== null
+      ? (f.accounts as Record<string, unknown>)
+      : undefined;
+  const sub =
+    accounts && typeof accounts[accountKey] === "object" && accounts[accountKey] !== null
+      ? (accounts[accountKey] as Record<string, unknown>)
+      : undefined;
+  if (sub) {
+    appId = typeof sub.appId === "string" ? sub.appId.trim() : "";
+    appSecret = typeof sub.appSecret === "string" ? sub.appSecret.trim() : "";
+  }
+  if (appId.length === 0 || appSecret.length === 0) {
+    appId = typeof f.appId === "string" ? f.appId.trim() : "";
+    appSecret = typeof f.appSecret === "string" ? f.appSecret.trim() : "";
+  }
+
   if (appId.length === 0 || appSecret.length === 0) {
     return undefined;
   }

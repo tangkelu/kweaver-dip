@@ -136,6 +136,8 @@ export interface ChannelConfig {
 
   /**
    * Application identifier issued by the channel provider.
+   * For Feishu and DingTalk, this selects the OpenClaw `channels.<provider>.accounts` key
+   * (normalized); each distinct app id maps to one account and at most one bound agent.
    */
   appId: string;
 
