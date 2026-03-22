@@ -931,6 +931,8 @@ describe("getEnv", () => {
 
     expect(getEnv()).toEqual({
       port: 4321,
+      bknBackendUrl: "http://127.0.0.1:13014/",
+      appUserToken: undefined,
       openClawGatewayUrl: "ws://127.0.0.1:19001/",
       openClawGatewayHttpUrl: "http://127.0.0.1:19001/",
       openClawGatewayToken: undefined,

@@ -13,6 +13,7 @@
 
 1. 执行 `npm install` 安装依赖
 2. 重命名 `.env.example` → `.env`，配置 OpenClaw 连接信息以及 OpenClaw 的 Auth Token。
+   同时配置 `BKN_BACKEND_URL` 和 `APP_USER_TOKEN`，用于转发 BKN Backend 请求。
 3. 在 `assets` 目录下执行 OpenSSL 命令生成 Ed25519 PEM 私钥和 PEM 公钥，用于调用 OpenClaw Gateway 接口时进行签名
 ```bash
 cd assets
@@ -81,6 +82,20 @@ openssl pkey -in private.pem -pubout -out public.pem
 | -- | -- | -- |
 | [\].name | string | 技能名称 |
 | [\].description | string | 技能描述，可选 |
+
+#### 业务知识网络转发
+
+公开接口基础路径：`/api/dip-studio/v1`
+
+服务会将以下请求转发到 `BKN_BACKEND_URL` 的 BKN Backend 接口，并使用环境变量 `APP_USER_TOKEN` 生成上游请求头 `Authorization: Bearer <APP_USER_TOKEN>`。
+
+`GET /api/dip-studio/v1/knowledge-networks`
+
+支持查询参数：`name_pattern`、`sort`、`direction`、`offset`、`limit`、`tag`
+
+`GET /api/dip-studio/v1/knowledge-networks/{kn_id}`
+
+支持查询参数：`mode`、`include_statistics`
 
 #### 获取指定数字员工已配置技能列表
 

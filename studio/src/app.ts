@@ -3,6 +3,7 @@ import express, { type Express, type Request, type Response } from "express";
 import { HttpError } from "./errors/http-error";
 import { errorHandler } from "./middleware/error-handler";
 import { notFoundHandler } from "./middleware/not-found";
+import { createBknRouter } from "./routes/bkn";
 import { createCronRouter } from "./routes/plan";
 import { createDigitalHumanResponseRouter } from "./routes/digital-human-response";
 import { createDigitalHumanRouter } from "./routes/digital-human";
@@ -47,6 +48,7 @@ export function createApp(options: AppOptions = {}): Express {
   app.disable("x-powered-by");
   app.use(express.json());
   app.use(createHealthRouter());
+  app.use(createBknRouter());
   app.use(createCronRouter());
   app.use(createSessionsRouter());
   app.use(createSkillsRouter());

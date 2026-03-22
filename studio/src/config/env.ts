@@ -50,6 +50,8 @@ export function resolvePort(value: string | undefined): number {
  */
 export function getEnv(): {
   port: number;
+  bknBackendUrl: string;
+  appUserToken?: string;
   openClawGatewayUrl: string;
   openClawGatewayHttpUrl: string;
   openClawGatewayToken?: string;
@@ -69,6 +71,8 @@ export function getEnv(): {
 
   return {
     port: resolvePort(process.env.PORT),
+    bknBackendUrl: resolveBknBackendUrl(process.env.BKN_BACKEND_URL),
+    appUserToken: readOptionalString(process.env.APP_USER_TOKEN),
     openClawGatewayUrl: gatewayUrl,
     openClawGatewayHttpUrl: resolveGatewayHttpUrl(gatewayUrl),
     openClawGatewayToken: readOptionalString(process.env.OPENCLAW_GATEWAY_TOKEN),
@@ -201,6 +205,28 @@ export function resolveTimeoutMs(value: string | undefined): number {
   }
 
   return timeoutMs;
+}
+
+/**
+ * Resolves the BKN backend base URL.
+ *
+ * @param value The raw environment variable value.
+ * @returns A normalized HTTP(S) URL string.
+ * @throws {Error} Thrown when the URL is invalid or uses an unsupported protocol.
+ */
+export function resolveBknBackendUrl(value: string | undefined): string {
+  const rawValue = readOptionalString(value) ?? "http://127.0.0.1:13014";
+  const url = new URL(rawValue);
+
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error(`BKN_BACKEND_URL must use http or https protocol: ${rawValue}`);
+  }
+
+  url.pathname = "/";
+  url.search = "";
+  url.hash = "";
+
+  return url.toString();
 }
 
 /**
