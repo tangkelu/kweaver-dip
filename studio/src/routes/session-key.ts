@@ -1,7 +1,10 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
 
 import { HttpError } from "../errors/http-error";
-import type { CreateSessionKeyResponse } from "../types/session-key";
+import type {
+  CreateSessionKeyRequest,
+  CreateSessionKeyResponse
+} from "../types/session-key";
 
 /**
  * Builds the session key router.
@@ -14,15 +17,16 @@ export function createSessionKeyRouter(): Router {
   router.post(
     "/api/dip-studio/v1/chat/session",
     (
-      request: Request,
+      request: Request<unknown, CreateSessionKeyResponse, CreateSessionKeyRequest>,
       response: Response<CreateSessionKeyResponse>,
       next: NextFunction
     ): void => {
       try {
         const userId = readRequiredUserIdHeader(request.headers["x-user-id"]);
+        const { agentId } = readCreateSessionKeyRequestBody(request.body);
 
         response.status(200).json({
-          sessionKey: buildOpenClawSessionKey(userId)
+          sessionKey: buildOpenClawSessionKey(agentId, userId)
         });
       } catch (error) {
         next(
@@ -35,6 +39,31 @@ export function createSessionKeyRouter(): Router {
   );
 
   return router;
+}
+
+/**
+ * Validates the incoming session key creation request body.
+ *
+ * @param requestBody The raw request body parsed by Express.
+ * @returns The validated session key creation payload.
+ * @throws {HttpError} Thrown when the request body is invalid.
+ */
+export function readCreateSessionKeyRequestBody(
+  requestBody: unknown
+): CreateSessionKeyRequest {
+  if (typeof requestBody !== "object" || requestBody === null || Array.isArray(requestBody)) {
+    throw new HttpError(400, "Session key request body must be a JSON object");
+  }
+
+  const { agentId } = requestBody as Partial<CreateSessionKeyRequest>;
+
+  if (typeof agentId !== "string" || agentId.trim() === "") {
+    throw new HttpError(400, "agentId is required");
+  }
+
+  return {
+    agentId: agentId.trim()
+  };
 }
 
 /**
@@ -59,13 +88,15 @@ export function readRequiredUserIdHeader(
 /**
  * Builds the OpenClaw session key for a new user chat session.
  *
+ * @param agentId The owning agent id.
  * @param userId The authenticated user id.
  * @param chatId Optional deterministic chat id used by tests.
  * @returns The normalized OpenClaw session key.
  */
 export function buildOpenClawSessionKey(
+  agentId: string,
   userId: string,
   chatId: string = globalThis.crypto.randomUUID()
 ): string {
-  return `user:${userId}:direct:${chatId}`;
+  return `agent:${agentId}:user:${userId}:direct:${chatId}`;
 }

@@ -232,28 +232,28 @@ openssl pkey -in private.pem -pubout -out public.pem
 | -- | -- | -- | -- |
 | Authorization | string | 是 | `Bearer <access-token>`，用于 Hydra 内省鉴权 |
 
+请求：`application/json`
+
+| 参数 | 类型 | 是否必填 | 说明 |
+| -- | -- | -- | -- |
+| agentId | string | 是 | 生成会话键时使用的 Agent ID |
+
 响应：`200 application/json`
 
 | 参数 | 类型 | 说明 |
 | -- | -- | -- |
-| sessionKey | string | 新会话键，格式为 `user:<userid>:direct:<chatId>` |
+| sessionKey | string | 新会话键，格式为 `agent:<agentId>:user:<userid>:direct:<chatId>` |
 
 #### 进行数字员工对话
 
-`POST /api/dip-studio/v1/digital-human/{id}/chat/responses`
-
-路径参数：
-
-| 参数 | 类型 | 是否必填 | 说明 |
-| -- | -- | -- | -- |
-| id | string | 是 | 数字员工 ID |
+`POST /api/dip-studio/v1/chat/responses`
 
 请求头：
 
 | 参数 | 类型 | 是否必填 | 说明 |
 | -- | -- | -- | -- |
 | Authorization | string | 是 | `Bearer <access-token>`，用于 Hydra 内省鉴权 |
-| x-openclaw-session-key | string | 是 | 必须先通过 `POST /api/dip-studio/v1/chat/session` 获取，随后透传到 OpenClaw `/v1/responses` 的会话键 |
+| x-openclaw-session-key | string | 是 | 必须先通过 `POST /api/dip-studio/v1/chat/session` 获取；服务会从其中的 `agent:<agentId>` 前缀解析数字员工 ID |
 
 请求：`application/json`
 

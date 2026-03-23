@@ -1,12 +1,22 @@
 components:
   schemas:
+    CreateSessionKeyRequest:
+      summary: 创建会话键请求
+      type: object
+      properties:
+        agentId:
+          type: string
+          description: 生成会话键时使用的 Agent ID
+      required:
+        - agentId
+
     CreateSessionKeyResponse:
       summary: 创建会话键响应
       type: object
       properties:
         sessionKey:
           type: string
-          description: 新生成的会话键，格式为 `user:<userid>:direct:<chatId>`
+          description: 新生成的会话键，格式为 `agent:<agentId>:user:<userid>:direct:<chatId>`
       required:
         - sessionKey
 

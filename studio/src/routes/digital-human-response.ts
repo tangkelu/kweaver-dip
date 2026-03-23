@@ -2,6 +2,7 @@ import { Router, type NextFunction, type Request, type Response } from "express"
 import type { IncomingHttpHeaders } from "node:http";
 
 import { getEnv } from "../utils/env";
+import { parseSession } from "../utils/session";
 import { HttpError } from "../errors/http-error";
 import {
   DefaultOpenClawResponsesHttpClient,
@@ -28,9 +29,9 @@ export function createDigitalHumanResponseRouter(
   const router = Router();
 
   router.post(
-    "/api/dip-studio/v1/digital-human/:id/chat/responses",
+    "/api/dip-studio/v1/chat/responses",
     async (
-      request: Request<{ id: string }, unknown, DigitalHumanResponseRequest>,
+      request: Request<Record<string, never>, unknown, DigitalHumanResponseRequest>,
       response: Response,
       next: NextFunction
     ): Promise<void> => {
@@ -40,12 +41,13 @@ export function createDigitalHumanResponseRouter(
 
       try {
         const requestBody = readDigitalHumanResponseRequestBody(request.body);
-        const requestHeaders = readDigitalHumanResponseRequestHeaders(request.headers);
+        const sessionKey = readRequiredSessionKeyHeader(request.headers);
+        const agentId = readAgentIdFromSessionKey(sessionKey);
         const upstreamResponse = await responsesHttpClient.createResponseStream(
-          request.params.id,
+          agentId,
           requestBody,
           abortController.signal,
-          requestHeaders
+          createDigitalHumanResponseRequestHeaders(sessionKey)
         );
 
         writeEventStreamHeaders(response, upstreamResponse.status, upstreamResponse.headers);
@@ -114,14 +116,14 @@ export function readDigitalHumanResponseRequestBody(
 }
 
 /**
- * Extracts supported upstream request headers from the downstream HTTP request.
+ * Reads the OpenClaw session key from the downstream HTTP request headers.
  *
  * @param requestHeaders The raw downstream request headers.
- * @returns The filtered headers forwarded to OpenClaw.
+ * @returns The normalized session key.
  */
-export function readDigitalHumanResponseRequestHeaders(
+export function readRequiredSessionKeyHeader(
   requestHeaders?: IncomingHttpHeaders
-): Headers {
+): string {
   if (requestHeaders === undefined) {
     throw new HttpError(401, "x-openclaw-session-key header is required");
   }
@@ -134,6 +136,37 @@ export function readDigitalHumanResponseRequestHeaders(
     throw new HttpError(401, "x-openclaw-session-key header is required");
   }
 
+  return sessionKey;
+}
+
+/**
+ * Parses the target agent id from the OpenClaw session key.
+ *
+ * @param sessionKey The OpenClaw session key header value.
+ * @returns The agent id encoded in the session key.
+ */
+export function readAgentIdFromSessionKey(sessionKey: string): string {
+  const parsedSession = parseSession(sessionKey);
+
+  if (parsedSession.agent === undefined || parsedSession.agent.trim() === "") {
+    throw new HttpError(
+      400,
+      "x-openclaw-session-key must start with agent:<agentId>:"
+    );
+  }
+
+  return parsedSession.agent;
+}
+
+/**
+ * Creates the supported upstream request headers from the downstream session key.
+ *
+ * @param sessionKey The normalized session key.
+ * @returns The filtered headers forwarded to OpenClaw.
+ */
+export function createDigitalHumanResponseRequestHeaders(
+  sessionKey: string
+): Headers {
   return new Headers({
     "x-openclaw-session-key": sessionKey
   });

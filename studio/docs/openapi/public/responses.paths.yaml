@@ -21,6 +21,12 @@ paths:
     post:
       operationId: createSessionKey
       summary: 创建新会话键
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './responses.schemas.yaml#/components/schemas/CreateSessionKeyRequest'
       responses:
         "200":
           description: 新创建的会话键
@@ -35,21 +41,15 @@ paths:
         "500":
           $ref: '../common.schemas.yaml#/errors/InternalServerError'
 
-  /digital-human/{id}/chat/responses:
+  /chat/responses:
     post:
       operationId: createDigitalHumanResponse
       summary: 创建数字员工响应流
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: 数字员工 ID
-          schema:
-            type: string
         - name: x-openclaw-session-key
           in: header
           required: true
-          description: 调用前必须先通过 `POST /chat/session` 获取，或由客户端自行持久化并传回的会话键
+          description: 调用前必须先通过 `POST /chat/session` 获取，且键中需包含 `agent:<agentId>` 前缀
           schema:
             type: string
       requestBody:

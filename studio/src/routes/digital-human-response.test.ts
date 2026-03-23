@@ -4,10 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 import { HttpError } from "../errors/http-error";
 import {
   attachDownstreamAbortHandlers,
+  createDigitalHumanResponseRequestHeaders,
   createDigitalHumanResponseRouter,
   pipeEventStream,
+  readAgentIdFromSessionKey,
   readDigitalHumanResponseRequestBody,
-  readDigitalHumanResponseRequestHeaders,
+  readRequiredSessionKeyHeader,
   readOptionalHeaderValue,
   writeEventStreamHeaders
 } from "./digital-human-response";
@@ -68,21 +70,46 @@ describe("readOptionalHeaderValue", () => {
   });
 });
 
-describe("readDigitalHumanResponseRequestHeaders", () => {
+describe("readRequiredSessionKeyHeader", () => {
   it("extracts x-openclaw-session-key only", () => {
-    const headers = readDigitalHumanResponseRequestHeaders({
+    const sessionKey = readRequiredSessionKeyHeader({
       "x-openclaw-session-key": "agent:demo:session-1",
       "x-openclaw-extra": "ignored"
     });
 
-    expect(headers).toBeInstanceOf(Headers);
-    expect(headers?.get("x-openclaw-session-key")).toBe("agent:demo:session-1");
-    expect(headers?.get("x-openclaw-extra")).toBeNull();
+    expect(sessionKey).toBe("agent:demo:session-1");
   });
 
   it("fails when x-openclaw-session-key is absent", () => {
-    expect(() => readDigitalHumanResponseRequestHeaders({})).toThrow(
+    expect(() => readRequiredSessionKeyHeader({})).toThrow(
       "x-openclaw-session-key header is required"
+    );
+  });
+});
+
+describe("readAgentIdFromSessionKey", () => {
+  it("parses agent id from the session key prefix", () => {
+    expect(
+      readAgentIdFromSessionKey("agent:agent-1:user:user-1:direct:chat-1")
+    ).toBe("agent-1");
+  });
+
+  it("rejects session keys without an agent prefix", () => {
+    expect(() => readAgentIdFromSessionKey("user:user-1:direct:chat-1")).toThrow(
+      "x-openclaw-session-key must start with agent:<agentId>:"
+    );
+  });
+});
+
+describe("createDigitalHumanResponseRequestHeaders", () => {
+  it("forwards x-openclaw-session-key only", () => {
+    const headers = createDigitalHumanResponseRequestHeaders(
+      "agent:demo:user:user-1:direct:chat-1"
+    );
+
+    expect(headers).toBeInstanceOf(Headers);
+    expect(headers.get("x-openclaw-session-key")).toBe(
+      "agent:demo:user:user-1:direct:chat-1"
     );
   });
 });
@@ -237,18 +264,15 @@ describe("createDigitalHumanResponseRouter", () => {
       }>;
     };
     const layer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/digital-human/:id/chat/responses"
+      (entry) => entry.route?.path === "/api/dip-studio/v1/chat/responses"
     );
     const handler = layer?.route?.stack[0]?.handle;
     const request = {
-      params: {
-        id: "agent-1"
-      },
       body: {
         input: "hello"
       },
       headers: {
-        "x-openclaw-session-key": "agent:agent-1:session-1"
+        "x-openclaw-session-key": "agent:agent-1:user:user-1:direct:chat-1"
       },
       on: vi.fn()
     } as unknown as Request;
@@ -265,7 +289,7 @@ describe("createDigitalHumanResponseRouter", () => {
       (createResponseStream.mock.calls[0]?.[3] as Headers | undefined)?.get(
         "x-openclaw-session-key"
       )
-    ).toBe("agent:agent-1:session-1");
+    ).toBe("agent:agent-1:user:user-1:direct:chat-1");
     expect(response.write).toHaveBeenCalledOnce();
     expect(response.end).toHaveBeenCalledOnce();
     expect(next).not.toHaveBeenCalled();
@@ -291,13 +315,10 @@ describe("createDigitalHumanResponseRouter", () => {
       }>;
     };
     const layer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/digital-human/:id/chat/responses"
+      (entry) => entry.route?.path === "/api/dip-studio/v1/chat/responses"
     );
     const handler = layer?.route?.stack[0]?.handle;
     const request = {
-      params: {
-        id: "agent-1"
-      },
       body: {
         input: "hello"
       },
@@ -311,6 +332,49 @@ describe("createDigitalHumanResponseRouter", () => {
       expect.objectContaining({
         statusCode: 401,
         message: "x-openclaw-session-key header is required"
+      })
+    );
+  });
+
+  it("rejects malformed session keys", async () => {
+    const response = createResponseDouble();
+    const next = vi.fn<NextFunction>();
+    const router = createDigitalHumanResponseRouter({
+      createResponseStream: vi.fn()
+    }) as {
+      stack: Array<{
+        route?: {
+          path: string;
+          stack: Array<{
+            handle: (
+              request: Request,
+              response: Response,
+              next: NextFunction
+            ) => Promise<void>;
+          }>;
+        };
+      }>;
+    };
+    const layer = router.stack.find(
+      (entry) => entry.route?.path === "/api/dip-studio/v1/chat/responses"
+    );
+    const handler = layer?.route?.stack[0]?.handle;
+    const request = {
+      body: {
+        input: "hello"
+      },
+      headers: {
+        "x-openclaw-session-key": "user:user-1:direct:chat-1"
+      },
+      on: vi.fn()
+    } as unknown as Request;
+
+    await handler?.(request, response, next);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 400,
+        message: "x-openclaw-session-key must start with agent:<agentId>:"
       })
     );
   });
@@ -335,13 +399,10 @@ describe("createDigitalHumanResponseRouter", () => {
       }>;
     };
     const layer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/digital-human/:id/chat/responses"
+      (entry) => entry.route?.path === "/api/dip-studio/v1/chat/responses"
     );
     const handler = layer?.route?.stack[0]?.handle;
     const request = {
-      params: {
-        id: "agent-1"
-      },
       body: [],
       on: vi.fn()
     } as unknown as Request;
@@ -376,18 +437,15 @@ describe("createDigitalHumanResponseRouter", () => {
       }>;
     };
     const layer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/digital-human/:id/chat/responses"
+      (entry) => entry.route?.path === "/api/dip-studio/v1/chat/responses"
     );
     const handler = layer?.route?.stack[0]?.handle;
     const request = {
-      params: {
-        id: "agent-1"
-      },
       body: {
         input: "hello"
       },
       headers: {
-        "x-openclaw-session-key": "agent:agent-1:session-1"
+        "x-openclaw-session-key": "agent:agent-1:user:user-1:direct:chat-1"
       },
       on: vi.fn()
     } as unknown as Request;
@@ -435,18 +493,15 @@ describe("createDigitalHumanResponseRouter", () => {
       }>;
     };
     const layer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/digital-human/:id/chat/responses"
+      (entry) => entry.route?.path === "/api/dip-studio/v1/chat/responses"
     );
     const handler = layer?.route?.stack[0]?.handle;
     const request = {
-      params: {
-        id: "agent-1"
-      },
       body: {
         input: "hello"
       },
       headers: {
-        "x-openclaw-session-key": "agent:agent-1:session-1"
+        "x-openclaw-session-key": "agent:agent-1:user:user-1:direct:chat-1"
       },
       on: vi.fn()
     } as unknown as Request;
@@ -478,18 +533,15 @@ describe("createDigitalHumanResponseRouter", () => {
       }>;
     };
     const layer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/digital-human/:id/chat/responses"
+      (entry) => entry.route?.path === "/api/dip-studio/v1/chat/responses"
     );
     const handler = layer?.route?.stack[0]?.handle;
     const request = {
-      params: {
-        id: "agent-1"
-      },
       body: {
         input: "hello"
       },
       headers: {
-        "x-openclaw-session-key": "agent:agent-1:session-1"
+        "x-openclaw-session-key": "agent:agent-1:user:user-1:direct:chat-1"
       },
       on: vi.fn((eventName: string, listener: () => void) => {
         if (eventName === "aborted") {
@@ -525,18 +577,15 @@ describe("createDigitalHumanResponseRouter", () => {
       }>;
     };
     const layer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/digital-human/:id/chat/responses"
+      (entry) => entry.route?.path === "/api/dip-studio/v1/chat/responses"
     );
     const handler = layer?.route?.stack[0]?.handle;
     const request = {
-      params: {
-        id: "agent-1"
-      },
       body: {
         input: "hello"
       },
       headers: {
-        "x-openclaw-session-key": "agent:agent-1:session-1"
+        "x-openclaw-session-key": "agent:agent-1:user:user-1:direct:chat-1"
       },
       on: vi.fn()
     } as unknown as Request;
