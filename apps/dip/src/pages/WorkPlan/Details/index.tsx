@@ -1,3 +1,4 @@
+import { SnippetsOutlined } from '@ant-design/icons'
 import { Tabs } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -28,7 +29,7 @@ const WorkPlanDetail = () => {
   const [activeTab, setActiveTab] = useState<WorkPlanDetailTab>('results')
 
   useEffect(() => {
-    setCollapsed(true)
+    // setCollapsed(true)
   }, [setCollapsed])
 
   const handleBack = useCallback(() => {
@@ -73,7 +74,9 @@ const WorkPlanDetail = () => {
             <IconFont type="icon-dip-left" />
           </button>
           <div className="flex min-w-0 items-center gap-3">
-            <AgentIcon className="h-8 w-8 shrink-0 overflow-hidden rounded-md" aria-hidden />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#60AEFF]">
+              <SnippetsOutlined className="text-lg text-white" />
+            </div>
             <div className="flex min-w-0 flex-col gap-0.5">
               <span className="truncate font-medium text-[--dip-text-color]">
                 {MOCK_PLAN_TITLE}

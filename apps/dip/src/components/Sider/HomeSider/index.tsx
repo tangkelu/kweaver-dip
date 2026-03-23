@@ -63,7 +63,7 @@ const HomeSider = ({ collapsed, onCollapse }: HomeSiderProps) => {
   const selectedKey = getSelectedKey()
 
   /** 菜单项 */
-  const menuItems = useMemo<MenuProps['items'][]>(() => {
+  const menuItems = useMemo<MenuProps['items']>(() => {
     const hasKey = (route: RouteConfig): route is RouteConfig & { key: string } => {
       return Boolean(route.key)
     }
@@ -74,23 +74,13 @@ const HomeSider = ({ collapsed, onCollapse }: HomeSiderProps) => {
       .filter((route) => route.handle?.layout?.siderType === 'digital-human')
       .filter(hasKey)
 
-    // 按是否为 digital-human-management 拆成两组
-    const managementRoutes = visibleSidebarRoutes.filter(
-      (route) => route.key === 'digital-human-management',
-    )
-    const normalRoutes = visibleSidebarRoutes.filter(
-      (route) => route.key !== 'digital-human-management',
-    )
-
-    console.log(normalRoutes, managementRoutes)
-
-    const items: MenuProps['items'][] = [[], []]
+    const items: MenuProps['items'] = []
 
     // 第一组：普通数字员工路由，按 group 分组展示
     const groupMap = new Map<string, NonNullable<MenuProps['items']>>()
     const groupedRouteOrder: string[] = []
 
-    normalRoutes.forEach((route) => {
+    visibleSidebarRoutes.forEach((route) => {
       if (!route.key) return
 
       const item: Exclude<MenuProps['items'], undefined>[number] = {
@@ -116,7 +106,7 @@ const HomeSider = ({ collapsed, onCollapse }: HomeSiderProps) => {
 
       if (!route.group) {
         // 无 group 的路由直接平铺
-        items[0]?.push(item)
+        items.push(item)
         return
       }
 
@@ -135,43 +125,17 @@ const HomeSider = ({ collapsed, onCollapse }: HomeSiderProps) => {
       if (!children || children.length === 0) return
 
       // 分组标题作为一个普通、不可点击的菜单项，后面紧跟该分组下的子项，整体平铺展示
-      items[0]?.push({
+      items.push({
         key: `group-${groupName}`,
         label: groupName,
         type: 'group',
       })
 
       children.forEach((child) => {
-        items[0]?.push(child)
+        items.push(child)
       })
     })
 
-    // 第二组：digital-human-management 单独成组
-    if (managementRoutes.length > 0) {
-      const route = managementRoutes[0]
-      const item: Exclude<MenuProps['items'], undefined>[number] = {
-        key: route.key,
-        label: route.label || route.key,
-        icon: route.iconUrl ? (
-          <MaskIcon
-            url={route.iconUrl}
-            className="w-4 h-4"
-            background={
-              selectedKey === route.key
-                ? 'linear-gradient(210deg, #1C4DFA 0%, #3FA9F5 100%)'
-                : '#333333'
-            }
-          />
-        ) : null,
-        onClick: () => {
-          if (route.path) {
-            navigate(`/${route.path}`)
-          }
-        },
-      }
-
-      items[1]?.push(item)
-    }
     return items
   }, [roleIds, selectedKey, navigate])
 
@@ -215,8 +179,13 @@ const HomeSider = ({ collapsed, onCollapse }: HomeSiderProps) => {
       {
         key: 'ai-store',
         label: (
-          <a href={storeHref} target="_blank" rel="noopener noreferrer">
-            AI Store
+          <a
+            href={storeHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 justify-between"
+          >
+            <span>AI Store</span> <span>&gt;</span>
           </a>
         ),
         icon: <SidebarAiStoreIcon />,
@@ -224,8 +193,13 @@ const HomeSider = ({ collapsed, onCollapse }: HomeSiderProps) => {
       {
         key: 'data-platform',
         label: (
-          <a href={ssoUrl} target="_blank" rel="noopener noreferrer">
-            业务知识网络
+          <a
+            href={ssoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 justify-between"
+          >
+            <span>业务知识网络</span> <span>&gt;</span>
           </a>
         ),
         icon: <IconFont type="icon-yewuzhishiwangluo" />,
@@ -233,8 +207,13 @@ const HomeSider = ({ collapsed, onCollapse }: HomeSiderProps) => {
       {
         key: 'system',
         label: (
-          <a href={getExternalUrl('/deploy')} target="_blank" rel="noopener noreferrer">
-            系统工作台
+          <a
+            href={getExternalUrl('/deploy')}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 justify-between"
+          >
+            <span>系统工作台</span> <span>&gt;</span>
           </a>
         ),
         icon: <SidebarSystemIcon />,
@@ -303,7 +282,7 @@ const HomeSider = ({ collapsed, onCollapse }: HomeSiderProps) => {
           <Menu
             mode="inline"
             selectedKeys={[selectedKey]}
-            items={menuItems[0]}
+            items={menuItems}
             inlineCollapsed={collapsed}
             selectable
           />
@@ -311,13 +290,13 @@ const HomeSider = ({ collapsed, onCollapse }: HomeSiderProps) => {
 
         {/* 外链菜单内容 */}
         <div className="shrink-0">
-          <Menu
+          {/* <Menu
             mode="inline"
             selectedKeys={[selectedKey]}
             items={menuItems[1]}
             inlineCollapsed={collapsed}
             selectable
-          />
+          /> */}
           <Menu
             mode="inline"
             selectedKeys={[]}

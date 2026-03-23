@@ -96,6 +96,23 @@ export const routeConfigs: RouteConfig[] = [
 
   // --- Digital Human Section ---
   {
+    path: 'digital-human/management',
+    key: 'digital-human-management',
+    label: '我的数字员工',
+    iconUrl: dipStudioUrl,
+    element: <DigitalHumanManagement />,
+    showInSidebar: true,
+    showInHeader: true,
+    handle: {
+      layout: {
+        hasSider: true,
+        hasHeader: false,
+        siderType: 'digital-human',
+        headerType: 'home',
+      },
+    },
+  },
+  {
     path: 'work-plan',
     key: 'work-plan',
     label: '工作计划',
@@ -241,23 +258,6 @@ export const routeConfigs: RouteConfig[] = [
     label: '数字员工详情',
     element: <DigitalHumanDetail />,
     showInSidebar: false,
-    handle: {
-      layout: {
-        hasSider: true,
-        hasHeader: false,
-        siderType: 'digital-human',
-        headerType: 'home',
-      },
-    },
-  },
-  {
-    path: 'digital-human/management',
-    key: 'digital-human-management',
-    label: '我的数字员工',
-    iconUrl: dipStudioUrl,
-    element: <DigitalHumanManagement />,
-    showInSidebar: true,
-    showInHeader: true,
     handle: {
       layout: {
         hasSider: true,

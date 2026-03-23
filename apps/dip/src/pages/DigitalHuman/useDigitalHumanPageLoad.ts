@@ -25,7 +25,7 @@ export function useDigitalHumanPageLoad(
   const [loading, setLoading] = useState(enabled)
 
   useEffect(() => {
-    setCollapsed(true)
+    // setCollapsed(true)
   }, [setCollapsed])
 
   useEffect(() => {

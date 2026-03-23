@@ -54,7 +54,10 @@ const SkillConfig = ({ readonly }: SkillConfigProps) => {
         render: (text: string) => {
           return (
             <div className="flex items-center gap-2 truncate">
-              <AgentIcon className="w-6 h-6 rounded flex-shrink-0" />
+              <IconFont
+                type="icon-dip-deep-thinking"
+                className="text-[--dip-primary-color] text-xl h-6 w-6 shrink-0"
+              />
               <span title={text} className="truncate">
                 {text || '--'}
               </span>

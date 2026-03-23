@@ -1,7 +1,7 @@
 import type { CronJob, CronJobListResponse } from '@/apis/dip-studio/plan'
 
 /** 设为 `true` 时使用本地 mock 预览列表 UI；接好接口后改为 `false` */
-export const PLAN_LIST_USE_MOCK = false
+export const PLAN_LIST_USE_MOCK = true
 
 const MOCK_TOTAL = 35
 const MOCK_DELAY_MS = 380
