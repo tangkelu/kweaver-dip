@@ -91,12 +91,12 @@ paths:
         "500":
           $ref: '../common.schemas.yaml#/errors/InternalServerError'
 
-  /digital-human/{dh_id}/plans:
+  /digital-human/{id}/plans:
     get:
       operationId: getDigitalHumanPlanList
       summary: 获取指定数字员工的计划任务列表
       parameters:
-        - name: dh_id
+        - name: id
           in: path
           required: true
           description: 数字员工 ID
@@ -178,12 +178,12 @@ paths:
         "500":
           $ref: '../common.schemas.yaml#/errors/InternalServerError'
 
-  /digital-human/{dh_id}/plans/{plan_id}/runs:
+  /digital-human/{id}/plans/{plan_id}/runs:
     get:
       operationId: getDigitalHumanPlanRuns
       summary: 获取指定数字员工计划任务的运行记录
       parameters:
-        - name: dh_id
+        - name: id
           in: path
           required: true
           description: 数字员工 ID
