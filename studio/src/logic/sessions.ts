@@ -6,6 +6,8 @@ import type {
 } from "../infra/openclaw-archives-http-client";
 import { parseSession } from "../utils/session";
 import type {
+  OpenClawSessionDeleteParams,
+  OpenClawSessionDeleteResult,
   OpenClawSessionGetParams,
   OpenClawSessionGetResult,
   OpenClawSessionArchiveEntry,
@@ -36,6 +38,15 @@ export interface SessionsLogic {
    * @returns The OpenClaw session detail payload.
    */
   getSession(params: OpenClawSessionGetParams): Promise<OpenClawSessionGetResult>;
+
+  /**
+   * Deletes one session.
+   *
+   * @param key The session key to delete.
+   * @param userId The authenticated user identifier.
+   * @returns The OpenClaw session deletion payload.
+   */
+  deleteSession(key: string, userId: string): Promise<OpenClawSessionDeleteResult>;
 
   /**
    * Fetches one session summary by exact key match.
@@ -123,6 +134,33 @@ export class DefaultSessionsLogic implements SessionsLogic {
     params: OpenClawSessionGetParams
   ): Promise<OpenClawSessionGetResult> {
     return this.openClawSessionsAdapter.getSession(params);
+  }
+
+  /**
+   * Deletes one session after verifying that it belongs to the authenticated user.
+   *
+   * @param key The session key to delete.
+   * @param userId The authenticated user identifier.
+   * @returns The OpenClaw session deletion payload.
+   */
+  public async deleteSession(
+    key: string,
+    userId: string
+  ): Promise<OpenClawSessionDeleteResult> {
+    const sessionsList = await this.listSessions({
+      ...buildSessionLookupParams(key),
+      userId
+    });
+
+    findSessionByKey(sessionsList.sessions, key);
+
+    const deleteParams: OpenClawSessionDeleteParams = {
+      key,
+      deleteTranscript: true,
+      emitLifecycleHooks: true
+    };
+
+    return this.openClawSessionsAdapter.deleteSession(deleteParams);
   }
 
   /**

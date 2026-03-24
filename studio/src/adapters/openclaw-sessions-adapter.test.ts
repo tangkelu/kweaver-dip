@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   OpenClawSessionsGatewayAdapter,
+  createSessionsDeleteRequest,
   createSessionsGetRequest,
   createSessionsListRequest,
   createSessionsPreviewRequest
@@ -42,6 +43,27 @@ describe("createSessionsGetRequest", () => {
       params: {
         key: "session_key_here",
         limit: 100
+      }
+    });
+  });
+});
+
+describe("createSessionsDeleteRequest", () => {
+  it("builds the sessions.delete JSON RPC frame", () => {
+    expect(
+      createSessionsDeleteRequest("req-4", {
+        key: "session_key_here",
+        deleteTranscript: true,
+        emitLifecycleHooks: false
+      })
+    ).toEqual({
+      type: "req",
+      id: "req-4",
+      method: "sessions.delete",
+      params: {
+        key: "session_key_here",
+        deleteTranscript: true,
+        emitLifecycleHooks: false
       }
     });
   });
@@ -139,6 +161,28 @@ describe("OpenClawSessionsGatewayAdapter", () => {
           messages: []
         }
       ]
+    });
+  });
+
+  it("delegates sessions.delete to the gateway port", async () => {
+    const gatewayPort = {
+      invoke: vi.fn().mockResolvedValue({
+        ok: true,
+        key: "key1",
+        deleted: true
+      })
+    };
+    const adapter = new OpenClawSessionsGatewayAdapter(gatewayPort);
+
+    await expect(
+      adapter.deleteSession({
+        key: "key1",
+        deleteTranscript: true
+      })
+    ).resolves.toEqual({
+      ok: true,
+      key: "key1",
+      deleted: true
     });
   });
 });

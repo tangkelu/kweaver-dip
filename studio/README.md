@@ -111,6 +111,18 @@ GitHub：https://github.com/kweaver-ai/web
 
 返回指定会话的摘要详情；服务端会始终返回推导标题。
 
+#### 删除会话
+
+`DELETE /api/dip-studio/v1/sessions/{key}`
+
+路径参数：
+
+| 参数 | 类型 | 是否必填 | 说明 |
+| -- | -- | -- | -- |
+| key | string | 是 | 会话 key |
+
+响应：`204`
+
 #### 获取数字员工列表
 
 `GET /api/dip-studio/v1/digital-human`

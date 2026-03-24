@@ -44,6 +44,26 @@ export interface OpenClawSessionGetParams {
 }
 
 /**
+ * Request payload sent to OpenClaw `sessions.delete`.
+ */
+export interface OpenClawSessionDeleteParams {
+  /**
+   * Session key.
+   */
+  key: string;
+
+  /**
+   * Whether to delete transcript data together with the session.
+   */
+  deleteTranscript?: boolean;
+
+  /**
+   * Whether to emit lifecycle hooks during deletion.
+   */
+  emitLifecycleHooks?: boolean;
+}
+
+/**
  * Request payload sent to OpenClaw `sessions.preview`.
  */
 export interface OpenClawSessionsPreviewParams {
@@ -256,6 +276,36 @@ export interface OpenClawSessionsPreviewResult {
    * Preview items keyed by session.
    */
   items?: OpenClawSessionPreviewItem[];
+
+  /**
+   * Accepts additional OpenClaw fields for forward compatibility.
+   */
+  [key: string]: unknown;
+}
+
+/**
+ * Result payload returned by OpenClaw `sessions.delete`.
+ */
+export interface OpenClawSessionDeleteResult {
+  /**
+   * Whether the request succeeded.
+   */
+  ok: boolean;
+
+  /**
+   * Session key.
+   */
+  key: string;
+
+  /**
+   * Whether the session record was deleted.
+   */
+  deleted?: boolean;
+
+  /**
+   * Whether transcript data was archived.
+   */
+  archived?: boolean;
 
   /**
    * Accepts additional OpenClaw fields for forward compatibility.

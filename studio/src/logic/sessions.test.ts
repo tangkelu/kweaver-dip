@@ -19,6 +19,7 @@ describe("DefaultSessionsLogic", () => {
     const logic = new DefaultSessionsLogic({
       listSessions,
       getSession: vi.fn(),
+      deleteSession: vi.fn(),
       previewSessions: vi.fn(),
     });
 
@@ -60,6 +61,7 @@ describe("DefaultSessionsLogic", () => {
     const logic = new DefaultSessionsLogic({
       listSessions,
       getSession: vi.fn(),
+      deleteSession: vi.fn(),
       previewSessions: vi.fn(),
     });
 
@@ -84,6 +86,7 @@ describe("DefaultSessionsLogic", () => {
         key: "key1",
         messages: []
       }),
+      deleteSession: vi.fn(),
       previewSessions: vi.fn()
     });
 
@@ -112,6 +115,7 @@ describe("DefaultSessionsLogic", () => {
     const logic = new DefaultSessionsLogic({
       listSessions,
       getSession: vi.fn(),
+      deleteSession: vi.fn(),
       previewSessions: vi.fn()
     });
 
@@ -139,6 +143,7 @@ describe("DefaultSessionsLogic", () => {
       {
         listSessions: vi.fn(),
         getSession: vi.fn(),
+        deleteSession: vi.fn(),
         previewSessions: vi.fn()
       },
       {
@@ -160,6 +165,7 @@ describe("DefaultSessionsLogic", () => {
     const logic = new DefaultSessionsLogic({
       listSessions: vi.fn(),
       getSession: vi.fn(),
+      deleteSession: vi.fn(),
       previewSessions: vi.fn().mockResolvedValue({
         items: []
       })
@@ -172,6 +178,50 @@ describe("DefaultSessionsLogic", () => {
       })
     ).resolves.toEqual({
       items: []
+    });
+  });
+
+  it("deletes one owned session through the adapter", async () => {
+    const listSessions = vi.fn().mockResolvedValue({
+      ts: 1,
+      path: "/sessions",
+      count: 1,
+      sessions: [
+        {
+          key: "agent:de_finance:user:user-1:direct:chat-1",
+          kind: "user-direct",
+          updatedAt: 1,
+          sessionId: "runtime-1"
+        }
+      ]
+    });
+    const deleteSession = vi.fn().mockResolvedValue({
+      ok: true,
+      key: "agent:de_finance:user:user-1:direct:chat-1",
+      deleted: true
+    });
+    const logic = new DefaultSessionsLogic({
+      listSessions,
+      getSession: vi.fn(),
+      deleteSession,
+      previewSessions: vi.fn()
+    });
+
+    await expect(
+      logic.deleteSession("agent:de_finance:user:user-1:direct:chat-1", "user-1")
+    ).resolves.toEqual({
+      ok: true,
+      key: "agent:de_finance:user:user-1:direct:chat-1",
+      deleted: true
+    });
+    expect(listSessions).toHaveBeenCalledWith({
+      agentId: "de_finance",
+      includeDerivedTitles: true
+    });
+    expect(deleteSession).toHaveBeenCalledWith({
+      key: "agent:de_finance:user:user-1:direct:chat-1",
+      deleteTranscript: true,
+      emitLifecycleHooks: true
     });
   });
 });

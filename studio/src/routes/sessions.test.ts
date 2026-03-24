@@ -30,6 +30,50 @@ function createResponseDouble(): Response {
   return response;
 }
 
+/**
+ * Reads one router layer by path and HTTP method.
+ *
+ * @param router The Express router double.
+ * @param path The registered route path.
+ * @param method The expected HTTP method.
+ * @returns The matched router layer when found.
+ */
+function findRouteLayer(
+  router: {
+    stack: Array<{
+      route?: {
+        path: string;
+        methods?: Record<string, boolean>;
+        stack: Array<{
+          handle: (
+            request: Request,
+            response: Response,
+            next: NextFunction
+          ) => Promise<void>;
+        }>;
+      };
+    }>;
+  },
+  path: string,
+  method: "get" | "delete"
+): {
+  route?: {
+    path: string;
+    methods?: Record<string, boolean>;
+    stack: Array<{
+      handle: (
+        request: Request,
+        response: Response,
+        next: NextFunction
+      ) => Promise<void>;
+    }>;
+  };
+} | undefined {
+  return router.stack.find(
+    (entry) => entry.route?.path === path && entry.route?.methods?.[method] === true
+  );
+}
+
 describe("readSessionsListQuery", () => {
   it("parses optional query fields", () => {
     expect(
@@ -145,6 +189,7 @@ describe("createSessionsRouter", () => {
     const router = createSessionsRouter({
       listSessions: vi.fn(),
       getSession: vi.fn(),
+      deleteSession: vi.fn(),
       getSessionSummary: vi.fn(),
       getSessionArchives: vi.fn(),
       getSessionArchiveSubpath: vi.fn(),
@@ -157,28 +202,37 @@ describe("createSessionsRouter", () => {
       }>;
     };
 
-    const listLayer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions"
+    const listLayer = findRouteLayer(router, "/api/dip-studio/v1/sessions", "get");
+    const detailLayer = findRouteLayer(router, "/api/dip-studio/v1/sessions/:key", "get");
+    const deleteLayer = findRouteLayer(
+      router,
+      "/api/dip-studio/v1/sessions/:key",
+      "delete"
     );
-    const detailLayer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions/:key"
+    const digitalHumanListLayer = findRouteLayer(
+      router,
+      "/api/dip-studio/v1/digital-human/:id/sessions",
+      "get"
     );
-    const digitalHumanListLayer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/digital-human/:id/sessions"
+    const digitalHumanMessagesLayer = findRouteLayer(
+      router,
+      "/api/dip-studio/v1/sessions/:key/messages",
+      "get"
     );
-    const digitalHumanMessagesLayer = router.stack.find(
-      (entry) =>
-        entry.route?.path === "/api/dip-studio/v1/sessions/:key/messages"
+    const digitalHumanArchivesLayer = findRouteLayer(
+      router,
+      "/api/dip-studio/v1/sessions/:key/archives",
+      "get"
     );
-    const digitalHumanArchivesLayer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions/:key/archives"
-    );
-    const digitalHumanArchiveSubpathLayer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions/:key/archives/*subpath"
+    const digitalHumanArchiveSubpathLayer = findRouteLayer(
+      router,
+      "/api/dip-studio/v1/sessions/:key/archives/*subpath",
+      "get"
     );
 
     expect(listLayer).toBeDefined();
     expect(detailLayer).toBeDefined();
+    expect(deleteLayer).toBeDefined();
     expect(digitalHumanListLayer).toBeDefined();
     expect(digitalHumanMessagesLayer).toBeDefined();
     expect(digitalHumanArchivesLayer).toBeDefined();
@@ -192,6 +246,7 @@ describe("createSessionsRouter", () => {
     const router = createSessionsRouter({
       listSessions,
       getSession: vi.fn(),
+      deleteSession: vi.fn(),
       getSessionSummary: vi.fn(),
       getSessionArchives: vi.fn(),
       getSessionArchiveSubpath: vi.fn(),
@@ -210,9 +265,7 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const listLayer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions"
-    );
+    const listLayer = findRouteLayer(router, "/api/dip-studio/v1/sessions", "get");
     const handler = listLayer?.route?.stack[0]?.handle;
     const response = createResponseDouble();
     const next = vi.fn<NextFunction>();
@@ -246,6 +299,7 @@ describe("createSessionsRouter", () => {
     const router = createSessionsRouter({
       listSessions: vi.fn(),
       getSession,
+      deleteSession: vi.fn(),
       getSessionSummary,
       getSessionArchives: vi.fn(),
       getSessionArchiveSubpath: vi.fn(),
@@ -264,9 +318,7 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const getLayer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions/:key"
-    );
+    const getLayer = findRouteLayer(router, "/api/dip-studio/v1/sessions/:key", "get");
     const handler = getLayer?.route?.stack[0]?.handle;
     const response = createResponseDouble();
     const next = vi.fn<NextFunction>();
@@ -296,13 +348,16 @@ describe("createSessionsRouter", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it("handles digital human sessions list request", async () => {
-    const listSessions = vi.fn().mockResolvedValue({
-      sessions: []
+  it("handles session delete request", async () => {
+    const deleteSession = vi.fn().mockResolvedValue({
+      ok: true,
+      key: "session_key_1",
+      deleted: true
     });
     const router = createSessionsRouter({
-      listSessions,
+      listSessions: vi.fn(),
       getSession: vi.fn(),
+      deleteSession,
       getSessionSummary: vi.fn(),
       getSessionArchives: vi.fn(),
       getSessionArchiveSubpath: vi.fn(),
@@ -321,8 +376,68 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const listLayer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/digital-human/:id/sessions"
+    const deleteLayer = findRouteLayer(
+      router,
+      "/api/dip-studio/v1/sessions/:key",
+      "delete"
+    );
+    const handler = deleteLayer?.route?.stack[0]?.handle;
+    const response = {
+      status: vi.fn(),
+      send: vi.fn()
+    } as unknown as Response;
+    vi.mocked(response.status).mockReturnValue(response);
+    const next = vi.fn<NextFunction>();
+    const request = {
+      params: {
+        key: " session_key_1 "
+      },
+      headers: {}
+    } as unknown as Request;
+
+    injectAuthenticatedUserId(request, "user-1");
+
+    await handler?.(request, response, next);
+
+    expect(deleteSession).toHaveBeenCalledWith(
+      "session_key_1",
+      "user-1"
+    );
+    expect(response.status).toHaveBeenCalledWith(204);
+    expect(response.send).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("handles digital human sessions list request", async () => {
+    const listSessions = vi.fn().mockResolvedValue({
+      sessions: []
+    });
+    const router = createSessionsRouter({
+      listSessions,
+      getSession: vi.fn(),
+      deleteSession: vi.fn(),
+      getSessionSummary: vi.fn(),
+      getSessionArchives: vi.fn(),
+      getSessionArchiveSubpath: vi.fn(),
+      previewSessions: vi.fn()
+    }) as {
+      stack: Array<{
+        route?: {
+          path: string;
+          stack: Array<{
+            handle: (
+              request: Request,
+              response: Response,
+              next: NextFunction
+            ) => Promise<void>;
+          }>;
+        };
+      }>;
+    };
+    const listLayer = findRouteLayer(
+      router,
+      "/api/dip-studio/v1/digital-human/:id/sessions",
+      "get"
     );
     const handler = listLayer?.route?.stack[0]?.handle;
     const response = createResponseDouble();
@@ -359,6 +474,7 @@ describe("createSessionsRouter", () => {
     const router = createSessionsRouter({
       listSessions: vi.fn(),
       getSession,
+      deleteSession: vi.fn(),
       getSessionSummary: vi.fn(),
       getSessionArchives: vi.fn(),
       getSessionArchiveSubpath: vi.fn(),
@@ -377,8 +493,10 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const getLayer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions/:key/messages"
+    const getLayer = findRouteLayer(
+      router,
+      "/api/dip-studio/v1/sessions/:key/messages",
+      "get"
     );
     const handler = getLayer?.route?.stack[0]?.handle;
     const response = createResponseDouble();
@@ -414,6 +532,7 @@ describe("createSessionsRouter", () => {
       {
         listSessions: vi.fn(),
         getSession: vi.fn(),
+        deleteSession: vi.fn(),
         getSessionSummary: vi.fn(),
         getSessionArchives,
         getSessionArchiveSubpath: vi.fn(),
@@ -433,8 +552,10 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const getLayer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions/:key/archives"
+    const getLayer = findRouteLayer(
+      router,
+      "/api/dip-studio/v1/sessions/:key/archives",
+      "get"
     );
     const handler = getLayer?.route?.stack[0]?.handle;
     const response = createResponseDouble();
@@ -465,6 +586,7 @@ describe("createSessionsRouter", () => {
     const router1 = createSessionsRouter({
       listSessions: vi.fn().mockRejectedValue(badRequest),
       getSession: vi.fn(),
+      deleteSession: vi.fn(),
       getSessionSummary: vi.fn(),
       getSessionArchives: vi.fn(),
       getSessionArchiveSubpath: vi.fn(),
@@ -483,9 +605,7 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const listLayer1 = router1.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions"
-    );
+    const listLayer1 = findRouteLayer(router1, "/api/dip-studio/v1/sessions", "get");
     const handler1 = listLayer1?.route?.stack[0]?.handle;
     const response1 = createResponseDouble();
     const next1 = vi.fn<NextFunction>();
@@ -496,6 +616,7 @@ describe("createSessionsRouter", () => {
     const router2 = createSessionsRouter({
       listSessions: vi.fn().mockRejectedValue(new Error("boom")),
       getSession: vi.fn(),
+      deleteSession: vi.fn(),
       getSessionSummary: vi.fn(),
       getSessionArchives: vi.fn(),
       getSessionArchiveSubpath: vi.fn(),
@@ -514,9 +635,7 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const listLayer2 = router2.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions"
-    );
+    const listLayer2 = findRouteLayer(router2, "/api/dip-studio/v1/sessions", "get");
     const handler2 = listLayer2?.route?.stack[0]?.handle;
     const response2 = createResponseDouble();
     const next2 = vi.fn<NextFunction>();
@@ -539,6 +658,7 @@ describe("createSessionsRouter", () => {
         sessions: []
       }),
       getSession: vi.fn(),
+      deleteSession: vi.fn(),
       getSessionSummary: vi.fn().mockRejectedValue(notFound),
       getSessionArchives: vi.fn(),
       getSessionArchiveSubpath: vi.fn(),
@@ -557,9 +677,7 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const getLayer1 = router1.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions/:key"
-    );
+    const getLayer1 = findRouteLayer(router1, "/api/dip-studio/v1/sessions/:key", "get");
     const handler1 = getLayer1?.route?.stack[0]?.handle;
     const response1 = createResponseDouble();
     const next1 = vi.fn<NextFunction>();
@@ -579,6 +697,7 @@ describe("createSessionsRouter", () => {
     const router2 = createSessionsRouter({
       listSessions: vi.fn().mockRejectedValue(new Error("boom")),
       getSession: vi.fn(),
+      deleteSession: vi.fn(),
       getSessionSummary: vi.fn().mockRejectedValue(new Error("boom")),
       getSessionArchives: vi.fn(),
       getSessionArchiveSubpath: vi.fn(),
@@ -597,9 +716,7 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const getLayer2 = router2.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions/:key"
-    );
+    const getLayer2 = findRouteLayer(router2, "/api/dip-studio/v1/sessions/:key", "get");
     const handler2 = getLayer2?.route?.stack[0]?.handle;
     const response2 = createResponseDouble();
     const next2 = vi.fn<NextFunction>();
@@ -622,13 +739,14 @@ describe("createSessionsRouter", () => {
     });
   });
 
-  it("forwards session messages HttpError and wraps unknown errors", async () => {
+  it("forwards session delete HttpError and wraps unknown errors", async () => {
     const { HttpError } = await import("../errors/http-error");
     const notFound = new HttpError(404, "Session not found");
 
     const router1 = createSessionsRouter({
       listSessions: vi.fn(),
-      getSession: vi.fn().mockRejectedValue(notFound),
+      getSession: vi.fn(),
+      deleteSession: vi.fn().mockRejectedValue(notFound),
       getSessionSummary: vi.fn(),
       getSessionArchives: vi.fn(),
       getSessionArchiveSubpath: vi.fn(),
@@ -647,8 +765,114 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const getLayer1 = router1.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions/:key/messages"
+    const deleteLayer1 = findRouteLayer(
+      router1,
+      "/api/dip-studio/v1/sessions/:key",
+      "delete"
+    );
+    const handler1 = deleteLayer1?.route?.stack[0]?.handle;
+    const response1 = {
+      status: vi.fn(),
+      send: vi.fn()
+    } as unknown as Response;
+    vi.mocked(response1.status).mockReturnValue(response1);
+    const next1 = vi.fn<NextFunction>();
+    const request1 = {
+      params: {
+        key: "session-key"
+      },
+      query: {},
+      headers: {}
+    } as unknown as Request;
+
+    injectAuthenticatedUserId(request1, "user-1");
+
+    await handler1?.(request1, response1, next1);
+    expect(next1).toHaveBeenCalledWith(notFound);
+
+    const router2 = createSessionsRouter({
+      listSessions: vi.fn(),
+      getSession: vi.fn(),
+      deleteSession: vi.fn().mockRejectedValue(new Error("boom")),
+      getSessionSummary: vi.fn(),
+      getSessionArchives: vi.fn(),
+      getSessionArchiveSubpath: vi.fn(),
+      previewSessions: vi.fn()
+    }) as {
+      stack: Array<{
+        route?: {
+          path: string;
+          stack: Array<{
+            handle: (
+              request: Request,
+              response: Response,
+              next: NextFunction
+            ) => Promise<void>;
+          }>;
+        };
+      }>;
+    };
+    const deleteLayer2 = findRouteLayer(
+      router2,
+      "/api/dip-studio/v1/sessions/:key",
+      "delete"
+    );
+    const handler2 = deleteLayer2?.route?.stack[0]?.handle;
+    const response2 = {
+      status: vi.fn(),
+      send: vi.fn()
+    } as unknown as Response;
+    vi.mocked(response2.status).mockReturnValue(response2);
+    const next2 = vi.fn<NextFunction>();
+    const request2 = {
+      params: {
+        key: "session-key"
+      },
+      query: {},
+      headers: {}
+    } as unknown as Request;
+
+    injectAuthenticatedUserId(request2, "user-1");
+
+    await handler2?.(request2, response2, next2);
+
+    expect(next2).toHaveBeenCalledOnce();
+    expect(vi.mocked(next2).mock.calls[0]?.[0]).toMatchObject({
+      statusCode: 502,
+      message: "Failed to delete session"
+    });
+  });
+
+  it("forwards session messages HttpError and wraps unknown errors", async () => {
+    const { HttpError } = await import("../errors/http-error");
+    const notFound = new HttpError(404, "Session not found");
+
+    const router1 = createSessionsRouter({
+      listSessions: vi.fn(),
+      getSession: vi.fn().mockRejectedValue(notFound),
+      deleteSession: vi.fn(),
+      getSessionSummary: vi.fn(),
+      getSessionArchives: vi.fn(),
+      getSessionArchiveSubpath: vi.fn(),
+      previewSessions: vi.fn()
+    }) as {
+      stack: Array<{
+        route?: {
+          path: string;
+          stack: Array<{
+            handle: (
+              request: Request,
+              response: Response,
+              next: NextFunction
+            ) => Promise<void>;
+          }>;
+        };
+      }>;
+    };
+    const getLayer1 = findRouteLayer(
+      router1,
+      "/api/dip-studio/v1/sessions/:key/messages",
+      "get"
     );
     const handler1 = getLayer1?.route?.stack[0]?.handle;
     const response1 = createResponseDouble();
@@ -670,6 +894,7 @@ describe("createSessionsRouter", () => {
     const router2 = createSessionsRouter({
       listSessions: vi.fn(),
       getSession: vi.fn().mockRejectedValue(new Error("boom")),
+      deleteSession: vi.fn(),
       getSessionSummary: vi.fn(),
       getSessionArchives: vi.fn(),
       getSessionArchiveSubpath: vi.fn(),
@@ -688,8 +913,10 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const getLayer2 = router2.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions/:key/messages"
+    const getLayer2 = findRouteLayer(
+      router2,
+      "/api/dip-studio/v1/sessions/:key/messages",
+      "get"
     );
     const handler2 = getLayer2?.route?.stack[0]?.handle;
     const response2 = createResponseDouble();
@@ -721,6 +948,7 @@ describe("createSessionsRouter", () => {
       {
         listSessions: vi.fn(),
         getSession: vi.fn(),
+        deleteSession: vi.fn(),
         getSessionSummary: vi.fn(),
         getSessionArchives: vi.fn().mockRejectedValue(forbidden),
         getSessionArchiveSubpath: vi.fn(),
@@ -740,8 +968,10 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const getLayer1 = router1.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions/:key/archives"
+    const getLayer1 = findRouteLayer(
+      router1,
+      "/api/dip-studio/v1/sessions/:key/archives",
+      "get"
     );
     const handler1 = getLayer1?.route?.stack[0]?.handle;
     const response1 = createResponseDouble();
@@ -764,6 +994,7 @@ describe("createSessionsRouter", () => {
       {
         listSessions: vi.fn(),
         getSession: vi.fn(),
+        deleteSession: vi.fn(),
         getSessionSummary: vi.fn(),
         getSessionArchives: vi.fn().mockRejectedValue(new Error("boom")),
         getSessionArchiveSubpath: vi.fn(),
@@ -783,8 +1014,10 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const getLayer2 = router2.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions/:key/archives"
+    const getLayer2 = findRouteLayer(
+      router2,
+      "/api/dip-studio/v1/sessions/:key/archives",
+      "get"
     );
     const handler2 = getLayer2?.route?.stack[0]?.handle;
     const response2 = createResponseDouble();
@@ -820,6 +1053,7 @@ describe("createSessionsRouter", () => {
       {
         listSessions: vi.fn(),
         getSession: vi.fn(),
+        deleteSession: vi.fn(),
         getSessionSummary: vi.fn(),
         getSessionArchives: vi.fn(),
         getSessionArchiveSubpath,
@@ -839,8 +1073,10 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const getLayer = router.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions/:key/archives/*subpath"
+    const getLayer = findRouteLayer(
+      router,
+      "/api/dip-studio/v1/sessions/:key/archives/*subpath",
+      "get"
     );
     const handler = getLayer?.route?.stack[0]?.handle;
     const response = {
@@ -881,6 +1117,7 @@ describe("createSessionsRouter", () => {
       {
         listSessions: vi.fn(),
         getSession: vi.fn(),
+        deleteSession: vi.fn(),
         getSessionSummary: vi.fn(),
         getSessionArchives: vi.fn(),
         getSessionArchiveSubpath: vi.fn().mockRejectedValue(notFound),
@@ -900,8 +1137,10 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const getLayer1 = router1.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions/:key/archives/*subpath"
+    const getLayer1 = findRouteLayer(
+      router1,
+      "/api/dip-studio/v1/sessions/:key/archives/*subpath",
+      "get"
     );
     const handler1 = getLayer1?.route?.stack[0]?.handle;
     const response1 = {
@@ -930,6 +1169,7 @@ describe("createSessionsRouter", () => {
       {
         listSessions: vi.fn(),
         getSession: vi.fn(),
+        deleteSession: vi.fn(),
         getSessionSummary: vi.fn(),
         getSessionArchives: vi.fn(),
         getSessionArchiveSubpath: vi.fn().mockRejectedValue(new Error("boom")),
@@ -949,8 +1189,10 @@ describe("createSessionsRouter", () => {
         };
       }>;
     };
-    const getLayer2 = router2.stack.find(
-      (entry) => entry.route?.path === "/api/dip-studio/v1/sessions/:key/archives/*subpath"
+    const getLayer2 = findRouteLayer(
+      router2,
+      "/api/dip-studio/v1/sessions/:key/archives/*subpath",
+      "get"
     );
     const handler2 = getLayer2?.route?.stack[0]?.handle;
     const response2 = {

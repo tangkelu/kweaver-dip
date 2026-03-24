@@ -91,6 +91,31 @@ paths:
           $ref: '../common.schemas.yaml#/errors/Conflict'
         "500":
           $ref: '../common.schemas.yaml#/errors/InternalServerError'
+    delete:
+      operationId: deleteSession
+      summary: 删除指定会话
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: 会话 key
+          schema:
+            type: string
+      responses:
+        "204":
+          description: 删除成功
+        "400":
+          $ref: '../common.schemas.yaml#/errors/InvalidParameter'
+        "401":
+          $ref: '../common.schemas.yaml#/errors/Unauthorized'
+        "403":
+          $ref: '../common.schemas.yaml#/errors/Forbidden'
+        "404":
+          $ref: '../common.schemas.yaml#/errors/NotFound'
+        "409":
+          $ref: '../common.schemas.yaml#/errors/Conflict'
+        "500":
+          $ref: '../common.schemas.yaml#/errors/InternalServerError'
 
   /digital-human/{id}/sessions:
     get:

@@ -3,6 +3,8 @@ import type {
   OpenClawRequestFrame
 } from "../types/openclaw";
 import type {
+  OpenClawSessionDeleteParams,
+  OpenClawSessionDeleteResult,
   OpenClawSessionGetParams,
   OpenClawSessionGetResult,
   OpenClawSessionsListParams,
@@ -30,6 +32,16 @@ export interface OpenClawSessionsAdapter {
    * @returns The OpenClaw session detail payload.
    */
   getSession(params: OpenClawSessionGetParams): Promise<OpenClawSessionGetResult>;
+
+  /**
+   * Deletes one session using OpenClaw `sessions.delete`.
+   *
+   * @param params Request parameters forwarded to OpenClaw.
+   * @returns The OpenClaw session deletion payload.
+   */
+  deleteSession(
+    params: OpenClawSessionDeleteParams
+  ): Promise<OpenClawSessionDeleteResult>;
 
   /**
    * Fetches previews for multiple sessions using OpenClaw `sessions.preview`.
@@ -76,6 +88,25 @@ export function createSessionsGetRequest(
     type: "req",
     id: requestId,
     method: "sessions.get",
+    params
+  };
+}
+
+/**
+ * Creates the OpenClaw `sessions.delete` request.
+ *
+ * @param requestId The frame correlation id.
+ * @param params Request parameters forwarded to OpenClaw.
+ * @returns A serialized OpenClaw request frame.
+ */
+export function createSessionsDeleteRequest(
+  requestId: string,
+  params: OpenClawSessionDeleteParams
+): OpenClawRequestFrame {
+  return {
+    type: "req",
+    id: requestId,
+    method: "sessions.delete",
     params
   };
 }
@@ -135,6 +166,20 @@ export class OpenClawSessionsGatewayAdapter implements OpenClawSessionsAdapter {
   ): Promise<OpenClawSessionGetResult> {
     return this.gatewayPort.invoke<OpenClawSessionGetResult>(
       createSessionsGetRequest("sessions.get", params)
+    );
+  }
+
+  /**
+   * Queries `sessions.delete` over the gateway RPC port.
+   *
+   * @param params Request parameters forwarded to OpenClaw.
+   * @returns The OpenClaw session deletion payload.
+   */
+  public async deleteSession(
+    params: OpenClawSessionDeleteParams
+  ): Promise<OpenClawSessionDeleteResult> {
+    return this.gatewayPort.invoke<OpenClawSessionDeleteResult>(
+      createSessionsDeleteRequest("sessions.delete", params)
     );
   }
 

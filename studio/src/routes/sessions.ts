@@ -124,6 +124,29 @@ export function createSessionsRouter(
     }
   );
 
+  router.delete(
+    "/api/dip-studio/v1/sessions/:key",
+    async (
+      request: Request<SessionDetailParams>,
+      response: Response,
+      next: NextFunction
+    ): Promise<void> => {
+      try {
+        const key = readRequiredPathParam(request.params.key, "key");
+
+        await logic.deleteSession(key, readRequiredAuthenticatedUserId(request));
+
+        response.status(204).send();
+      } catch (error) {
+        next(
+          error instanceof HttpError
+            ? error
+            : new HttpError(502, "Failed to delete session")
+        );
+      }
+    }
+  );
+
   router.get(
     "/api/dip-studio/v1/sessions/:key",
     async (
@@ -431,4 +454,22 @@ export function parseOptionalString(rawValue: string | undefined): string | unde
 
   const trimmed = rawValue.trim();
   return trimmed === "" ? undefined : trimmed;
+}
+
+/**
+ * Reads the authenticated user id and rejects requests without one.
+ *
+ * @param request The incoming HTTP request.
+ * @returns The normalized authenticated user id.
+ */
+function readRequiredAuthenticatedUserId(request: {
+  headers: Request["headers"];
+}): string {
+  const userId = readAuthenticatedUserId(request);
+
+  if (userId === undefined) {
+    throw new HttpError(401, "x-user-id header is required");
+  }
+
+  return userId;
 }
