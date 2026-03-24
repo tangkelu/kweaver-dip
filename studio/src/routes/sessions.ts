@@ -5,7 +5,6 @@ import { getEnv } from "../utils/env";
 import { HttpError } from "../errors/http-error";
 import {
   DefaultOpenClawArchivesHttpClient,
-  type OpenClawArchivesHttpClient
 } from "../infra/openclaw-archives-http-client";
 import { OpenClawGatewayClient } from "../infra/openclaw-gateway-client";
 import { DefaultSessionsLogic, type SessionsLogic } from "../logic/sessions";
@@ -77,6 +76,11 @@ export interface SessionArchivesSubpathParams extends SessionDetailParams {
 }
 
 const env = getEnv();
+const openClawArchivesHttpClient = new DefaultOpenClawArchivesHttpClient({
+  gatewayUrl: env.openClawGatewayHttpUrl,
+  token: env.openClawGatewayToken,
+  timeoutMs: env.openClawGatewayTimeoutMs
+});
 const sessionsLogic = new DefaultSessionsLogic(
   new OpenClawSessionsGatewayAdapter(
     OpenClawGatewayClient.getInstance({
@@ -84,24 +88,18 @@ const sessionsLogic = new DefaultSessionsLogic(
       token: env.openClawGatewayToken,
       timeoutMs: env.openClawGatewayTimeoutMs
     })
-  )
+  ),
+  openClawArchivesHttpClient
 );
-const openClawArchivesHttpClient = new DefaultOpenClawArchivesHttpClient({
-  gatewayUrl: env.openClawGatewayHttpUrl,
-  token: env.openClawGatewayToken,
-  timeoutMs: env.openClawGatewayTimeoutMs
-});
 
 /**
  * Builds the sessions router.
  *
  * @param logic Optional sessions logic implementation.
- * @param archivesHttpClient Optional OpenClaw archives HTTP client.
  * @returns The router exposing sessions endpoints.
  */
 export function createSessionsRouter(
-  logic: SessionsLogic = sessionsLogic,
-  archivesHttpClient: OpenClawArchivesHttpClient = openClawArchivesHttpClient
+  logic: SessionsLogic = sessionsLogic
 ): Router {
   const router = Router();
 
@@ -217,11 +215,7 @@ export function createSessionsRouter(
     ): Promise<void> => {
       try {
         const key = readRequiredPathParam(request.params.key, "key");
-        const dhId = readRequiredArchiveAgentId(key);
-        const sessionId = normalizeArchiveSessionId(
-          key
-        );
-        const result = await archivesHttpClient.listSessionArchives(dhId, sessionId);
+        const result = await logic.getSessionArchives(key);
 
         response.status(200).json(result);
       } catch (error) {
@@ -248,16 +242,8 @@ export function createSessionsRouter(
     ): Promise<void> => {
       try {
         const key = readRequiredPathParam(request.params.key, "key");
-        const dhId = readRequiredArchiveAgentId(key);
-        const sessionId = normalizeArchiveSessionId(
-          key
-        );
         const subpath = readRequiredSubpathParam(request.params.subpath, "subpath");
-        const result = await archivesHttpClient.getSessionArchiveSubpath(
-          dhId,
-          sessionId,
-          subpath
-        );
+        const result = await logic.getSessionArchiveSubpath(key, subpath);
         const contentType = result.headers.get("content-type");
 
         if (contentType !== null) {
@@ -396,22 +382,6 @@ export function normalizeArchiveSessionId(rawSessionId: string): string {
   const lastPart = parts.at(-1);
 
   return lastPart ?? trimmed;
-}
-
-/**
- * Reads the required archive agent id from one session key.
- *
- * @param rawSessionKey Raw session key from path.
- * @returns The agent id encoded in the session key.
- */
-export function readRequiredArchiveAgentId(rawSessionKey: string): string {
-  const parsedSession = parseSession(rawSessionKey.trim());
-
-  if (parsedSession.agent === undefined || parsedSession.agent.trim() === "") {
-    throw new HttpError(400, "Invalid path parameter `key`");
-  }
-
-  return parsedSession.agent;
 }
 
 /**

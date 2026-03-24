@@ -1,9 +1,15 @@
 import type { OpenClawSessionsAdapter } from "../adapters/openclaw-sessions-adapter";
 import { HttpError } from "../errors/http-error";
+import type {
+  OpenClawArchivesHttpClient,
+  OpenClawArchivesHttpResult
+} from "../infra/openclaw-archives-http-client";
 import { parseSession } from "../utils/session";
 import type {
   OpenClawSessionGetParams,
   OpenClawSessionGetResult,
+  OpenClawSessionArchiveEntry,
+  OpenClawSessionArchivesResult,
   OpenClawSessionSummary,
   OpenClawSessionsListParams,
   OpenClawSessionsListResult,
@@ -40,6 +46,26 @@ export interface SessionsLogic {
   getSessionSummary(key: string): Promise<OpenClawSessionSummary>;
 
   /**
+   * Fetches one session archives list and applies Studio-level filtering.
+   *
+   * @param key The raw session key or session id.
+   * @returns The filtered archives list payload.
+   */
+  getSessionArchives(key: string): Promise<OpenClawSessionArchivesResult>;
+
+  /**
+   * Reads one archive subpath for a session.
+   *
+   * @param key The raw session key.
+   * @param subpath The target subpath under archives root.
+   * @returns The upstream response status, headers and body bytes.
+   */
+  getSessionArchiveSubpath(
+    key: string,
+    subpath: string
+  ): Promise<OpenClawArchivesHttpResult>;
+
+  /**
    * Fetches previews for multiple sessions.
    *
    * @param params Query parameters forwarded to OpenClaw.
@@ -60,7 +86,8 @@ export class DefaultSessionsLogic implements SessionsLogic {
    * @param openClawSessionsAdapter The adapter used to fetch OpenClaw sessions data.
    */
   public constructor(
-    private readonly openClawSessionsAdapter: OpenClawSessionsAdapter
+    private readonly openClawSessionsAdapter: OpenClawSessionsAdapter,
+    private readonly openClawArchivesHttpClient?: OpenClawArchivesHttpClient
   ) {}
 
   /**
@@ -101,6 +128,54 @@ export class DefaultSessionsLogic implements SessionsLogic {
     );
 
     return findSessionByKey(sessionsList.sessions, key);
+  }
+
+  /**
+   * Fetches session archives list from OpenClaw and removes internal plan files.
+   *
+   * @param key The raw session key or session id.
+   * @returns The filtered archives list payload.
+   */
+  public async getSessionArchives(key: string): Promise<OpenClawSessionArchivesResult> {
+    if (this.openClawArchivesHttpClient === undefined) {
+      throw new Error("OpenClaw archives client is not configured");
+    }
+
+    const archiveLookup = readSessionArchiveLookup(key);
+
+    const result = await this.openClawArchivesHttpClient.listSessionArchives(
+      archiveLookup.digitalHumanId,
+      archiveLookup.sessionId
+    );
+
+    return {
+      ...result,
+      contents: result.contents.filter((entry) => !isHiddenSessionArchiveEntry(entry))
+    };
+  }
+
+  /**
+   * Reads one archive subpath for a session via OpenClaw.
+   *
+   * @param key The raw session key.
+   * @param subpath The target subpath under archives root.
+   * @returns The upstream response status, headers and body bytes.
+   */
+  public async getSessionArchiveSubpath(
+    key: string,
+    subpath: string
+  ): Promise<OpenClawArchivesHttpResult> {
+    if (this.openClawArchivesHttpClient === undefined) {
+      throw new Error("OpenClaw archives client is not configured");
+    }
+
+    const archiveLookup = readSessionArchiveLookup(key);
+
+    return this.openClawArchivesHttpClient.getSessionArchiveSubpath(
+      archiveLookup.digitalHumanId,
+      archiveLookup.sessionId,
+      subpath
+    );
   }
 
   /**
@@ -167,4 +242,56 @@ export function findSessionByKey(
   }
 
   return matchedSession;
+}
+
+/**
+ * Hides internal plan files from archives listing responses.
+ *
+ * @param entry One archive entry returned by OpenClaw.
+ * @returns True when the entry should be excluded from API response.
+ */
+export function isHiddenSessionArchiveEntry(
+  entry: OpenClawSessionArchiveEntry
+): boolean {
+  const normalizedName = entry.name.trim().toUpperCase();
+
+  return normalizedName === "PLAN.MD" || normalizedName === "PALN.MD";
+}
+
+/**
+ * Resolves the agent id and normalized session id used by archives-access.
+ *
+ * @param key The raw session key or session id.
+ * @returns The agent id and normalized session id.
+ */
+export function readSessionArchiveLookup(key: string): {
+  digitalHumanId: string;
+  sessionId: string;
+} {
+  const trimmedKey = key.trim();
+
+  if (!trimmedKey.includes(":")) {
+    throw new HttpError(400, "Invalid path parameter `key`");
+  }
+
+  const parsedSession = parseSession(trimmedKey);
+  const digitalHumanId = parsedSession.agent?.trim();
+  const sessionId = trimmedKey
+    .split(":")
+    .map((part) => part.trim())
+    .filter((part) => part !== "")
+    .at(-1);
+
+  if (digitalHumanId === undefined || digitalHumanId === "") {
+    throw new HttpError(400, "Invalid path parameter `key`");
+  }
+
+  if (sessionId === undefined || sessionId === "") {
+    throw new HttpError(400, "Invalid path parameter `key`");
+  }
+
+  return {
+    digitalHumanId,
+    sessionId
+  };
 }

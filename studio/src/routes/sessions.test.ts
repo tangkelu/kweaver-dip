@@ -1,12 +1,12 @@
 import type { NextFunction, Request, Response } from "express";
 import { describe, expect, it, vi } from "vitest";
+import { readSessionArchiveLookup } from "../logic/sessions";
 
 import {
   createSessionsRouter,
   parseOptionalBooleanString,
   parseOptionalNonNegativeIntegerString,
   normalizeArchiveSessionId,
-  readRequiredArchiveAgentId,
   readRequiredPathParam,
   readRequiredSubpathParam,
   readSessionGetParams,
@@ -114,13 +114,20 @@ describe("digital human sessions helpers", () => {
     ).toBe("9fb6b0da-c26e-4419-929e-6b8a1274f80c");
   });
 
-  it("reads archive agent id from session key", () => {
+  it("reads archive lookup from session key", () => {
     expect(
-      readRequiredArchiveAgentId(
+      readSessionArchiveLookup(
         "agent:de_finance:user:user-1:direct:9fb6b0da-c26e-4419-929e-6b8a1274f80c"
       )
-    ).toBe("de_finance");
-    expect(() => readRequiredArchiveAgentId("user:user-1:direct:session-1")).toThrow(
+    ).toEqual({
+      digitalHumanId: "de_finance",
+      sessionId: "9fb6b0da-c26e-4419-929e-6b8a1274f80c"
+    });
+    expect(readSessionArchiveLookup("agent:de_finance:direct:peer-1")).toEqual({
+      digitalHumanId: "de_finance",
+      sessionId: "peer-1"
+    });
+    expect(() => readSessionArchiveLookup("user:user-1:direct:session-1")).toThrow(
       "Invalid path parameter `key`"
     );
   });
@@ -148,6 +155,8 @@ describe("createSessionsRouter", () => {
       listSessions: vi.fn(),
       getSession: vi.fn(),
       getSessionSummary: vi.fn(),
+      getSessionArchives: vi.fn(),
+      getSessionArchiveSubpath: vi.fn(),
       previewSessions: vi.fn()
     }) as {
       stack: Array<{
@@ -193,6 +202,8 @@ describe("createSessionsRouter", () => {
       listSessions,
       getSession: vi.fn(),
       getSessionSummary: vi.fn(),
+      getSessionArchives: vi.fn(),
+      getSessionArchiveSubpath: vi.fn(),
       previewSessions: vi.fn()
     }) as {
       stack: Array<{
@@ -243,6 +254,8 @@ describe("createSessionsRouter", () => {
       listSessions: vi.fn(),
       getSession,
       getSessionSummary,
+      getSessionArchives: vi.fn(),
+      getSessionArchiveSubpath: vi.fn(),
       previewSessions: vi.fn()
     }) as {
       stack: Array<{
@@ -298,6 +311,8 @@ describe("createSessionsRouter", () => {
       listSessions,
       getSession: vi.fn(),
       getSessionSummary: vi.fn(),
+      getSessionArchives: vi.fn(),
+      getSessionArchiveSubpath: vi.fn(),
       previewSessions: vi.fn()
     }) as {
       stack: Array<{
@@ -356,6 +371,8 @@ describe("createSessionsRouter", () => {
       listSessions: vi.fn(),
       getSession,
       getSessionSummary: vi.fn(),
+      getSessionArchives: vi.fn(),
+      getSessionArchiveSubpath: vi.fn(),
       previewSessions: vi.fn()
     }) as {
       stack: Array<{
@@ -400,7 +417,7 @@ describe("createSessionsRouter", () => {
   });
 
   it("handles session archives request", async () => {
-    const listSessionArchives = vi.fn().mockResolvedValue({
+    const getSessionArchives = vi.fn().mockResolvedValue({
       path: "/",
       contents: []
     });
@@ -409,11 +426,9 @@ describe("createSessionsRouter", () => {
         listSessions: vi.fn(),
         getSession: vi.fn(),
         getSessionSummary: vi.fn(),
+        getSessionArchives,
+        getSessionArchiveSubpath: vi.fn(),
         previewSessions: vi.fn()
-      },
-      {
-        listSessionArchives,
-        getSessionArchiveSubpath: vi.fn()
       }
     ) as {
       stack: Array<{
@@ -447,7 +462,9 @@ describe("createSessionsRouter", () => {
       next
     );
 
-    expect(listSessionArchives).toHaveBeenCalledWith("de_finance", "session-1");
+    expect(getSessionArchives).toHaveBeenCalledWith(
+      "agent:de_finance:user:user-1:direct:session-1"
+    );
     expect(response.status).toHaveBeenCalledWith(200);
     expect(next).not.toHaveBeenCalled();
   });
@@ -460,6 +477,8 @@ describe("createSessionsRouter", () => {
       listSessions: vi.fn().mockRejectedValue(badRequest),
       getSession: vi.fn(),
       getSessionSummary: vi.fn(),
+      getSessionArchives: vi.fn(),
+      getSessionArchiveSubpath: vi.fn(),
       previewSessions: vi.fn()
     }) as {
       stack: Array<{
@@ -489,6 +508,8 @@ describe("createSessionsRouter", () => {
       listSessions: vi.fn().mockRejectedValue(new Error("boom")),
       getSession: vi.fn(),
       getSessionSummary: vi.fn(),
+      getSessionArchives: vi.fn(),
+      getSessionArchiveSubpath: vi.fn(),
       previewSessions: vi.fn()
     }) as {
       stack: Array<{
@@ -530,6 +551,8 @@ describe("createSessionsRouter", () => {
       }),
       getSession: vi.fn(),
       getSessionSummary: vi.fn().mockRejectedValue(notFound),
+      getSessionArchives: vi.fn(),
+      getSessionArchiveSubpath: vi.fn(),
       previewSessions: vi.fn()
     }) as {
       stack: Array<{
@@ -568,6 +591,8 @@ describe("createSessionsRouter", () => {
       listSessions: vi.fn().mockRejectedValue(new Error("boom")),
       getSession: vi.fn(),
       getSessionSummary: vi.fn().mockRejectedValue(new Error("boom")),
+      getSessionArchives: vi.fn(),
+      getSessionArchiveSubpath: vi.fn(),
       previewSessions: vi.fn()
     }) as {
       stack: Array<{
@@ -616,6 +641,8 @@ describe("createSessionsRouter", () => {
       listSessions: vi.fn(),
       getSession: vi.fn().mockRejectedValue(notFound),
       getSessionSummary: vi.fn(),
+      getSessionArchives: vi.fn(),
+      getSessionArchiveSubpath: vi.fn(),
       previewSessions: vi.fn()
     }) as {
       stack: Array<{
@@ -655,6 +682,8 @@ describe("createSessionsRouter", () => {
       listSessions: vi.fn(),
       getSession: vi.fn().mockRejectedValue(new Error("boom")),
       getSessionSummary: vi.fn(),
+      getSessionArchives: vi.fn(),
+      getSessionArchiveSubpath: vi.fn(),
       previewSessions: vi.fn()
     }) as {
       stack: Array<{
@@ -704,11 +733,9 @@ describe("createSessionsRouter", () => {
         listSessions: vi.fn(),
         getSession: vi.fn(),
         getSessionSummary: vi.fn(),
+        getSessionArchives: vi.fn().mockRejectedValue(forbidden),
+        getSessionArchiveSubpath: vi.fn(),
         previewSessions: vi.fn()
-      },
-      {
-        listSessionArchives: vi.fn().mockRejectedValue(forbidden),
-        getSessionArchiveSubpath: vi.fn()
       }
     ) as {
       stack: Array<{
@@ -749,11 +776,9 @@ describe("createSessionsRouter", () => {
         listSessions: vi.fn(),
         getSession: vi.fn(),
         getSessionSummary: vi.fn(),
+        getSessionArchives: vi.fn().mockRejectedValue(new Error("boom")),
+        getSessionArchiveSubpath: vi.fn(),
         previewSessions: vi.fn()
-      },
-      {
-        listSessionArchives: vi.fn().mockRejectedValue(new Error("boom")),
-        getSessionArchiveSubpath: vi.fn()
       }
     ) as {
       stack: Array<{
@@ -807,11 +832,9 @@ describe("createSessionsRouter", () => {
         listSessions: vi.fn(),
         getSession: vi.fn(),
         getSessionSummary: vi.fn(),
+        getSessionArchives: vi.fn(),
+        getSessionArchiveSubpath,
         previewSessions: vi.fn()
-      },
-      {
-        listSessionArchives: vi.fn(),
-        getSessionArchiveSubpath
       }
     ) as {
       stack: Array<{
@@ -852,8 +875,7 @@ describe("createSessionsRouter", () => {
     );
 
     expect(getSessionArchiveSubpath).toHaveBeenCalledWith(
-      "de_finance",
-      "session-1",
+      "agent:de_finance:user:user-1:direct:session-1",
       "notes/today.txt"
     );
     expect(response.setHeader).toHaveBeenCalledWith("content-type", "text/plain");
@@ -871,11 +893,9 @@ describe("createSessionsRouter", () => {
         listSessions: vi.fn(),
         getSession: vi.fn(),
         getSessionSummary: vi.fn(),
+        getSessionArchives: vi.fn(),
+        getSessionArchiveSubpath: vi.fn().mockRejectedValue(notFound),
         previewSessions: vi.fn()
-      },
-      {
-        listSessionArchives: vi.fn(),
-        getSessionArchiveSubpath: vi.fn().mockRejectedValue(notFound)
       }
     ) as {
       stack: Array<{
@@ -922,11 +942,9 @@ describe("createSessionsRouter", () => {
         listSessions: vi.fn(),
         getSession: vi.fn(),
         getSessionSummary: vi.fn(),
+        getSessionArchives: vi.fn(),
+        getSessionArchiveSubpath: vi.fn().mockRejectedValue(new Error("boom")),
         previewSessions: vi.fn()
-      },
-      {
-        listSessionArchives: vi.fn(),
-        getSessionArchiveSubpath: vi.fn().mockRejectedValue(new Error("boom"))
       }
     ) as {
       stack: Array<{

@@ -4,6 +4,8 @@ import {
   buildSessionLookupParams,
   DefaultSessionsLogic,
   findSessionByKey,
+  isHiddenSessionArchiveEntry,
+  readSessionArchiveLookup,
   withDerivedTitles
 } from "./sessions";
 
@@ -83,6 +85,36 @@ describe("DefaultSessionsLogic", () => {
     });
   });
 
+  it("delegates getSessionArchives to the archives client and filters plan files", async () => {
+    const listSessionArchives = vi.fn().mockResolvedValue({
+      path: "/",
+      contents: [
+        { name: "PLAN.md", type: "file" },
+        { name: "PALN.md", type: "file" },
+        { name: "report.md", type: "file" }
+      ]
+    });
+    const logic = new DefaultSessionsLogic(
+      {
+        listSessions: vi.fn(),
+        getSession: vi.fn(),
+        previewSessions: vi.fn()
+      },
+      {
+        listSessionArchives,
+        getSessionArchiveSubpath: vi.fn()
+      }
+    );
+
+    await expect(
+      logic.getSessionArchives("agent:de_finance:user:user-1:direct:session-1")
+    ).resolves.toEqual({
+      path: "/",
+      contents: [{ name: "report.md", type: "file" }]
+    });
+    expect(listSessionArchives).toHaveBeenCalledWith("de_finance", "session-1");
+  });
+
   it("delegates previewSessions to the adapter", async () => {
     const logic = new DefaultSessionsLogic({
       listSessions: vi.fn(),
@@ -143,5 +175,31 @@ describe("sessions logic helpers", () => {
     });
 
     expect(() => findSessionByKey([], "missing")).toThrow("Session not found");
+  });
+
+  it("identifies internal plan files in archives list", () => {
+    expect(isHiddenSessionArchiveEntry({ name: "PLAN.md", type: "file" })).toBe(true);
+    expect(isHiddenSessionArchiveEntry({ name: " PALN.md ", type: "file" })).toBe(
+      true
+    );
+    expect(isHiddenSessionArchiveEntry({ name: "report.md", type: "file" })).toBe(
+      false
+    );
+  });
+
+  it("reads archives lookup fields from session key", () => {
+    expect(
+      readSessionArchiveLookup("agent:de_finance:user:user-1:direct:session-1")
+    ).toEqual({
+      digitalHumanId: "de_finance",
+      sessionId: "session-1"
+    });
+    expect(readSessionArchiveLookup("agent:de_finance:direct:peer-1")).toEqual({
+      digitalHumanId: "de_finance",
+      sessionId: "peer-1"
+    });
+    expect(() => readSessionArchiveLookup("session-1")).toThrow(
+      "Invalid path parameter `key`"
+    );
   });
 });

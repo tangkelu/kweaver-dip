@@ -8,7 +8,7 @@
 
 ---
 
-[# [UNIFIED_ARCHIVE_AND_SCHEDULE_PROTOCOL]
+# [UNIFIED_ARCHIVE_AND_SCHEDULE_PROTOCOL]
 
 你必须遵守以下统一协议。
 
@@ -26,7 +26,7 @@
 
 【触发条件】
 只要当前任务需要写入任何文件，就必须执行本协议。
-归档物包括但不限于：`plan.md`、`report.md`、`summary.md`、`result.json`、`notes.md`。
+归档物包括但不限于：`PLAN.md`、`report.md`、`summary.md`、`result.json`、`notes.md`。
 
 【身份文件】
 若任务需要人格/身份设定，只认：
@@ -55,8 +55,8 @@
 【归档路径规则】
 路径执行双轨制，严禁混淆：
 
-1. **计划文件（plan.md 专属）**：
-   `archives/{ARCHIVE_ID}/plan.md`
+1. **计划文件（PLAN.md 专属）**：
+   `archives/{ARCHIVE_ID}/PLAN.md`
 
 2. **普通归档物（其他所有生成物）**：
    `archives/{ARCHIVE_ID}/{TIMESTAMP}/{ORIGIN_NAME}`
@@ -84,29 +84,29 @@
 
 【任务消息首要指令】
 在最终构建任务的 message 中，首要指令必须是：
-`从路径 archives/{ARCHIVE_ID}/plan.md 中读取 Task_ID: {{TASK_UUID}} 的详细计划并按步骤执行`
+`从路径 archives/{ARCHIVE_ID}/PLAN.md 中读取 Task_ID: {{TASK_UUID}} 的详细计划并按步骤执行`
 
-【plan.md 持久化】
-必须写入路径：`archives/{ARCHIVE_ID}/plan.md`
+【PLAN.md 持久化】
+必须写入路径：`archives/{ARCHIVE_ID}/PLAN.md`
 必须包含：`Task_ID`, `Role_Context`, `Archive_Path`, `Status`, `Objective`, `Result`, `Action_Steps`。
 
 `Action_Steps` 的第 1 条必须是：
-`1. [读取本文件指令]：从路径 archives/{ARCHIVE_ID}/plan.md 中读取 Task_ID: {{TASK_UUID}} 的详细计划并按步骤执行`
+`1. [读取本文件指令]：从路径 archives/{ARCHIVE_ID}/PLAN.md 中读取 Task_ID: {{TASK_UUID}} 的详细计划并按步骤执行`
 
 ==================================================
-三、plan.md 模板
+三、PLAN.md 模板
 ==================================================
 
 ### [Task_ID: {{TASK_UUID}}] {{Task_Name}}
 - **Role_Context**: {{Current_Persona}} (Aligned with `SOUL.md` & `IDENTITY.md`)
-- **Archive_Path**: archives/{{ARCHIVE_ID}}/plan.md
+- **Archive_Path**: archives/{{ARCHIVE_ID}}/PLAN.md
 - **Status**: Active
 
 #### ORA Detail
 - **Objective**: {{O_content}}
 - **Result**: {{R_content}}
 - **Action_Steps**:
-  1. **[读取本文件指令]**：从路径 `archives/{{ARCHIVE_ID}}/plan.md` 中读取 `Task_ID: {{TASK_UUID}}` 的详细计划并按步骤执行。
+  1. **[读取本文件指令]**：从路径 `archives/{{ARCHIVE_ID}}/PLAN.md` 中读取 `Task_ID: {{TASK_UUID}}` 的详细计划并按步骤执行。
   2. **[上下文校验]**：确认当前上下文已对齐 `SOUL.md` 与 `IDENTITY.md`。
   3. **[执行动作]**：根据读取到的详细步骤执行业务逻辑。
   4. **[归档校验]**：验证输出物已存入 `archives/{{ARCHIVE_ID}}/{{TIMESTAMP}}/` 目录。
@@ -117,6 +117,6 @@
 
 1. 调用 `session_status` 提取 `ARCHIVE_ID`。
 2. 生成 `TIMESTAMP`。
-3. 判定路径：`plan.md` 去根目录，其他去 `TIMESTAMP` 目录。
+3. 判定路径：`PLAN.md` 去根目录，其他去 `TIMESTAMP` 目录。
 4. 写入并回读校验。
 5. 返回状态。

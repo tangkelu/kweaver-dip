@@ -74,10 +74,32 @@ export default function register(api: OpenClawPluginApi) {
           }
         }
 
+        const sessionId = urlObj.searchParams.get("session");
+        let normalizedSessionId = sessionId ? sessionId.replace(/[^a-zA-Z0-9-_]/g, "_") : null;
+        if (sessionId?.includes(":")) {
+          const keyParts = sessionId.split(":");
+          const sessionUuid = keyParts[keyParts.length - 1];
+          normalizedSessionId = sessionUuid.replace(/[^a-zA-Z0-9-_]/g, "_");
+        }
+
         const archivesDir = path.join(workspaceDir, "archives");
         const rawPath = urlObj.pathname;
         let subPath = decodeURIComponent(rawPath).replace(/^\/v1\/archives\/?/, "");
+
+        // If subPath is empty but session query param is provided, use it as the subPath
+        if (!subPath && normalizedSessionId) {
+          subPath = normalizedSessionId;
+        }
         
+        // Extract UUID if the first segment is a complex session key (e.g. agent:de_finance:...)
+        const segments = subPath.split("/").filter(s => !!s);
+        if (segments.length > 0 && segments[0].includes(":")) {
+          const keyParts = segments[0].split(":");
+          const sessionUuid = keyParts[keyParts.length - 1];
+          segments[0] = sessionUuid.replace(/[^a-zA-Z0-9-_]/g, "_");
+          subPath = segments.join("/");
+        }
+
         const targetPath = path.resolve(archivesDir, subPath);
 
         const relative = path.relative(archivesDir, targetPath);
@@ -100,25 +122,35 @@ export default function register(api: OpenClawPluginApi) {
           throw e;
         }
 
-        const sessionId = urlObj.searchParams.get("session");
-
         if (stat.isDirectory()) {
           const entries = await fs.promises.readdir(targetPath, { withFileTypes: true });
-          let files = entries.map(entry => {
-            return {
-              name: entry.name,
-              type: entry.isDirectory() ? 'directory' : (entry.isFile() ? 'file' : 'other')
-            };
-          });
+          
+          const files = entries.map(entry => ({
+            name: entry.name,
+            type: entry.isDirectory() ? "directory" : (entry.isFile() ? "file" : "other")
+          }));
 
-          if (sessionId && !subPath) {
-            files = files.filter(f => f.name.startsWith(sessionId));
+          // Sort by name descending (newest timestamps first)
+          files.sort((a, b) => b.name.localeCompare(a.name));
+
+          // Calculate converged path (relative to session root if possible)
+          let displaySubPath = "/";
+          if (normalizedSessionId) {
+            const sessionDir = path.join(archivesDir, normalizedSessionId);
+            displaySubPath = path.relative(sessionDir, targetPath);
+          } else {
+            const pathParts = subPath.split("/").filter(p => !!p);
+            if (pathParts.length > 0) {
+              const sessionDir = path.join(archivesDir, pathParts[0]);
+              displaySubPath = path.relative(sessionDir, targetPath);
+            }
           }
+          if (displaySubPath === "." || !displaySubPath) displaySubPath = "/";
           
           res.statusCode = 200;
           res.setHeader("Content-Type", "application/json");
           res.end(JSON.stringify({
-            path: subPath || "/",
+            path: displaySubPath,
             contents: files
           }));
           return true;
@@ -196,7 +228,7 @@ export default function register(api: OpenClawPluginApi) {
         isPathCompliant = isInArchives && 
                           pathSegments.length === 3 && 
                           pathSegments[1] === sessionIdSafe && 
-                          pathSegments[2].toLowerCase() === "plan.md";
+                          pathSegments[2] === "PLAN.md";
       } else {
         // Track 2: archives/{ARCHIVE_ID}/{TIMESTAMP}/{ORIGIN_NAME} (4 segments)
         isPathCompliant = isInArchives && 
@@ -217,7 +249,7 @@ export default function register(api: OpenClawPluginApi) {
       if (isPlan) {
         // archives/{ARCHIVE_ID}/
         targetArchiveDir = path.join(archivesBaseDir, sessionIdSafe);
-        finalFileName = "plan.md"; // Force lowercase plan.md
+        finalFileName = "PLAN.md"; // Force uppercase PLAN.md
       } else {
         // archives/{ARCHIVE_ID}/{TIMESTAMP}/
         targetArchiveDir = path.join(archivesBaseDir, sessionIdSafe, timestamp);
@@ -237,7 +269,7 @@ export default function register(api: OpenClawPluginApi) {
         }
       }
 
-      api.logger.info(`Processed ${isPlan ? "plan" : "archived"} file: ${originalFileName} in ${path.relative(archivesBaseDir, targetArchiveDir)}`);
+      api.logger.info(`Processed ${isPlan ? "PLAN" : "archived"} file: ${originalFileName} in ${path.relative(archivesBaseDir, targetArchiveDir)}`);
     } catch (err: any) {
       api.logger.error(`Failed to handle archive naming: ${err.message}`);
     }

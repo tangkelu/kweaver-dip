@@ -1,13 +1,15 @@
 # OpenClaw Archives Access Plugin
 
-The `archives-access` plugin allows external systems to securely read files and list directories within an agent's `archives` workspace directory via the OpenClaw Gateway HTTP server.
+The `archives-access` plugin allows external systems to securely read files and list directories within an agent's `archives` workspace directory via the OpenClaw Gateway HTTP server. It also enforces a dual-track archiving structure to keep the workspace organized.
 
 ## Features
-- **Secure File Serving**: Read any file located in an agent's `archives` directory seamlessly.
-- **Directory Listing**: Retrieve a JSON-structured list of files and subdirectories.
-- **Agent Targeting**: Target specific agent workspaces dynamically using the `agent` parameter.
-- **Session Filtering**: Filter root directory listings by a `session` prefix to easily locate session data.
-- **Zero-Trust Security**: Built-in path traversal protection strictly blocks reading files outside the designated `archives` directory.
+- **Dual-Track Archiving**: Automatically organizes files into `archives/{ARCHIVE_ID}/PLAN.md` (uppercase) or `archives/{ARCHIVE_ID}/{TIMESTAMP}/{ORIGIN_NAME}`.
+- **Auto-Compliance**: Listens for file modifications and automatically moves non-compliant files to their correct archival paths.
+- **Improved Listing Logic**:
+    - **Session Normalization**: Supports complex session keys (e.g., `agent:de_finance:user:...:uuid`) by extracting the UUID for path resolution.
+    - **Session-Direct Access**: Providing a `session` query parameter directly lists the session's contents.
+    - **Converged Path Response**: Returns paths relative to the session root for a cleaner view.
+- **Zero-Trust Security**: Path traversal protection strictly blocks access outside the `archives` directory.
 
 ---
 
@@ -39,6 +41,17 @@ Restart your active gateway process so that the plugin registry picks up the cha
 
 ---
 
+## Archiving Rules
+
+The plugin automatically maintains a compliant structure for all files created or modified within the workspace:
+
+1.  **Plan Files**: Files named `plan.md` (case-insensitive) are moved to `archives/{SESSION_UUID}/PLAN.md` (forced uppercase).
+2.  **Archived Assets**: All other files are moved to `archives/{SESSION_UUID}/{YYYY-MM-DD-HH-mm-ss}/{ORIGIN_FILE_NAME}`.
+
+This logic is triggered on the `after_tool_call` hook for any write/edit/replace tool.
+
+---
+
 ## API Documentation
 
 ### `GET /v1/archives/{subpath}`
@@ -52,63 +65,23 @@ Fetches a file or lists a directory from a targeted agent's `archives` workspace
 
 | Parameter | Type     | Required | Description |
 |:----------|:---------|:---------|:------------|
-| `agent`   | `string` | **Yes**  | The ID of the agent whose workspace should be accessed (e.g. `de_finance`, `coordinator`). The plugin will look up the workspace path dynamically from `openclaw.json`. |
-| `session` | `string` | No       | When fetching the root `/v1/archives` directory, setting this filters the returned folder list to only include entries starting with this exact session ID. |
+| `agent`   | `string` | **Yes**  | The ID of the agent whose workspace should be accessed. |
+| `session` | `string` | No       | If provided, the API directly lists the contents of this session's archive directory. Supports complex session keys. |
 
 **Path Parameters:**
-- `{subpath}` (Optional): The relative path to the intended file or directory inside the `archives` folder. Omit this to access the root archives folder. UTF-8 URL encoded paths (e.g., Chinese characters like `他的财务报表.md`) are natively supported.
+- `{subpath}` (Optional): The relative path inside the `archives` folder. Supports complex session keys in the first segment.
 
 ---
 
 ### Request Examples & Responses
 
-#### 1. Getting a Specific File
-If the final subpath resolves to a file, the plugin will pipe the file contents directly in the response and automatically apply the relevant `Content-Type` header (e.g. `text/plain`, `application/pdf`, `image/png`).
+#### 1. Listing a Session Directory
+Providing the `session` parameter (even a complex one) gives a direct list of its archived contents.
 
 **Request:**
 ```bash
 curl -i -H "Authorization: Bearer YOUR_TOKEN" \
-  "http://localhost:18789/v1/archives/5346e9bf-a493-4722-a1fc-93d857e96d94_2026-03-20-16-11-32/他的财务报表.md?agent=de_finance"
-```
-
-**Response:**
-```http
-HTTP/1.1 200 OK
-Content-Type: application/octet-stream
-
-<... binary/text file contents ...>
-```
-
-#### 2. Listing a Directory Contents
-If the targeted path is a directory (e.g. finding files inside a session), it returns a structured JSON payload denoting `file` or `directory` types.
-
-**Request:**
-```bash
-curl -i -H "Authorization: Bearer YOUR_TOKEN" \
-  "http://localhost:18789/v1/archives/5346e9bf-a493-4722-a1fc-93d857e96d94_2026-03-20-16-11-32?agent=de_finance"
-```
-
-**Response:**
-```http
-HTTP/1.1 200 OK
-Content-Type: application/json
-
-{
-  "path": "5346e9bf-a493-4722-a1fc-93d857e96d94_2026-03-20-16-11-32",
-  "contents": [
-    { "name": "他的财务报表.md", "type": "file" },
-    { "name": "screenshots", "type": "directory" }
-  ]
-}
-```
-
-#### 3. Listing Base `archives` Directory with Session Filtering
-To find the exact auto-generated session directory using just the session UUID prefix:
-
-**Request:**
-```bash
-curl -i -H "Authorization: Bearer YOUR_TOKEN" \
-  "http://localhost:18789/v1/archives/?agent=de_finance&session=5346e9bf-a493"
+  "http://localhost:18789/v1/archives?agent=de_finance&session=f78e9254-66e8-42a1-a8b3-5ca9dc07d174"
 ```
 
 **Response:**
@@ -119,14 +92,32 @@ Content-Type: application/json
 {
   "path": "/",
   "contents": [
-    { "name": "5346e9bf-a493-4722-a1fc-93d857e96d94_2026-03-20-16-11-32", "type": "directory" }
+    { "name": "PLAN.md", "type": "file" },
+    { "name": "2026-03-24-10-21-30", "type": "directory" }
   ]
 }
+```
+
+#### 2. Getting a Specific File
+The plugin pipes the file contents directly with the correct `Content-Type`.
+
+**Request:**
+```bash
+curl -i -H "Authorization: Bearer YOUR_TOKEN" \
+  "http://localhost:18789/v1/archives/f78e9254-66e8-42a1-a8b3-5ca9dc07d174/PLAN.md?agent=de_finance"
+```
+
+**Response:**
+```http
+HTTP/1.1 200 OK
+Content-Type: text/markdown
+
+# My Plan...
 ```
 
 ---
 
 ## Error Codes
-- `403 Forbidden`: Denies requested subpaths that attempt directory traversal (e.g. `../` or absolute paths outside the `archives` fold).
-- `404 Not Found`: Returned if the requested file doesn't exist, the directory doesn't exist, or if the specified `agent` ID does not have a registered workspace.
-- `500 Internal Server Error`: For unexpected fs or stream resolution errors.
+- `403 Forbidden`: Path traversal attempt blocked.
+- `404 Not Found`: Requested resource or target agent workspace not found.
+- `500 Internal Server Error`: Unexpected filesystem or stream error.
