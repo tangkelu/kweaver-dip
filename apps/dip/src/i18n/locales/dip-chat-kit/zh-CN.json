@@ -15,6 +15,7 @@
     "targetQuestionNotFound": "未找到可重新生成的问题",
     "backToBottom": "返回底部",
     "inputPlaceholder": "发送消息...",
+    "inputDisclaimer": "数字员工可能会犯错，请核查重要业务信息",
     "conversationTitle": "对话 AI 生成",
     "previewAreaTitle": "预览区",
     "closePreview": "关闭预览",
@@ -36,6 +37,17 @@
     "unsupportedFileType": "文件“{fileName}”类型不支持，仅支持图片（jpeg/png/gif/webp/heic/heif）和文件（txt/markdown/html/csv/json/pdf）",
     "imageSizeExceeded": "图片“{fileName}”超过 10MB 限制",
     "fileSizeExceeded": "文件“{fileName}”超过 5MB 限制",
-    "duplicateFileUploaded": "文件“{fileName}”已上传，不允许重复上传"
+    "duplicateFileUploaded": "文件“{fileName}”已上传，不允许重复上传",
+    "eventToolCall": "工具调用",
+    "eventToolResult": "工具结果",
+    "eventSystem": "系统消息",
+    "eventUnknown": "其他消息",
+    "eventRoleAssistant": "助手",
+    "eventRoleTool": "工具",
+    "eventRoleSystem": "系统",
+    "eventRoleUnknown": "未知",
+    "eventCallId": "调用ID",
+    "eventActionView": "查看",
+    "eventActionError": "错误"
   }
 }

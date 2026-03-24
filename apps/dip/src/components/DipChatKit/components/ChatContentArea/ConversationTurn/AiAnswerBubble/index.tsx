@@ -1,4 +1,12 @@
-﻿import { CopyOutlined, RedoOutlined } from '@ant-design/icons'
+import {
+  CheckOutlined,
+  CopyOutlined,
+  EyeOutlined,
+  RedoOutlined,
+  ToolOutlined,
+  WarningOutlined,
+} from '@ant-design/icons'
+import { Tooltip } from 'antd'
 import { Bubble, CodeHighlighter, Mermaid } from '@ant-design/x'
 import XMarkdown, { type ComponentProps as MarkdownComponentProps } from '@ant-design/x-markdown'
 import '@ant-design/x-markdown/dist/x-markdown.css'
@@ -9,6 +17,7 @@ import { Children } from 'react'
 import { useMemo } from 'react'
 import intl from 'react-intl-universal'
 import MessageActions from '../MessageActions'
+import type { MessageAction } from '../MessageActions/types'
 import styles from './index.module.less'
 import type { AiAnswerBubbleProps } from './types'
 import {
@@ -16,6 +25,12 @@ import {
   buildCodePreviewPayload,
   buildMarkdownFilePreviewPayload,
   extractMarkdownFileNameFromHref,
+  getAnswerEventActionLabel,
+  getAnswerEventCardDetail,
+  getAnswerEventCardTitle,
+  getAnswerEventFullText,
+  getAnswerEventInlineText,
+  getAnswerEventPreviewText,
   getDomDataAttributes,
   isMermaidLanguage,
   normalizeLanguage,
@@ -196,43 +211,133 @@ const AiAnswerBubble: React.FC<AiAnswerBubbleProps> = ({ turn, onCopy, onRegener
 
   const answerContent =
     turn.answerMarkdown || (turn.answerLoading ? intl.get('dipChatKit.answerLoading').d('处理中...') : '')
+  const hasEventBlocks = turn.answerEvents.length > 0
+  const shouldRenderAnswerBubble = Boolean(answerContent) || turn.answerLoading || turn.answerStreaming
+  const bubbleActions = useMemo<MessageAction[]>(() => {
+    const actions: MessageAction[] = []
+
+    if (turn.answerMarkdown.trim()) {
+      actions.push({
+        key: 'copy-answer',
+        title: intl.get('dipChatKit.copyAnswer').d('复制回答') as string,
+        icon: <CopyOutlined />,
+        onClick: onCopy,
+      })
+    }
+
+    if (turn.question.trim()) {
+      actions.push({
+        key: 'regenerate-answer',
+        title: intl.get('dipChatKit.regenerateAnswer').d('重新生成') as string,
+        icon: <RedoOutlined />,
+        onClick: onRegenerate,
+      })
+    }
+
+    return actions
+  }, [onCopy, onRegenerate, turn.answerMarkdown, turn.question])
 
   return (
     <div className={clsx('AiAnswerBubble', styles.root)}>
-      <Bubble
-        className={styles.bubble}
-        content={answerContent}
-        streaming={turn.answerStreaming}
-        typing={turn.answerStreaming ? { effect: 'fade-in' } : false}
-        loading={turn.answerLoading && isEmpty(turn.answerMarkdown)}
-        contentRender={(content) => {
-          return (
-            <XMarkdown className={styles.markdownRoot} components={markdownComponents}>
-              {normalizeMarkdownText(content)}
-            </XMarkdown>
-          )
-        }}
-        footer={
-          <div className={styles.actionsWrap}>
-            <MessageActions
-              actions={[
-                {
-                  key: 'copy-answer',
-                  title: intl.get('dipChatKit.copyAnswer').d('复制回答') as string,
-                  icon: <CopyOutlined />,
-                  onClick: onCopy,
-                },
-                {
-                  key: 'regenerate-answer',
-                  title: intl.get('dipChatKit.regenerateAnswer').d('重新生成') as string,
-                  icon: <RedoOutlined />,
-                  onClick: onRegenerate,
-                },
-              ]}
+      <div
+        className={clsx(styles.answerLayout, {
+          [styles.answerLayoutWithEvents]: hasEventBlocks,
+        })}
+      >
+        {shouldRenderAnswerBubble && (
+          <div className={styles.answerMain}>
+            <Bubble
+              className={styles.bubble}
+              content={answerContent}
+              streaming={turn.answerStreaming}
+              typing={turn.answerStreaming ? { effect: 'fade-in' } : false}
+              loading={turn.answerLoading && isEmpty(turn.answerMarkdown)}
+              contentRender={(content) => {
+                return (
+                  <XMarkdown className={styles.markdownRoot} components={markdownComponents}>
+                    {normalizeMarkdownText(content)}
+                  </XMarkdown>
+                )
+              }}
+              footer={
+                bubbleActions.length > 0 ? (
+                  <div className={styles.actionsWrap}>
+                    <MessageActions actions={bubbleActions} />
+                  </div>
+                ) : null
+              }
             />
           </div>
-        }
-      />
+        )}
+
+        {hasEventBlocks && (
+          <div className={styles.eventBlockList}>
+            {turn.answerEvents.map((event) => {
+              const eventTitle = getAnswerEventCardTitle(event)
+              const eventDetail = getAnswerEventCardDetail(event)
+              const eventInlineText = getAnswerEventInlineText(event)
+              const eventPreviewText = getAnswerEventPreviewText(event)
+              const eventFullText = getAnswerEventFullText(event)
+              const canOpenPreview = Boolean(eventFullText)
+
+              return (
+                <div
+                  key={event.id}
+                  className={clsx(styles.eventBlockItem, {
+                    [styles.eventBlockItemError]: event.isError,
+                    [styles.eventBlockItemClickable]: canOpenPreview,
+                  })}
+                  role={canOpenPreview ? 'button' : undefined}
+                  tabIndex={canOpenPreview ? 0 : undefined}
+                  onClick={() => {
+                    if (!canOpenPreview) return
+                    onOpenPreview(buildCardPreviewPayload(eventTitle, eventFullText))
+                  }}
+                  onKeyDown={(domEvent) => {
+                    if (!canOpenPreview) return
+                    if (domEvent.key !== 'Enter' && domEvent.key !== ' ') return
+                    domEvent.preventDefault()
+                    onOpenPreview(buildCardPreviewPayload(eventTitle, eventFullText))
+                  }}
+                >
+                  <div className={styles.eventBlockHead}>
+                    <div className={styles.eventBlockTitleWrap}>
+                      <span className={styles.eventBlockIcon}>
+                        {event.isError ? <WarningOutlined /> : <ToolOutlined />}
+                      </span>
+                      <span className={styles.eventBlockTitle}>{eventTitle}</span>
+                    </div>
+                    {canOpenPreview && (
+                      <Tooltip title={getAnswerEventActionLabel(event)}>
+                        <span className={styles.eventBlockAction} aria-hidden>
+                          <EyeOutlined />
+                        </span>
+                      </Tooltip>
+                    )}
+                  </div>
+
+                  {eventDetail && <div className={styles.eventBlockDetail}>{eventDetail}</div>}
+
+                  {event.toolCallId && (
+                    <div className={styles.eventBlockCallId}>
+                      {intl.get('dipChatKit.eventCallId').d('调用ID')}：{event.toolCallId}
+                    </div>
+                  )}
+
+                  {!eventInlineText && !eventPreviewText && !event.isError && (
+                    <div className={styles.eventBlockStatus}>
+                      <CheckOutlined />
+                    </div>
+                  )}
+
+                  {eventInlineText && <div className={styles.eventBlockInline}>{eventInlineText}</div>}
+                  {eventPreviewText && <pre className={styles.eventBlockPreview}>{eventPreviewText}</pre>}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
       {turn.answerError && <div className={styles.errorText}>{turn.answerError}</div>}
     </div>
   )

@@ -82,6 +82,11 @@ const ChatContentArea: React.FC<ChatContentAreaProps> = ({
     },
     [setDipChatKitStore],
   )
+  const resetConversationRef = useRef(resetConversation)
+
+  useEffect(() => {
+    resetConversationRef.current = resetConversation
+  }, [resetConversation])
 
   const resolveEmployeeId = useCallback(
     (payload: AiPromptSubmitPayload): string => {
@@ -236,11 +241,11 @@ const ChatContentArea: React.FC<ChatContentAreaProps> = ({
     setInputValue('')
 
     if (!trimmedSessionId) {
-      resetConversation([])
+      resetConversationRef.current([])
       return
     }
 
-    resetConversation([])
+    resetConversationRef.current([])
     let disposed = false
     const request = getDigitalHumanSessionMessages(trimmedSessionId)
 
@@ -248,11 +253,11 @@ const ChatContentArea: React.FC<ChatContentAreaProps> = ({
       .then((response) => {
         if (disposed) return
         const turns = mapSessionMessagesToTurns(response.messages)
-        resetConversation(turns)
+        resetConversationRef.current(turns)
       })
       .catch(() => {
         if (disposed) return
-        resetConversation([])
+        resetConversationRef.current([])
         message.error(intl.get('dipChatKit.loadSessionMessagesFailed').d('加载会话消息失败'))
       })
 
@@ -262,7 +267,7 @@ const ChatContentArea: React.FC<ChatContentAreaProps> = ({
         request.abort()
       }
     }
-  }, [abortAllStreaming, resetConversation, sessionId])
+  }, [abortAllStreaming, sessionId])
 
   useEffect(() => {
     return () => {
@@ -422,6 +427,11 @@ const ChatContentArea: React.FC<ChatContentAreaProps> = ({
                 inputPlaceholder || (intl.get('dipChatKit.inputPlaceholder').d('发送消息...') as string)
               }
             />
+          </div>
+          <div className={styles.inputDisclaimer}>
+            {intl
+              .get('dipChatKit.inputDisclaimer')
+              .d('数字员工可能会犯错，请核查重要业务信息')}
           </div>
         </div>
       </div>

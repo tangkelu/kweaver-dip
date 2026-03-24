@@ -13,18 +13,23 @@ const ConversationTurn: React.FC<ConversationTurnProps> = ({
   onRegenerateAnswer,
   onOpenPreview,
 }) => {
+  const shouldRenderQuestion =
+    turn.question.trim().length > 0 || turn.questionAttachments.length > 0
+
   return (
     <div className={clsx('ConversationTurn', styles.root)}>
-      <UserQuestionBubble
-        question={turn.question}
-        attachments={turn.questionAttachments}
-        onEdit={() => {
-          onEditQuestion(turn.id, turn.question)
-        }}
-        onCopy={() => {
-          onCopyQuestion(turn.question)
-        }}
-      />
+      {shouldRenderQuestion && (
+        <UserQuestionBubble
+          question={turn.question}
+          attachments={turn.questionAttachments}
+          onEdit={() => {
+            onEditQuestion(turn.id, turn.question)
+          }}
+          onCopy={() => {
+            onCopyQuestion(turn.question)
+          }}
+        />
+      )}
       <AiAnswerBubble
         turn={turn}
         onCopy={() => {

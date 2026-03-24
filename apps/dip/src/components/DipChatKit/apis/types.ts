@@ -15,6 +15,11 @@ export interface DipChatKitSessionMessage {
   role?: string
   content?: unknown
   ts?: number
+  toolName?: string
+  toolCallId?: string
+  isError?: boolean
+  details?: Record<string, unknown>
+  [key: string]: unknown
 }
 
 export interface DipChatKitSessionGetResponse {

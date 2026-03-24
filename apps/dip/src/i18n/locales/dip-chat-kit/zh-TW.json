@@ -36,6 +36,18 @@
     "unsupportedFileType": "文件「{fileName}」類型不支援，僅支援圖片（jpeg/png/gif/webp/heic/heif）和文件（txt/markdown/html/csv/json/pdf）",
     "imageSizeExceeded": "圖片「{fileName}」超過 10MB 限制",
     "fileSizeExceeded": "文件「{fileName}」超過 5MB 限制",
-    "duplicateFileUploaded": "文件「{fileName}」已上傳，不允許重複上傳"
+    "duplicateFileUploaded": "文件「{fileName}」已上傳，不允許重複上傳",
+    "eventToolCall": "工具呼叫",
+    "eventToolResult": "工具結果",
+    "eventSystem": "系統訊息",
+    "eventUnknown": "其他訊息",
+    "eventRoleAssistant": "助手",
+    "eventRoleTool": "工具",
+    "eventRoleSystem": "系統",
+    "eventRoleUnknown": "未知",
+    "eventCallId": "呼叫ID",
+    "eventActionView": "檢視",
+    "eventActionError": "錯誤",
+    "inputDisclaimer": "數字員工可能會犯錯，請核查重要業務信息"
   }
 }

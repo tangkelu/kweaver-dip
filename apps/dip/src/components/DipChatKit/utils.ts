@@ -66,6 +66,7 @@ export const buildDefaultMessageTurnsFromSubmitPayload = (
       pendingSend: true,
       questionAttachments,
       answerMarkdown: '',
+      answerEvents: [],
       answerLoading: false,
       answerStreaming: false,
       createdAt: new Date().toISOString(),

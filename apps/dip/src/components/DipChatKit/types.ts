@@ -15,6 +15,20 @@ export interface DipChatKitPreviewPayload {
   sourceType: 'card' | 'code' | 'mermaid' | 'text'
 }
 
+export type DipChatKitAnswerEventType = 'toolCall' | 'toolResult' | 'system' | 'unknown'
+
+export interface DipChatKitAnswerEvent {
+  id: string
+  type: DipChatKitAnswerEventType
+  role: string
+  text: string
+  toolName?: string
+  toolCallId?: string
+  isError?: boolean
+  timestamp?: number
+  details?: Record<string, unknown>
+}
+
 export interface DipChatKitMessageTurn {
   id: string
   question: string
@@ -22,6 +36,7 @@ export interface DipChatKitMessageTurn {
   pendingSend?: boolean
   questionAttachments: DipChatKitAttachment[]
   answerMarkdown: string
+  answerEvents: DipChatKitAnswerEvent[]
   answerLoading: boolean
   answerStreaming: boolean
   answerError?: string

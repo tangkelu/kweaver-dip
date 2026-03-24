@@ -1,7 +1,24 @@
-﻿.root {
+.root {
   width: 100%;
   display: flex;
-  justify-content: flex-start;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.answerLayout {
+  display: flex;
+  width: min(100%, 1120px);
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.answerLayoutWithEvents {
+  justify-content: space-between;
+}
+
+.answerMain {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .bubble {
@@ -68,4 +85,176 @@
 
 .actionsWrap {
   margin-top: 4px;
+}
+
+.eventBlockList {
+  display: flex;
+  flex: 0 0 280px;
+  width: 280px;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eventBlockItem {
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #ffffff;
+  max-height: 160px;
+  overflow: hidden;
+  transition:
+    border-color 0.15s ease-out,
+    background-color 0.15s ease-out;
+}
+
+.eventBlockItemClickable {
+  cursor: pointer;
+}
+
+.eventBlockItemClickable:hover {
+  border-color: #98a2b3;
+  background: #f9fafb;
+}
+
+.eventBlockItemClickable:focus-visible {
+  outline: 2px solid #126ee3;
+  outline-offset: 1px;
+}
+
+.eventBlockItemError {
+  border-color: #fda29b;
+  background: #fef3f2;
+}
+
+.eventBlockHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.eventBlockTitleWrap {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+}
+
+.eventBlockIcon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  color: #2f67d8;
+  flex-shrink: 0;
+}
+
+.eventBlockTitle {
+  font-size: 13px;
+  line-height: 1.25;
+  color: #101828;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eventBlockAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: #126ee3;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+.eventBlockItemClickable:hover .eventBlockAction {
+  opacity: 1;
+}
+
+.eventBlockDetail {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 18px;
+  color: #667085;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eventBlockCallId {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 16px;
+  color: #344054;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eventBlockStatus {
+  margin-top: 6px;
+  color: #12b76a;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+}
+
+.eventBlockInline {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #344054;
+  background: #f2f4f7;
+  border: 1px solid #eaecf0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family:
+    'SFMono-Regular',
+    Consolas,
+    'Liberation Mono',
+    Menlo,
+    Courier,
+    monospace;
+}
+
+.eventBlockPreview {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #475467;
+  font-size: 11px;
+  line-height: 1.4;
+  max-height: 56px;
+  overflow: hidden;
+  background: #f2f4f7;
+  border: 1px solid #eaecf0;
+  border-radius: 6px;
+  font-family:
+    'SFMono-Regular',
+    Consolas,
+    'Liberation Mono',
+    Menlo,
+    Courier,
+    monospace;
+}
+
+@media (max-width: 1200px) {
+  .answerLayout {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .eventBlockList {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 680px;
+  }
 }
