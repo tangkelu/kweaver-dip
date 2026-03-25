@@ -4,7 +4,7 @@
 
 [中文](./README.zh.md) | English
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE.txt)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 # KWeaver DIP
 
@@ -21,7 +21,7 @@ KWeaver DIP is an AI-native platform for developing and managing digital employe
 - 🌐 [Live Demo](https://dip-poc.aishu.cn/studio/agent/development/my-agent-list) — Try KWeaver online (username: `kweaver`, password: `111111`)
 - 🤝 [Contributing](rules/CONTRIBUTING.md) — How to contribute to this project
 - 🚢 [Deployment](deploy/README.md) — One-click deploy to Kubernetes
-- 📄 [License](LICENSE.txt) — Apache License 2.0
+- 📄 [License](LICENSE) — Apache License 2.0
 
 ## Quick Start
 
@@ -66,7 +66,7 @@ When submitting changes in this repository, please also update: module-level `RE
 
 ## License
 
-This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE.txt) file for details.
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
 
 ## 💬 Community
 
@@ -80,4 +80,4 @@ Scan to join the KWeaver community group
 
 - **Contributing**: [Contributing Guide](rules/CONTRIBUTING.md)
 - **Issues**: [GitHub Issues](https://github.com/kweaver-ai/kweaver/issues)
-- **License**: [Apache License 2.0](LICENSE.txt)
+- **License**: [Apache License 2.0](LICENSE)
