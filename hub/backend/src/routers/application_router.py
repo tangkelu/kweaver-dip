@@ -54,7 +54,6 @@ def create_application_router(application_service: ApplicationService) -> APIRou
     def _application_to_response(app) -> ApplicationResponse:
         """将应用领域模型转换为响应模型。"""
         return ApplicationResponse(
-            id=app.id,
             key=app.key,
             name=app.name,
             description=app.description,
@@ -152,7 +151,7 @@ def create_application_router(application_service: ApplicationService) -> APIRou
                 auth_token=auth_token,  # 保留参数以保持兼容性
             )
             
-            logger.info(f"[install_application] 应用安装成功: key={application.key}, id={application.id}")
+            logger.info(f"[install_application] 应用安装成功: key={application.key}")
             return _application_to_response(application)
         
         except (ValidationError, ConflictError, InternalError):
@@ -225,7 +224,7 @@ def create_application_router(application_service: ApplicationService) -> APIRou
     )
     async def configure_application(
         request: Request,
-        id: int = Query(..., description="应用主键 ID", ge=1),
+        key: str = Query(..., description="应用包唯一标识", min_length=1, max_length=32),
     ) -> ApplicationResponse:
         """
         配置应用。
@@ -233,7 +232,7 @@ def create_application_router(application_service: ApplicationService) -> APIRou
         配置应用的业务知识网络和智能体。
 
         参数:
-            id: 应用主键 ID
+            key: 应用包唯一标识
 
         返回:
             ApplicationResponse: 更新后的应用信息
@@ -253,7 +252,7 @@ def create_application_router(application_service: ApplicationService) -> APIRou
             # 应用配置不再从请求体中传入，而是直接基于数据库中已有的配置，
             # 将业务知识网络配置和智能体配置的 is_config 统一设置为 True。
             application = await application_service.configure_application(
-                app_id=id,
+                key=key,
                 updated_by=updated_by,
                 updated_by_id=updated_by_id,
             )
@@ -280,22 +279,21 @@ def create_application_router(application_service: ApplicationService) -> APIRou
         }
     )
     async def get_application_basic_info(
-        id: int = Query(..., description="应用主键 ID", ge=1),
+        key: str = Query(..., description="应用包唯一标识", min_length=1, max_length=32),
     ) -> ApplicationBasicInfoResponse:
         """
         查看应用基础信息。
 
         参数:
-            id: 应用主键 ID
+            key: 应用包唯一标识
 
         返回:
             ApplicationBasicInfoResponse: 应用基础信息
         """
         try:
-            application = await application_service.get_application_basic_info(id)
+            application = await application_service.get_application_basic_info(key)
             
             return ApplicationBasicInfoResponse(
-                id=application.id,
                 key=application.key,
                 name=application.name,
                 description=application.description,
@@ -318,7 +316,7 @@ def create_application_router(application_service: ApplicationService) -> APIRou
 
     # ============ 设置应用被钉状态 ============
     @router.put(
-        "/applications/{id}/pinned",
+        "/applications/{key}/pinned",
         summary="设置应用被钉状态",
         description="设置指定应用是否被钉（置顶）",
         response_model=ApplicationResponse,
@@ -330,21 +328,21 @@ def create_application_router(application_service: ApplicationService) -> APIRou
         }
     )
     async def set_application_pinned(
-        id: int = Path(..., description="应用主键 ID", ge=1),
+        key: str = Path(..., description="应用包唯一标识", min_length=1, max_length=32),
         body: SetPinnedRequest = ...,
     ) -> ApplicationResponse:
         """
         设置应用是否被钉状态。
 
         参数:
-            id: 应用主键 ID
+            key: 应用包唯一标识
             body.pinned: 是否被钉
 
         返回:
             ApplicationResponse: 更新后的应用信息
         """
         try:
-            application = await application_service.set_application_pinned(app_id=id, pinned=body.pinned)
+            application = await application_service.set_application_pinned(key=key, pinned=body.pinned)
             return _application_to_response(application)
         except ValueError as e:
             raise NotFoundError(description=str(e))
@@ -366,18 +364,18 @@ def create_application_router(application_service: ApplicationService) -> APIRou
     )
     async def get_application_ontologies(
         request: Request,
-        id: int = Query(..., description="应用主键 ID", ge=1),
+        key: str = Query(..., description="应用包唯一标识", min_length=1, max_length=32),
     ):
         """
         查看业务知识网络配置。
 
         流程：
-        1. 通过 id 获取应用的业务知识网络配置项（ontology_config）
+        1. 通过 key 获取应用的业务知识网络配置项（ontology_config）
         2. 遍历配置项，通过 id 调用外部接口查询业务知识网络详情
         3. 返回业务知识网络详情列表（原始数据）
 
         参数:
-            id: 应用主键 ID
+            key: 应用包唯一标识
 
         返回:
             List[dict]: 业务知识网络详情列表（原始数据）
@@ -387,11 +385,8 @@ def create_application_router(application_service: ApplicationService) -> APIRou
             # 适配器层会从 TokenContext 统一获取，这里可以不再传递
             auth_token = getattr(request.state, "auth_token", None)
 
-            # 1. 通过 id 获取应用的业务知识网络配置项
-            # 2. 遍历配置项，通过 id 调用外部接口查询详情
-            # 3. 返回业务知识网络详情列表（原始数据）
-            ontologies = await application_service.get_application_ontologies_by_id(
-                app_id=id,
+            ontologies = await application_service.get_application_ontologies(
+                key=key,
                 auth_token=auth_token,
             )
             
@@ -417,18 +412,18 @@ def create_application_router(application_service: ApplicationService) -> APIRou
     )
     async def get_application_agents(
         request: Request,
-        id: int = Query(..., description="应用主键 ID", ge=1),
+        key: str = Query(..., description="应用包唯一标识", min_length=1, max_length=32),
     ):
         """
         查看智能体配置。
 
         流程：
-        1. 通过 id 获取应用的智能体配置项（agent_config）
+        1. 通过 key 获取应用的智能体配置项（agent_config）
         2. 遍历配置项，通过 id 调用外部接口查询智能体详情
         3. 返回智能体详情列表（原始数据）
 
         参数:
-            id: 应用主键 ID
+            key: 应用包唯一标识
 
         返回:
             List[dict]: 智能体详情列表（原始数据）
@@ -438,11 +433,8 @@ def create_application_router(application_service: ApplicationService) -> APIRou
             # 适配器层会从 TokenContext 统一获取，这里可以不再传递
             auth_token = getattr(request.state, "auth_token", None)
 
-            # 1. 通过 id 获取应用的智能体配置项
-            # 2. 遍历配置项，通过 id 调用外部接口查询详情
-            # 3. 返回智能体详情列表（原始数据）
-            agents = await application_service.get_application_agents_by_id(
-                app_id=id,
+            agents = await application_service.get_application_agents(
+                key=key,
                 auth_token=auth_token,
             )
             
@@ -456,7 +448,7 @@ def create_application_router(application_service: ApplicationService) -> APIRou
 
     # ============ 5、卸载应用 ============
     @router.delete(
-        "/applications/{id}",
+        "/applications/{key}",
         summary="卸载应用",
         description="卸载指定的应用",
         status_code=status.HTTP_204_NO_CONTENT,
@@ -469,7 +461,7 @@ def create_application_router(application_service: ApplicationService) -> APIRou
     )
     async def uninstall_application(
         request: Request,
-        id: int = Path(..., description="应用主键 ID", ge=1),
+        key: str = Path(..., description="应用包唯一标识", min_length=1, max_length=32),
     ) -> Response:
         """
         卸载应用。
@@ -479,7 +471,7 @@ def create_application_router(application_service: ApplicationService) -> APIRou
         2. 删除数据库中应用记录
 
         参数:
-            id: 应用主键 ID
+            key: 应用包唯一标识
 
         返回:
             None: 成功时返回 204 No Content
@@ -490,7 +482,7 @@ def create_application_router(application_service: ApplicationService) -> APIRou
             auth_token = getattr(request.state, "auth_token", None)
 
             await application_service.uninstall_application(
-                app_id=id,
+                key=key,
                 auth_token=auth_token,  # 保留参数以保持兼容性
             )
             return Response(status_code=status.HTTP_204_NO_CONTENT)

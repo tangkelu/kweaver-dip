@@ -14,7 +14,7 @@ from src.main import create_app
 from src.infrastructure.config.settings import Settings
 from src.domains.application import (
     Application, OntologyInfo, AgentInfo, ManifestInfo, MicroAppInfo,
-    OntologyConfigItem, AgentConfigItem
+    OntologyConfigItem, AgentConfigItem, ReleaseConfigItem,
 )
 from src.application.application_service import ApplicationService
 from src.adapters.application_adapter import ApplicationAdapter
@@ -64,13 +64,13 @@ def sample_application() -> Application:
             entry="/test_app",
             headless=False,
         ),
-        release_config=["test-release-1"],
+        release_config=[ReleaseConfigItem(name="test-release-1", namespace="default")],
         ontology_config=[
-            OntologyConfigItem(id=1, is_config=True),
-            OntologyConfigItem(id=2, is_config=True),
+            OntologyConfigItem(id="1", is_config=True),
+            OntologyConfigItem(id="2", is_config=True),
         ],
         agent_config=[
-            AgentConfigItem(id=1, is_config=True),
+            AgentConfigItem(id="1", is_config=True),
         ],
         is_config=True,
         updated_by="user-001",
@@ -232,8 +232,8 @@ class TestApplicationService:
         result = await service.get_application_ontologies("test-app-001")
 
         assert len(result) == 2
-        assert result[0].id == 1
-        assert result[1].id == 2
+        assert result[0]["id"] == "1"
+        assert result[1]["id"] == "2"
 
     @pytest.mark.asyncio
     async def test_get_application_agents_returns_list(self, sample_application: Application):
@@ -246,7 +246,7 @@ class TestApplicationService:
         result = await service.get_application_agents("test-app-001")
 
         assert len(result) == 1
-        assert result[0].id == 1
+        assert result[0]["id"] == "1"
 
     @pytest.mark.asyncio
     async def test_configure_application_updates_config(self, sample_application: Application):
@@ -258,7 +258,7 @@ class TestApplicationService:
         service = ApplicationService(mock_port)
 
         result = await service.configure_application(
-            app_id="test-app-001",
+            key="test-app-001",
             updated_by="user-002",
         )
 

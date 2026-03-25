@@ -33,10 +33,6 @@ components:
       description: 对应数据库表 t_application
       type: object
       properties:
-        id:
-          type: integer
-          title: 应用主键 ID
-          description: 应用的主键 ID
         key:
           type: string
           title: 应用唯一标识
@@ -113,7 +109,6 @@ components:
           format: date-time
           title: 更新时间
       required:
-        - id
         - key
         - name
         - release_config
@@ -121,7 +116,6 @@ components:
         - updated_by
         - updated_at
       example:
-        id: 1
         key: 'A9F3D12C7B8E90F4A6C1E2B7D8F0A3C5'
         name: '智能故障分析'
         description: 'DIP for ITOps 运维大脑应用'
@@ -157,10 +151,6 @@ components:
       description: 应用的基本信息，包括名称、描述、版本、是否配置视图
       type: object
       properties:
-        id:
-          type: integer
-          title: 应用主键 ID
-          description: 应用的主键 ID
         key:
           type: string
           title: 应用唯一标识
@@ -197,7 +187,6 @@ components:
           format: date-time
           title: 更新时间
       required:
-        - id
         - key
         - name
         - is_config

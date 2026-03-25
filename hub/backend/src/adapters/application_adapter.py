@@ -330,48 +330,18 @@ class ApplicationAdapter(ApplicationPort):
                     return None
                 return self._row_to_application(row)
 
-    async def get_application_by_id(self, app_id: int) -> Application:
-        """
-        根据应用主键 ID 获取应用信息。
-
-        参数:
-            app_id: 应用主键 ID
-
-        返回:
-            Application: 应用实体
-
-        异常:
-            ValueError: 当应用不存在时抛出
-        """
-        pool = await self._get_pool()
-        async with pool.acquire() as conn:
-            async with conn.cursor() as cursor:
-                await cursor.execute(
-                    """SELECT id, `key`, name, description, icon, version, category, micro_app,
-                              release_config, ontology_ids, agent_ids, is_config,
-                              COALESCE(pinned, 0) as pinned,
-                              updated_by, updated_by_id, updated_at, COALESCE(business_domain, 'db_public') as business_domain
-                       FROM t_application 
-                       WHERE id = %s""",
-                    (app_id,)
-                )
-                row = await cursor.fetchone()
-                if row is None:
-                    raise ValueError(f"应用不存在: id={app_id}")
-                return self._row_to_application(row)
-
-    async def set_application_pinned(self, app_id: int, pinned: bool) -> Application:
+    async def set_application_pinned(self, key: str, pinned: bool) -> Application:
         """设置应用是否被钉状态。"""
         pool = await self._get_pool()
         async with pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    "UPDATE t_application SET pinned = %s WHERE id = %s",
-                    (pinned, app_id),
+                    "UPDATE t_application SET pinned = %s WHERE `key` = %s",
+                    (pinned, key),
                 )
                 if cursor.rowcount == 0:
-                    raise ValueError(f"应用不存在: id={app_id}")
-        return await self.get_application_by_id(app_id)
+                    raise ValueError(f"应用不存在: {key}")
+        return await self.get_application_by_key(key)
 
     async def create_application(self, application: Application) -> Application:
         """
@@ -618,31 +588,5 @@ class ApplicationAdapter(ApplicationPort):
 
                 if cursor.rowcount == 0:
                     raise ValueError(f"应用不存在: {key}")
-
-                return True
-
-    async def delete_application_by_id(self, app_id: int) -> bool:
-        """
-        根据应用主键 ID 删除应用。
-
-        参数:
-            app_id: 应用主键 ID
-
-        返回:
-            bool: 是否删除成功
-
-        异常:
-            ValueError: 当应用不存在时抛出
-        """
-        pool = await self._get_pool()
-        async with pool.acquire() as conn:
-            async with conn.cursor() as cursor:
-                await cursor.execute(
-                    "DELETE FROM t_application WHERE id = %s",
-                    (app_id,)
-                )
-
-                if cursor.rowcount == 0:
-                    raise ValueError(f"应用不存在: id={app_id}")
 
                 return True

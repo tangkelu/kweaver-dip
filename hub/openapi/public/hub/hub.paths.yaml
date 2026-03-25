@@ -79,13 +79,14 @@ paths:
       tags:
         - Application
       parameters:
-        - name: id
+        - name: key
           in: query
-          description: 应用主键 ID
+          description: 应用包唯一标识
           required: true
           schema:
-            type: integer
-            minimum: 1
+            type: string
+            maxLength: 32
+            minLength: 1
       responses:
         '200':
           description: 配置成功
@@ -101,7 +102,7 @@ paths:
           $ref: './hub.schemas.yaml#/components/errors/InternalServerError'
 
   # ============ 设置应用被钉状态 ============
-  /applications/{id}/pinned:
+  /applications/{key}/pinned:
     put:
       operationId: setApplicationPinned
       summary: 设置应用被钉状态
@@ -110,12 +111,13 @@ paths:
         - Application
       parameters:
         - in: path
-          name: id
-          description: 应用主键 ID
+          name: key
+          description: 应用包唯一标识
           required: true
           schema:
-            type: integer
-            minimum: 1
+            type: string
+            maxLength: 32
+            minLength: 1
       requestBody:
         required: true
         content:
@@ -150,13 +152,14 @@ paths:
       tags:
         - Application
       parameters:
-        - name: id
+        - name: key
           in: query
-          description: 应用主键 ID
+          description: 应用包唯一标识
           required: true
           schema:
-            type: integer
-            minimum: 1
+            type: string
+            maxLength: 32
+            minLength: 1
       responses:
         '200':
           description: 获取基础信息成功
@@ -180,19 +183,20 @@ paths:
         查看应用的业务知识网络配置情况。
         
         流程：
-        1. 通过 id 获取应用的业务知识网络配置项（ontology_config）
+        1. 通过 key 获取应用的业务知识网络配置项（ontology_config）
         2. 遍历配置项，通过 id 调用外部接口查询业务知识网络详情
         3. 返回业务知识网络详情列表（原始数据）
       tags:
         - Application
       parameters:
-        - name: id
+        - name: key
           in: query
-          description: 应用主键 ID
+          description: 应用包唯一标识
           required: true
           schema:
-            type: integer
-            minimum: 1
+            type: string
+            maxLength: 32
+            minLength: 1
       responses:
         '200':
           description: 获取业务知识网络配置成功
@@ -218,19 +222,20 @@ paths:
         查看应用的 Data Agent 智能体配置情况。
         
         流程：
-        1. 通过 id 获取应用的智能体配置项（agent_config）
+        1. 通过 key 获取应用的智能体配置项（agent_config）
         2. 遍历配置项，通过 id 调用外部接口查询智能体详情
         3. 返回智能体详情列表（原始数据）
       tags:
         - Application
       parameters:
-        - name: id
+        - name: key
           in: query
-          description: 应用主键 ID
+          description: 应用包唯一标识
           required: true
           schema:
-            type: integer
-            minimum: 1
+            type: string
+            maxLength: 32
+            minLength: 1
       responses:
         '200':
           description: 获取智能体配置成功
@@ -248,7 +253,7 @@ paths:
           $ref: './hub.schemas.yaml#/components/errors/InternalServerError'
 
   # ============ 5、卸载应用 ============
-  /applications/{id}:
+  /applications/{key}:
     delete:
       operationId: uninstallApplication
       summary: 卸载应用
@@ -262,12 +267,13 @@ paths:
         - Application
       parameters:
         - in: path
-          name: id
-          description: 应用主键 ID
+          name: key
+          description: 应用包唯一标识
           required: true
           schema:
-            type: integer
-            minimum: 1
+            type: string
+            maxLength: 32
+            minLength: 1
       responses:
         '204':
           description: 卸载应用成功

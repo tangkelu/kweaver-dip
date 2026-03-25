@@ -95,15 +95,15 @@ class MockApplicationAdapter(ApplicationPort):
         logger.info(f"[Mock] 获取应用列表: {len(apps)} 个应用")
         return apps
 
-    async def set_application_pinned(self, app_id: int, pinned: bool) -> Application:
+    async def set_application_pinned(self, key: str, pinned: bool) -> Application:
         """设置应用是否被钉状态。"""
-        for app in self._applications.values():
-            if app.id == app_id:
-                app.pinned = pinned
-                app.updated_at = datetime.now()
-                logger.info(f"[Mock] 设置应用被钉状态: id={app_id}, pinned={pinned}")
-                return deepcopy(app)
-        raise ValueError(f"应用不存在: id={app_id}")
+        if key not in self._applications:
+            raise ValueError(f"应用不存在: {key}")
+        app = self._applications[key]
+        app.pinned = pinned
+        app.updated_at = datetime.now()
+        logger.info(f"[Mock] 设置应用被钉状态: key={key}, pinned={pinned}")
+        return deepcopy(app)
 
     async def get_application_by_key(self, key: str) -> Application:
         """

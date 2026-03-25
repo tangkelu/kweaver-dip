@@ -55,7 +55,6 @@ class ApplicationResponse(BaseModel):
 
     对应 OpenAPI 中的 Application schema。
     """
-    id: int = Field(..., description="应用主键 ID")
     key: str = Field(..., description="应用包唯一标识", max_length=32)
     name: str = Field(..., description="应用名称", max_length=128)
     description: Optional[str] = Field(None, description="应用描述", max_length=800)
@@ -83,7 +82,6 @@ class ApplicationBasicInfoResponse(BaseModel):
 
     对应 OpenAPI 中的 ApplicationBasicInfo schema。
     """
-    id: int = Field(..., description="应用主键 ID")
     key: str = Field(..., description="应用唯一标识")
     name: str = Field(..., description="应用名称")
     description: Optional[str] = Field(None, description="应用描述")

@@ -91,27 +91,12 @@ class ApplicationService:
         """
         return await self._application_port.get_application_by_key(key)
 
-    async def get_application_by_id(self, app_id: int) -> Application:
-        """
-        根据应用主键 ID 获取应用信息。
-
-        参数:
-            app_id: 应用主键 ID
-
-        返回:
-            Application: 应用实体
-
-        异常:
-            ValueError: 当应用不存在时抛出
-        """
-        return await self._application_port.get_application_by_id(app_id)
-
-    async def get_application_basic_info(self, app_id: int) -> Application:
+    async def get_application_basic_info(self, key: str) -> Application:
         """
         获取应用基础信息。
 
         参数:
-            app_id: 应用主键 ID
+            key: 应用包唯一标识
 
         返回:
             Application: 应用基础信息
@@ -119,14 +104,14 @@ class ApplicationService:
         异常:
             ValueError: 当应用不存在时抛出
         """
-        return await self._application_port.get_application_by_id(app_id)
+        return await self._application_port.get_application_by_key(key)
 
-    async def set_application_pinned(self, app_id: int, pinned: bool) -> Application:
+    async def set_application_pinned(self, key: str, pinned: bool) -> Application:
         """
         设置应用是否被钉状态。
 
         参数:
-            app_id: 应用主键 ID
+            key: 应用包唯一标识
             pinned: 是否被钉
 
         返回:
@@ -135,23 +120,23 @@ class ApplicationService:
         异常:
             ValueError: 当应用不存在时抛出
         """
-        return await self._application_port.set_application_pinned(app_id=app_id, pinned=pinned)
+        return await self._application_port.set_application_pinned(key=key, pinned=pinned)
 
-    async def get_application_ontologies_by_id(
+    async def get_application_ontologies(
         self,
-        app_id: int,
+        key: str,
         auth_token: Optional[str] = None,
     ) -> List[dict]:
         """
         获取应用的业务知识网络详情列表。
 
         流程：
-        1. 通过 id 获取应用的业务知识网络配置项（ontology_config）
+        1. 通过 key 获取应用的业务知识网络配置项（ontology_config）
         2. 遍历配置项，通过 id 调用外部接口查询业务知识网络详情
         3. 返回业务知识网络详情列表（原始数据）
 
         参数:
-            app_id: 应用主键 ID
+            key: 应用包唯一标识
             auth_token: 认证 Token
 
         返回:
@@ -160,8 +145,7 @@ class ApplicationService:
         异常:
             ValueError: 当应用不存在时抛出
         """
-        # 1. 通过 id 获取应用
-        application = await self._application_port.get_application_by_id(app_id)
+        application = await self._application_port.get_application_by_key(key)
         
         # 2. 遍历配置项，通过 id 调用外部接口查询详情
         ontologies = []
@@ -185,21 +169,21 @@ class ApplicationService:
         
         return ontologies
 
-    async def get_application_agents_by_id(
+    async def get_application_agents(
         self,
-        app_id: int,
+        key: str,
         auth_token: Optional[str] = None,
     ) -> List[dict]:
         """
         获取应用的智能体详情列表。
 
         流程：
-        1. 通过 id 获取应用的智能体配置项（agent_config）
+        1. 通过 key 获取应用的智能体配置项（agent_config）
         2. 遍历配置项，通过 id 调用外部接口查询智能体详情
         3. 返回智能体详情列表（原始数据）
 
         参数:
-            app_id: 应用主键 ID
+            key: 应用包唯一标识
             auth_token: 认证 Token
 
         返回:
@@ -208,8 +192,7 @@ class ApplicationService:
         异常:
             ValueError: 当应用不存在时抛出
         """
-        # 1. 通过 id 获取应用
-        application = await self._application_port.get_application_by_id(app_id)
+        application = await self._application_port.get_application_by_key(key)
         
         # 2. 遍历配置项，通过 id 调用外部接口查询详情
         agents = []
@@ -235,7 +218,7 @@ class ApplicationService:
 
     async def configure_application(
         self,
-        app_id: int,
+        key: str,
         updated_by: str = "",
         updated_by_id: str = "",
     ) -> Application:
@@ -246,7 +229,7 @@ class ApplicationService:
         和智能体配置 (agent_config)，将每一项的 is_config 设置为 True。
 
         参数:
-            app_id: 应用主键 ID
+            key: 应用包唯一标识
             updated_by: 更新者用户显示名称
             updated_by_id: 更新者用户ID
 
@@ -256,8 +239,7 @@ class ApplicationService:
         异常:
             ValueError: 当应用不存在时抛出
         """
-        # 获取现有应用
-        application = await self._application_port.get_application_by_id(app_id)
+        application = await self._application_port.get_application_by_key(key)
 
         # 基于现有配置，将 is_config 统一置为 True
         new_ontology_config = [
@@ -697,7 +679,7 @@ class ApplicationService:
 
     async def uninstall_application(
         self,
-        app_id: int,
+        key: str,
         auth_token: Optional[str] = None,
     ) -> bool:
         """
@@ -709,7 +691,7 @@ class ApplicationService:
         3. 删除数据库中的应用记录
 
         参数:
-            app_id: 应用主键 ID
+            key: 应用包唯一标识
 
         返回:
             bool: 是否卸载成功
@@ -717,9 +699,8 @@ class ApplicationService:
         异常:
             ValueError: 当应用不存在时抛出
         """
-        # 获取应用信息
-        application = await self._application_port.get_application_by_id(app_id)
-        
+        application = await self._application_port.get_application_by_key(key)
+
         # 删除 Release
         if self._deploy_installer_port and application.release_config:
             for release_item in application.release_config:
@@ -733,9 +714,8 @@ class ApplicationService:
                     logger.info(f"[uninstall_application] Release 删除成功: {release_item.name}")
                 except Exception as e:
                     logger.warning(f"[uninstall_application] 删除 Release 失败 ({release_item.name}): {e}")
-        
-        # 删除数据库记录
-        return await self._application_port.delete_application_by_id(app_id)
+
+        return await self._application_port.delete_application(key)
 
     async def create_application(self, application: Application) -> Application:
         """
