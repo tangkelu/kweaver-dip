@@ -1,6 +1,5 @@
 import { message, Spin, Tabs } from 'antd'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
-import intl from 'react-intl-universal'
 import { createSearchParams, useLocation, useNavigate, useParams } from 'react-router-dom'
 import AppIcon from '@/components/AppIcon'
 import DigitalHumanSetting from '@/components/DigitalHumanSetting'
@@ -106,7 +105,7 @@ const Details = () => {
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
-        <Spin size="large" />
+        <Spin />
       </div>
     )
   }

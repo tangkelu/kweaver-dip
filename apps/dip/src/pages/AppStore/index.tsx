@@ -127,7 +127,7 @@ const AppStore = () => {
   /** 渲染状态内容（loading/error/empty） */
   const renderStateContent = () => {
     if (loading) {
-      return <Spin size="large" />
+      return <Spin />
     }
 
     if (error) {

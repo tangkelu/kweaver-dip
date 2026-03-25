@@ -9,7 +9,7 @@ import {
   getRouteByPath,
   shouldShowCurrentRouteInBreadcrumb,
 } from '@/routes/utils'
-import { useLanguageStore, useOEMConfigStore } from '@/stores'
+import { useBreadcrumbDetailStore, useLanguageStore, useOEMConfigStore } from '@/stores'
 import { useUserInfoStore } from '@/stores/userInfoStore'
 import type { BreadcrumbItem } from '@/utils/micro-app/globalState'
 import { Breadcrumb } from '../components/Breadcrumb'
@@ -60,6 +60,7 @@ const BaseHeader = ({ headerType }: { headerType: HeaderType }) => {
   const { getOEMResourceConfig } = useOEMConfigStore()
   const { language } = useLanguageStore()
   const { isAdmin } = useUserInfoStore()
+  const detailBreadcrumb = useBreadcrumbDetailStore((s) => s.detail)
   const oemResourceConfig = getOEMResourceConfig(language)
 
   // 不同平台（store）各自的首路由，用于面包屑首页返回
@@ -110,7 +111,13 @@ const BaseHeader = ({ headerType }: { headerType: HeaderType }) => {
       }
 
       if (shouldShowCurrentRouteInBreadcrumb(currentRoute) && currentRoute.label) {
-        const displayName = currentRoute.label
+        const dynamicTitle =
+          detailBreadcrumb &&
+          currentRoute.key &&
+          detailBreadcrumb.routeKey === currentRoute.key
+            ? detailBreadcrumb.title
+            : undefined
+        const displayName = dynamicTitle ?? currentRoute.label
         let routePath: string | undefined
         if (currentRoute.path?.includes(':')) {
           routePath = location.pathname
@@ -127,7 +134,7 @@ const BaseHeader = ({ headerType }: { headerType: HeaderType }) => {
     }
 
     return result
-  }, [headerType, currentRoute, location.pathname])
+  }, [headerType, currentRoute, detailBreadcrumb, location.pathname])
 
   const getLogoUrl = () => {
     const base64Image = oemResourceConfig?.['logo.png']

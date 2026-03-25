@@ -11,6 +11,8 @@ interface UserHistoryState {
   sessions: SessionSummary[]
   /** 首页侧边栏是否加载中 */
   loading: boolean
+  /** 最近一次拉取失败原因 */
+  error?: unknown
   /** 全量总数 */
   total: number
   /** 上次刷新时间 */
@@ -36,6 +38,7 @@ let fetchSessionsPromise: Promise<void> | null = null
 export const useUserHistoryStore = create<UserHistoryState>()((set, get) => ({
   sessions: [],
   loading: false,
+  error: null,
   total: 0,
   lastFetchedAt: 0,
   selectedSessionKey: undefined,
@@ -46,8 +49,12 @@ export const useUserHistoryStore = create<UserHistoryState>()((set, get) => ({
     }
 
     fetchSessionsPromise = (async () => {
+      const silent = !!opts?.silent
       if (!opts?.silent) {
-        set({ loading: true })
+        set({ loading: true, error: null })
+      } else {
+        // 静默刷新：不影响页面错误展示，但先清理上一次 error
+        set({ error: null })
       }
       try {
         const res = HISTORY_LIST_USE_MOCK ? await mockGetSessionsList() : await getSessionsList()
@@ -55,11 +62,17 @@ export const useUserHistoryStore = create<UserHistoryState>()((set, get) => ({
           sessions: res.sessions,
           total: res.count,
           loading: false,
+          error: null,
           lastFetchedAt: Date.now(),
         })
       } catch (error) {
         console.error('Failed to fetch history sessions:', error)
-        set({ loading: false })
+        if (silent) {
+          // 静默失败：保持已有 sessions，只结束 loading
+          set({ loading: false })
+        } else {
+          set({ loading: false, error, sessions: [], total: 0 })
+        }
       } finally {
         fetchSessionsPromise = null
       }
@@ -80,7 +93,7 @@ export const useUserHistoryStore = create<UserHistoryState>()((set, get) => ({
   deleteHistorySession: async (key) => {
     const targetSession = get().sessions.find((item) => item.key === key)
     if (!targetSession?.sessionId) {
-      message.error('未找到可删除的会话')
+      message.warning('当前会话不存在')
       return false
     }
     try {

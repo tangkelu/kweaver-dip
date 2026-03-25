@@ -5,6 +5,7 @@ import {
   type DigitalHumanUiMode,
   useDigitalHumanStore,
 } from '@/components/DigitalHumanSetting/digitalHumanStore'
+import { useBreadcrumbDetailStore } from '@/stores'
 import { useGlobalLayoutStore } from '@/stores/globalLayoutStore'
 
 export type DigitalHumanPageVariant = 'detail' | 'setting'
@@ -21,8 +22,34 @@ export function useDigitalHumanPageLoad(
   enabled: boolean = true,
 ): boolean {
   const { bindDigitalHuman, reset, setUiMode } = useDigitalHumanStore()
+  const basicName = useDigitalHumanStore((s) => s.basic.name)
+  const storeDigitalHumanId = useDigitalHumanStore((s) => s.digitalHumanId)
+  const setDetailBreadcrumb = useBreadcrumbDetailStore((s) => s.setDetailBreadcrumb)
   const { setCollapsed } = useGlobalLayoutStore()
   const [loading, setLoading] = useState(enabled)
+
+  useEffect(() => {
+    if (!enabled) {
+      setDetailBreadcrumb(null)
+      return
+    }
+    if (!digitalHumanId) {
+      setDetailBreadcrumb(null)
+      return
+    }
+    if (storeDigitalHumanId !== digitalHumanId) {
+      setDetailBreadcrumb(null)
+      return
+    }
+    const routeKey = variant === 'detail' ? 'digital-human-detail' : 'digital-human-setting-item'
+    const title = basicName?.trim()
+    if (title) {
+      setDetailBreadcrumb({ routeKey, title })
+    } else {
+      setDetailBreadcrumb(null)
+    }
+    return () => setDetailBreadcrumb(null)
+  }, [basicName, digitalHumanId, enabled, setDetailBreadcrumb, storeDigitalHumanId, variant])
 
   useEffect(() => {
     // setCollapsed(true)
@@ -64,26 +91,6 @@ export function useDigitalHumanPageLoad(
           getDigitalHumanDetail(digitalHumanId),
           getDigitalHumanSkills(digitalHumanId),
         ])
-        // const result: any = {
-        //   id: digitalHumanId,
-        //   name: '测试数字员工',
-        //   creature: '测试岗位',
-        //   soul: '测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂测试灵魂\n测试灵魂测试灵魂测试灵魂',
-        //   skills: [
-        //     { name: '技能1', description: '技能1描述' },
-        //     { name: '技能2', description: '技能2描述' },
-        //     { name: '技能3', description: '技能3描述' },
-        //   ],
-        //   bkn: [
-        //     { name: '知识源1', url: '知识源1' },
-        //     { name: '知识源2', url: '知识源2' },
-        //     { name: '知识源3', url: '知识源3' },
-        //   ],
-        //   channel: { type: 'feishu', appId: '1234567890', appSecret: '1234567890' },
-        //   updated_at: new Date().toISOString(),
-        //   updated_by: '张三',
-        // }
-        // bindDigitalHuman(result)
         if (cancelled) return
         bindDigitalHuman({
           ...detail,

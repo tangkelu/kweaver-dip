@@ -15,7 +15,7 @@ interface ContainerProps {
 }
 
 const SIDER_WIDTH = 240
-const SIDER_COLLAPSED_WIDTH = 60
+const SIDER_COLLAPSED_WIDTH = 52
 
 const Container = ({ children }: ContainerProps) => {
   const { collapsed, setCollapsed } = useGlobalLayoutStore()
@@ -69,7 +69,8 @@ const Container = ({ children }: ContainerProps) => {
 
       <Layout
         style={{
-          backgroundImage: `url(${bg})`,
+          backgroundImage: siderType === 'store' ? `url(${bg})` : undefined,
+          backgroundColor: 'white',
         }}
         className="bg-no-repeat bg-cover"
       >

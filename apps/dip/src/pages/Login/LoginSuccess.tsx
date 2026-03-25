@@ -26,7 +26,7 @@ const LoginSuccess = () => {
               return
             }
 
-            const { userInfo: currentUserInfo } = useUserInfoStore.getState()
+            const { userInfo: currentUserInfo, isAdmin } = useUserInfoStore.getState()
             if (currentUserInfo) {
               // 用户信息加载成功，根据权限跳转
               // 注意：如果有 asredirect 参数，后端会直接重定向到该地址，不会到 login-success 页面
@@ -47,7 +47,6 @@ const LoginSuccess = () => {
               //   hasNavigatedRef.current = true
               //   navigate(targetPath, { replace: true })
               // })
-              const isAdmin = currentUserInfo.vision_name === 'admin'
               navigate(isAdmin ? '/digital-human/management' : '/home', { replace: true })
             } else {
               // 请求完成但没有用户信息，说明获取失败
@@ -70,7 +69,7 @@ const LoginSuccess = () => {
 
   return (
     <GradientContainer className="w-full h-full flex items-center justify-center">
-      <Spin size="large" />
+      <Spin />
     </GradientContainer>
   )
 }

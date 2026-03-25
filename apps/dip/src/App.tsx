@@ -11,7 +11,6 @@ import { useLanguageStore } from './stores/languageStore'
 import './App.css'
 import './styles/resetAntd.less'
 import './styles/styleIsolation.less'
-import GradientContainer from './components/GradientContainer'
 import { themeColors } from './styles/themeColors'
 
 function getUILocale(lang: string): typeof enUS | typeof zhTW | typeof zhCN {
@@ -53,12 +52,12 @@ const App = () => {
       }}
       getPopupContainer={() => document.getElementById('dip-kweaver-root') || document.body}
     >
-      <AntdApp className='w-full h-full'>
+      <AntdApp className="w-full h-full">
         <Suspense
           fallback={
-            <GradientContainer className="w-full h-full flex items-center justify-center">
+            <div className="w-full h-full flex items-center justify-center">
               <Spin size="large" />
-            </GradientContainer>
+            </div>
           }
         >
           <RouterProvider router={router} />

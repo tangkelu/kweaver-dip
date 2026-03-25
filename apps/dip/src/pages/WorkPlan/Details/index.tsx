@@ -5,12 +5,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { getDigitalHumanDetail } from '@/apis/dip-studio/digital-human'
 import { getCronJob, type CronJob } from '@/apis/dip-studio/plan'
-import { getSessionDetail } from '@/apis/dip-studio/sessions'
 import IconFont from '@/components/IconFont'
 import ActionModal from '@/components/WorkPlanDetail/ActionModal/ActionModal'
 import Outcome from '@/components/WorkPlanDetail/Outcome'
 import Tasks from '@/components/WorkPlanDetail/Tasks'
-import { useGlobalLayoutStore } from '@/stores'
+import { useBreadcrumbDetailStore, useGlobalLayoutStore } from '@/stores'
 import { useUserWorkPlanStore } from '@/stores/userWorkPlanStore'
 import Conversation from './Conversation'
 import styles from './index.module.less'
@@ -27,14 +26,16 @@ const WorkPlanDetail = () => {
   const sessionKey = searchParams.get('sessionKey')?.trim() ?? ''
   const digitalHumanId = sessionKey.split('agent:')[1]?.split(':')[0]
   const { setCollapsed } = useGlobalLayoutStore()
+  const setDetailBreadcrumb = useBreadcrumbDetailStore((s) => s.setDetailBreadcrumb)
   const { fetchPlans, pausePlan, resumePlan, deletePlan } = useUserWorkPlanStore()
   const [modal, modalContextHolder] = Modal.useModal()
   const [messageApi, messageContextHolder] = message.useMessage()
 
   const [activeTab, setActiveTab] = useState<WorkPlanDetailTab>('results')
   const [editModalOpen, setEditModalOpen] = useState(false)
-  const [digitalHumanName, setDigitalHumanName] = useState('-')
+  const [digitalHumanName, setDigitalHumanName] = useState('--')
   const [currentPlan, setCurrentPlan] = useState<CronJob | undefined>(undefined)
+  const plans = useUserWorkPlanStore((s) => s.plans)
 
   useEffect(() => {
     // setCollapsed(true)
@@ -62,21 +63,54 @@ const WorkPlanDetail = () => {
   }, [loadCurrentPlan])
 
   useEffect(() => {
+    if (!workPlanId) {
+      setCurrentPlan(undefined)
+      return
+    }
+    // 防止切换到另一个 workPlanId 时，短暂展示上一项的标题
+    if (currentPlan && currentPlan.id !== workPlanId) {
+      setCurrentPlan(undefined)
+    }
+  }, [workPlanId, currentPlan])
+
+  useEffect(() => {
+    // 卸载时清理，避免跨路由残留影响动态标题
+    return () => setDetailBreadcrumb(null)
+  }, [setDetailBreadcrumb])
+
+  useEffect(() => {
+    if (!workPlanId) {
+      setDetailBreadcrumb(null)
+      return
+    }
+
+    // 1) 先从列表缓存中读取标题（避免加载中动态面包屑缺省）
+    const fromList = plans.find((p) => p.id === workPlanId)
+    const listTitle = fromList?.name?.trim()
+
+    // 2) 再用详情请求结果覆盖（确保名称最新）
+    const detailTitle = currentPlan?.id === workPlanId ? currentPlan.name?.trim() : undefined
+    const title = detailTitle ?? listTitle
+
+    setDetailBreadcrumb(title ? { routeKey: 'work-plan-item', title } : null)
+  }, [workPlanId, plans, currentPlan, setDetailBreadcrumb])
+
+  useEffect(() => {
     let disposed = false
 
     const loadDigitalHumanName = async () => {
-      setDigitalHumanName('-')
+      setDigitalHumanName('--')
 
       if (!digitalHumanId) return
 
       try {
         const digitalHumanDetail = await getDigitalHumanDetail(digitalHumanId)
         if (!disposed) {
-          setDigitalHumanName(digitalHumanDetail.name?.trim() || '-')
+          setDigitalHumanName(digitalHumanDetail.name?.trim() || '--')
         }
       } catch {
         if (!disposed) {
-          setDigitalHumanName('-')
+          setDigitalHumanName('--')
         }
       }
     }
@@ -210,7 +244,7 @@ const WorkPlanDetail = () => {
             </div>
             <div className="flex min-w-0 flex-col gap-0.5">
               <span className="truncate font-medium text-[--dip-text-color]">
-                {currentPlan?.name || '-'}
+                {currentPlan?.name || '--'}
               </span>
               <span className="text-xs text-[--dip-text-color-65]">
                 数字员工：{digitalHumanName}

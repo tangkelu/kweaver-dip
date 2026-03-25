@@ -19,6 +19,8 @@ export interface HistoryListProps {
   /** 每页条数 */
   pageSize?: number
   className?: string
+  /** 搜索值（前端过滤 derivedTitle） */
+  searchValue?: string
   /** 点击计划行 */
   onHistoryClick?: (session: SessionSummary) => void
 }
@@ -26,4 +28,6 @@ export interface HistoryListProps {
 export interface PlanListItemProps {
   session: SessionSummary
   onClick?: (session: SessionSummary) => void
+  onDelete?: (session: SessionSummary) => void
+  digitalHumanName?: string
 }

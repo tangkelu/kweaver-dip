@@ -6,7 +6,7 @@ const WorkPlan = () => {
   const navigate = useNavigate()
   const location = useLocation()
   return (
-    <div className="h-full flex flex-col bg-[--dip-white] overflow-hidden">
+    <div className="h-full flex flex-col bg-[--dip-white] overflow-hidden relative">
       <div className="flex justify-between p-6 flex-shrink-0 z-20">
         <div className="flex flex-col gap-y-2">
           <span className="font-medium text-base text-[--dip-text-color]">工作计划</span>

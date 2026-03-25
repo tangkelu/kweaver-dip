@@ -386,9 +386,7 @@ const MicroAppComponent = ({ appBasicInfo, homeRoute }: MicroAppComponentProps) 
         className="h-full w-full"
         id={`micro-app-container-${appBasicInfo.id}`}
       />
-      {loading && (
-        <Spin size="large" className="absolute inset-0 flex items-center justify-center" />
-      )}
+      {loading && <Spin className="absolute inset-0 flex items-center justify-center" />}
     </>
   )
 }

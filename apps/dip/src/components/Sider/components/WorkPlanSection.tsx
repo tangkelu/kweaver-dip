@@ -5,10 +5,12 @@ import clsx from 'classnames'
 import type { CronJob } from '@/apis/dip-studio/plan'
 import IconFont from '@/components/IconFont'
 import { getPlanJobDisplayStatus } from '@/components/WorkPlanList/utils'
+import { formatTotalDisplay } from '../utils'
 
 interface WorkPlanSectionProps {
   plans: CronJob[]
   hasMore: boolean
+  total: number
   selectedPlanId?: string
   onMore: () => void
   onOpenPlanDetail: (planId: string, agentId: string, sessionId: string) => void
@@ -20,6 +22,7 @@ interface WorkPlanSectionProps {
 export const WorkPlanSection = ({
   plans,
   hasMore,
+  total,
   selectedPlanId,
   onMore,
   onOpenPlanDetail,
@@ -74,7 +77,9 @@ export const WorkPlanSection = ({
       <div className="px-2 pb-2">
         {/* <div className="h-px bg-[--dip-line-color-10] mb-1.5" /> */}
         <div className="flex items-center justify-between px-2 py-1">
-          <span className="text-xs leading-[20px] text-[--dip-text-color-45]">工作计划</span>
+          <span className="text-xs leading-[20px] text-[--dip-text-color-45]">
+            工作计划（{formatTotalDisplay(total)}）
+          </span>
           {hasMore ? (
             <button
               type="button"

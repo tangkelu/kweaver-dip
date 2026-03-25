@@ -1,5 +1,5 @@
 import type { MenuProps } from 'antd'
-import { Button, Menu, message, Modal, Tooltip } from 'antd'
+import { Menu, Modal, message, Tooltip } from 'antd'
 import clsx from 'classnames'
 import { useCallback, useEffect, useMemo } from 'react'
 import { createSearchParams, useLocation, useNavigate } from 'react-router-dom'
@@ -95,6 +95,8 @@ const HomeSider = ({ collapsed, onCollapse, siderType = 'home' }: HomeSiderProps
   }, [location.pathname])
 
   const selectedKey = getSelectedKey()
+  /** 与菜单选中一致：仅 home、studio/conversation 为「会话」主按钮（深色） */
+  const isSessionRouteActive = selectedKey === 'home' || selectedKey === 'studio-conversation'
   const topPlans = useMemo(() => plans.slice(0, 5), [plans])
   const hasPlanMore = total > 5
   const topHistorySessions = useMemo(() => historySessions.slice(0, 5), [historySessions])
@@ -244,21 +246,23 @@ const HomeSider = ({ collapsed, onCollapse, siderType = 'home' }: HomeSiderProps
       ) : null}
 
       {/* 新建会话按钮 */}
-      <div
-        className={clsx(
-          'flex items-center gap-2 pb-3',
-          collapsed ? 'justify-center px-3' : 'justify-between px-3',
-        )}
-      >
+      <div className={clsx('flex items-center pb-3 px-1.5')}>
         <Tooltip title={collapsed ? '会话' : ''} placement="right">
-          <Button
-            type="primary"
-            icon={<IconFont type="icon-dip-add" />}
+          <button
+            type="button"
             onClick={handleCreateSession}
-            styles={{ root: { width: '100%' } }}
+            className={clsx(
+              `w-full h-8 flex justify-center items-center gap-x-2 rounded`,
+              isSessionRouteActive
+                ? 'bg-[--dip-primary-color] text-white'
+                : collapsed
+                  ? 'text-[--dip-text-color] hover:bg-[--dip-hover-bg-color-6]'
+                  : 'bg-[#EBF4FF] text-[--dip-primary-color]',
+            )}
           >
+            <IconFont type="icon-dip-add" />
             {collapsed ? '' : '会话'}
-          </Button>
+          </button>
         </Tooltip>
       </div>
 
@@ -277,6 +281,7 @@ const HomeSider = ({ collapsed, onCollapse, siderType = 'home' }: HomeSiderProps
             <WorkPlanSection
               plans={topPlans}
               hasMore={hasPlanMore}
+              total={plans.length}
               selectedPlanId={selectedPlanId}
               onMore={() => navigate('/work-plan')}
               onOpenPlanDetail={(planId, agentId, sessionId) => {
@@ -293,6 +298,7 @@ const HomeSider = ({ collapsed, onCollapse, siderType = 'home' }: HomeSiderProps
             <HistorySection
               sessions={topHistorySessions}
               hasMore={hasHistoryMore}
+              total={historySessions.length}
               selectedSessionKey={selectedSessionKey}
               onMore={() => navigate('/history')}
               onOpenHistoryDetail={(sessionKey) => {

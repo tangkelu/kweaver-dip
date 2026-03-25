@@ -98,7 +98,7 @@ function PlanListItemInner({
       <button
         type="button"
         onClick={() => onClick?.(job)}
-        className="max-w-[880px] mx-auto flex w-full items-center gap-4 rounded-lg border border-[var(--dip-line-color-10)] bg-[--dip-white] px-4 py-3 text-left transition-[border-color,background-color] hover:border-[#BEDBFF] hover:bg-[#EFF6FF]"
+        className="group max-w-[880px] mx-auto flex w-full items-center gap-4 rounded-lg border border-[var(--dip-line-color-10)] bg-[--dip-white] px-4 py-3 text-left transition-[border-color,background-color] hover:border-[#BEDBFF] hover:bg-[#EFF6FF]"
       >
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#60AEFF]">
           <SnippetsOutlined className="text-lg text-white" />
@@ -141,7 +141,7 @@ function PlanListItemInner({
         <Dropdown menu={{ items: operationItems }} trigger={['click']} placement="bottomRight">
           <button
             type="button"
-            className="ml-2 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border-0 bg-transparent text-[--dip-text-color-45] hover:bg-[rgba(0,0,0,0.06)]"
+            className="hidden ml-2 group-hover:inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-0 bg-transparent text-[--dip-text-color-45] hover:bg-[rgba(0,0,0,0.06)]"
             onClick={(event) => {
               event.stopPropagation()
             }}

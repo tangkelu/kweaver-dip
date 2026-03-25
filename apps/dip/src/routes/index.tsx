@@ -23,7 +23,7 @@ const LoginFailed = lazy(() => import('../pages/Login/LoginFailed'))
  */
 const DefaultIndexRedirect = () => {
   const navigate = useNavigate()
-  const userInfo = useUserInfoStore((s) => s.userInfo)
+  const isAdmin = useUserInfoStore((s) => s.isAdmin)
   const hasNavigatedRef = useRef(false)
 
   useEffect(() => {
@@ -40,9 +40,8 @@ const DefaultIndexRedirect = () => {
     //   navigate(targetPath, { replace: true })
     // })
 
-    const isAdmin = userInfo?.vision_name === 'admin'
     navigate(isAdmin ? '/digital-human/management' : '/home', { replace: true })
-  }, [navigate, userInfo])
+  }, [navigate, isAdmin])
 
   // const { userInfo } = useUserInfoStore()
 

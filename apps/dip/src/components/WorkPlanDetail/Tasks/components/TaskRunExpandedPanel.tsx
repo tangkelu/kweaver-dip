@@ -40,7 +40,7 @@ function TaskRunExpandedPanelInner({ id, digitalHumanId, sessionId }: TaskRunExp
           className={classNames(tabBtnBase, activeTab === 'session' && tabBtnActive)}
           onClick={() => setActiveTab('session')}
         >
-          会话记录
+          执行过程
         </button>
         <button
           type="button"

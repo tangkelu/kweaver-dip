@@ -1,8 +1,8 @@
 import DipChatKit from '@/components/DipChatKit'
 
 export type TaskConversationProps = {
-  digitalHumanId: string
-  sessionId: string
+  digitalHumanId?: string
+  sessionId?: string
 }
 
 const TaskConversation = ({ digitalHumanId, sessionId }: TaskConversationProps) => {

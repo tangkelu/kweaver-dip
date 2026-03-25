@@ -15,7 +15,7 @@ import { getDigitalHumanManagementMenuItems } from './utils'
 
 const Management = () => {
   const navigate = useNavigate()
-  const { userInfo, isAdmin } = useUserInfoStore()
+  const isAdmin = useUserInfoStore((s) => s.isAdmin)
   const [, messageContextHolder] = message.useMessage()
   const [hasLoadedData, setHasLoadedData] = useState(false)
   const hasEverHadDataRef = useRef(false)
@@ -33,66 +33,6 @@ const Management = () => {
   } = useListService<DigitalHuman>({
     fetchFn: getDigitalHumanList,
   })
-
-  // const digitalHumans: DigitalHuman[] = useMemo(() => {
-  //   if (loading) {
-  //     return []
-  //   }
-  //   return [
-  //     {
-  //       id: '1',
-  //       name: '运营小助手',
-  //       description: '负责日常运营数据统计、报表生成和用户消息回复',
-  //       icon: '',
-  //       creator: '张三',
-  //       created_at: new Date().toISOString(),
-  //       updated_by: '张三',
-  //       updated_at: new Date().toISOString(),
-  //       status: 1,
-  //       users: [
-  //         userInfo,
-  //         userInfo,
-  //         userInfo,
-  //         userInfo,
-  //         userInfo,
-  //         userInfo,
-  //         userInfo,
-  //         userInfo,
-  //         userInfo,
-  //         userInfo,
-  //       ],
-  //       plan_count: 100,
-  //       task_success_rate: [
-  //         { day: '2026-03-13', value: 80 },
-  //         { day: '2026-03-12', value: 90 },
-  //         { day: '2026-03-11', value: 60 },
-  //         { day: '2026-03-10', value: 50 },
-  //         { day: '2026-03-09', value: 70 },
-  //         { day: '2026-03-08', value: 30 },
-  //         { day: '2026-03-07', value: 50 },
-  //       ],
-  //     },
-  //     {
-  //       id: '2',
-  //       name: '销售小助手',
-  //       description: '负责日常销售数据统计、报表生成和用户消息回复',
-  //       icon: '',
-  //       creator: '张三',
-  //       created_at: new Date().toISOString(),
-  //       editor: '张三',
-  //       edited_at: new Date().toISOString(),
-  //       status: 1,
-  //       users: [userInfo],
-  //       plan_count: 100,
-  //       task_success_rate: [
-  //         { day: '2026-03-13', value: 80 },
-  //         { day: '2026-03-12', value: 90 },
-  //         { day: '2026-03-11', value: 60 },
-  //         { day: '2026-03-10', value: 50 },
-  //       ],
-  //     },
-  //   ]
-  // }, [loading, userInfo])
 
   // 对齐项目列表页：根据是否曾经有过数据、是否是搜索态，控制头部和空态展示逻辑
   useEffect(() => {
@@ -140,7 +80,7 @@ const Management = () => {
 
   const renderStateContent = () => {
     if (loading && !digitalHumans.length) {
-      return <Spin size="large" />
+      return <Spin />
     }
 
     if (error) {

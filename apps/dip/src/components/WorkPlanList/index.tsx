@@ -45,16 +45,21 @@ function PlanListInner({
     setEditModalOpen(true)
   }, [])
 
-  const handleEditSuccess = useCallback(async (updatedPlan: CronJob) => {
-    setEditModalOpen(false)
-    setEditingPlan(undefined)
-    if (!isGlobalMode) {
-      setDigitalHumanJobs((prev) => prev.map((item) => (item.id === updatedPlan.id ? updatedPlan : item)))
-    }
-    if (isGlobalMode) {
-      await fetchGlobalPlans({ silent: true })
-    }
-  }, [fetchGlobalPlans, isGlobalMode])
+  const handleEditSuccess = useCallback(
+    async (updatedPlan: CronJob) => {
+      setEditModalOpen(false)
+      setEditingPlan(undefined)
+      if (!isGlobalMode) {
+        setDigitalHumanJobs((prev) =>
+          prev.map((item) => (item.id === updatedPlan.id ? updatedPlan : item)),
+        )
+      }
+      if (isGlobalMode) {
+        await fetchGlobalPlans({ silent: true })
+      }
+    },
+    [fetchGlobalPlans, isGlobalMode],
+  )
 
   const fetchPage = useCallback(
     async (isLoadMore: boolean) => {
@@ -197,70 +202,71 @@ function PlanListInner({
     [handleDelete, handleEditPlan, handlePause, handleResume, onPlanClick],
   )
 
-  if (source.mode === 'digitalHuman' && !source.digitalHumanId.trim()) {
-    return (
-      <div className={`flex flex-1 min-h-0 items-center justify-center px-6 ${className ?? ''}`}>
-        <Empty title="暂无数据" />
-      </div>
-    )
-  }
-
+  const isNoDigitalHumanId = source.mode === 'digitalHuman' && !source.digitalHumanId.trim()
   const initialLoading = isGlobalMode ? globalLoading : digitalHumanLoading
-
-  if (initialLoading) {
-    return (
-      <div className={`flex flex-1 min-h-0 items-center justify-center ${className ?? ''}`}>
-        <Spin />
-      </div>
-    )
-  }
-
   const listData = isGlobalMode ? globalPlans : digitalHumanJobs
 
-  if (listData.length === 0) {
-    return (
-      <div className={`flex flex-1 min-h-0 items-center justify-center px-6 ${className ?? ''}`}>
-        <Empty title="暂无数据" />
-      </div>
-    )
-  }
+  const stateContent = (() => {
+    if (isNoDigitalHumanId) {
+      return <Empty title="暂无数据" />
+    }
+
+    if (initialLoading) {
+      return <Spin />
+    }
+
+    if (listData.length === 0) {
+      return <Empty title="暂无数据" />
+    }
+
+    return null
+  })()
 
   return (
     <div className={`flex flex-1 min-h-0 flex-col overflow-hidden ${className ?? ''}`}>
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1">
-          <List
-            tagName={ScrollBarContainer as any}
-            className="h-full w-full"
-            rowComponent={getRow}
-            rowCount={listData.length}
-            rowHeight={PLAN_LIST_ROW_HEIGHT}
-            rowProps={{
-              data: listData,
-            }}
-            style={{ height: '100%', width: '100%' }}
-            onScroll={(e) => {
-              handleScroll({ target: e.currentTarget })
-            }}
-          />
-        </div>
-        {!isGlobalMode && loadingMore ? (
-          <div className="flex shrink-0 justify-center px-6 py-2">
-            <Spin size="small" />
+        {stateContent ? (
+          <div className="absolute inset-0 flex items-center justify-center px-6 min-h-[300px]">
+            {stateContent}
           </div>
-        ) : null}
+        ) : (
+          <>
+            <div className="min-h-0 flex-1">
+              <List
+                tagName={ScrollBarContainer as any}
+                className="h-full w-full"
+                rowComponent={getRow}
+                rowCount={listData.length}
+                rowHeight={PLAN_LIST_ROW_HEIGHT}
+                rowProps={{
+                  data: listData,
+                }}
+                style={{ height: '100%', width: '100%' }}
+                // onScroll={(e) => {
+                //   handleScroll({ target: e.currentTarget })
+                // }}
+              />
+            </div>
+            {!isGlobalMode && loadingMore ? (
+              <div className="flex shrink-0 justify-center px-6 py-2">
+                <Spin size="small" />
+              </div>
+            ) : null}
+          </>
+        )}
+
+        <ActionModal
+          open={editModalOpen}
+          plan={editingPlan}
+          onCancel={() => {
+            setEditModalOpen(false)
+            setEditingPlan(undefined)
+          }}
+          onSuccess={(updatedPlan) => {
+            void handleEditSuccess(updatedPlan)
+          }}
+        />
       </div>
-      <ActionModal
-        open={editModalOpen}
-        plan={editingPlan}
-        onCancel={() => {
-          setEditModalOpen(false)
-          setEditingPlan(undefined)
-        }}
-        onSuccess={(updatedPlan) => {
-          void handleEditSuccess(updatedPlan)
-        }}
-      />
     </div>
   )
 }

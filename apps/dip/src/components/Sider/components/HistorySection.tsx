@@ -1,10 +1,12 @@
 import clsx from 'classnames'
 import type { SessionSummary } from '@/apis/dip-studio/sessions'
 import IconFont from '@/components/IconFont'
+import { formatTotalDisplay } from '../utils'
 
 interface HistorySectionProps {
   sessions: SessionSummary[]
   hasMore: boolean
+  total: number
   selectedSessionKey?: string
   onMore: () => void
   onOpenHistoryDetail: (sessionKey: string) => void
@@ -18,6 +20,7 @@ function getSessionTitle(session: any): string {
 export const HistorySection = ({
   sessions,
   hasMore,
+  total,
   selectedSessionKey,
   onMore,
   onOpenHistoryDetail,
@@ -26,7 +29,9 @@ export const HistorySection = ({
   return (
     <div className="px-2 pb-2">
       <div className="flex items-center justify-between px-2 py-1">
-        <span className="text-xs leading-[20px] text-[--dip-text-color-45]">历史记录</span>
+        <span className="text-xs leading-[20px] text-[--dip-text-color-45]">
+          历史记录（{formatTotalDisplay(total)}）
+        </span>
         {hasMore ? (
           <button
             type="button"
@@ -50,7 +55,7 @@ export const HistorySection = ({
                 type="button"
                 onClick={() => onOpenHistoryDetail(session.key)}
                 className={clsx(
-                  'group w-full text-left h-10 px-2 py-1.5 rounded-md relative border-0 flex items-center',
+                  'group w-full text-left h-9 px-2 py-1.5 rounded-md relative border-0 flex items-center',
                   isActive
                     ? 'bg-[#f1f7fe] text-[--dip-primary-color]'
                     : 'bg-transparent hover:bg-[--dip-hover-bg-color]',
@@ -61,7 +66,7 @@ export const HistorySection = ({
                 ) : null} */}
                 <div
                   className={clsx(
-                    'truncate text-sm group-hover:mr-2',
+                    'truncate text-sm group-hover:mr-2 flex-1 min-w-0',
                     isActive ? 'text-[--dip-primary-color]' : 'text-[--dip-text-color]',
                   )}
                   title={title}

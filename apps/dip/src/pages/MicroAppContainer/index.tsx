@@ -96,7 +96,7 @@ const MicroAppContainer = () => {
     if (loading) {
       return (
         <div className="absolute inset-0 flex justify-center items-center">
-          <Spin size="large" />
+          <Spin />
         </div>
       )
     }

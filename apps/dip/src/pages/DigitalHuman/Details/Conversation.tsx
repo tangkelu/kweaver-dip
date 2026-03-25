@@ -7,7 +7,7 @@ const Conversation = ({ digitalHumanId }: { digitalHumanId: string }) => {
   return (
     <div className="h-full w-full box-border">
       <div className="h-full min-h-0">
-        <DipChatKit assignEmployeeValue={digitalHumanId} />
+        <DipChatKit assignEmployeeValue={digitalHumanId} showHeader={false} />
       </div>
     </div>
   )

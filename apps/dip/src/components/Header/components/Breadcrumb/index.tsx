@@ -114,7 +114,7 @@ export const Breadcrumb = ({
                 ) : (
                   <button
                     type="button"
-                    className={`max-w-[200px] ${type === 'micro-app' ? '' : 'px-1'}`}
+                    className={`max-w-[200px] font-medium text-black/45 ${type === 'micro-app' ? '' : 'px-1'}`}
                     onClick={(e) => !isDisabled && handleNavigate(item, e)}
                   >
                     {hasIcon && renderIcon(item.icon, item.name)}

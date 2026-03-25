@@ -130,10 +130,9 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'work-plan/:workPlanId',
     key: 'work-plan-item',
-    label: '工作计划',
+    label: '工作计划详情',
     element: <WorkPlanDetail />,
     sidebarMode: 'hidden',
-    showInBreadcrumb: false,
     handle: {
       layout: {
         hasSider: true,
@@ -165,7 +164,6 @@ export const routeConfigs: RouteConfig[] = [
     label: '历史记录',
     element: <HistoryConversation />,
     sidebarMode: 'hidden',
-    showInBreadcrumb: false,
     handle: {
       layout: {
         hasSider: true,
@@ -178,10 +176,9 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'digital-human/management/setting',
     key: 'digital-human-setting-new',
-    label: '数字员工新建配置',
+    label: '新建数字员工',
     element: <DHSetting />,
     sidebarMode: 'hidden',
-    showInBreadcrumb: false,
     handle: {
       layout: {
         hasSider: true,
@@ -243,7 +240,6 @@ export const routeConfigs: RouteConfig[] = [
     label: '数字员工配置',
     element: <DHSetting />,
     sidebarMode: 'hidden',
-    showInBreadcrumb: false,
     handle: {
       layout: {
         hasSider: true,
@@ -259,7 +255,6 @@ export const routeConfigs: RouteConfig[] = [
     label: '数字员工详情',
     element: <DigitalHumanDetail />,
     sidebarMode: 'hidden',
-    showInBreadcrumb: false,
     handle: {
       layout: {
         hasSider: true,

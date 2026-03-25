@@ -1,7 +1,6 @@
 import { Spin } from 'antd'
 import { useEffect, useRef } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
-import GradientContainer from '@/components/GradientContainer'
 import { getFullPath } from '@/utils/config'
 import { getAccessToken, setAccessToken } from '@/utils/http/token-config'
 import { usePreferenceStore, useUserInfoStore } from '../stores'
@@ -188,9 +187,9 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (shouldShowLoading) {
     return (
-      <GradientContainer className="w-full h-full flex items-center justify-center">
-        <Spin size="large" />
-      </GradientContainer>
+      <div className="w-full h-full flex items-center justify-center">
+        <Spin />
+      </div>
     )
   }
 

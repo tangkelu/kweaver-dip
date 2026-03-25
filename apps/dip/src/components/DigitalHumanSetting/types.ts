@@ -8,5 +8,5 @@ export enum DESettingMenuKey {
 export interface DESettingMenuItem {
   key: DESettingMenuKey
   label: string
-  iconSymbol: string
+  iconSymbol?: string
 }

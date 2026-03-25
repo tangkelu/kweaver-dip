@@ -27,11 +27,15 @@ export const postApplications = (file: Blob | ArrayBuffer): Promise<ApplicationI
  * 获取应用列表
  * @returns 应用列表
  */
-export const getApplications = (params?: Record<string, any>): Promise<ApplicationInfo[]> =>
-  get(`/api/dip-hub/v1/applications`, { params }).then((result: any) => {
+export const getApplications = (params?: Record<string, any>): Promise<ApplicationInfo[]> => {
+  const p1 = get(`/api/dip-hub/v1/applications`, { params })
+  const p2 = p1.then((result: any) => {
     // 如果结果不是数组，返回空数组
     return Array.isArray(result) ? result : []
   })
+  p2.abort = p1.abort
+  return p2
+}
 
 /**
  * 查看应用基础信息
@@ -46,21 +50,29 @@ export const getApplicationsBasicInfo = (id?: number): Promise<ApplicationBasicI
  * 查看业务知识网络配置
  * OpenAPI: GET /applications/ontologies?app_id=xxx
  */
-export const getApplicationsOntologies = (id: number): Promise<OntologyInfo[]> =>
-  get(`/api/dip-hub/v1/applications/ontologies`, { params: { id } }).then((result: any) => {
+export const getApplicationsOntologies = (id: number): Promise<OntologyInfo[]> => {
+  const p1 = get(`/api/dip-hub/v1/applications/ontologies`, { params: { id } })
+  const p2 = p1.then((result: any) => {
     // 如果结果不是数组，返回空数组
     return Array.isArray(result) ? result : []
   })
+  p2.abort = p1.abort
+  return p2
+}
 
 /**
  * 查看智能体配置
  * OpenAPI: GET /applications/agents?app_id=xxx
  */
-export const getApplicationsAgents = (id: number): Promise<AgentInfo[]> =>
-  get(`/api/dip-hub/v1/applications/agents`, { params: { id } }).then((result: any) => {
+export const getApplicationsAgents = (id: number): Promise<AgentInfo[]> => {
+  const p1 = get(`/api/dip-hub/v1/applications/agents`, { params: { id } })
+  const p2 = p1.then((result: any) => {
     // 如果结果不是数组，返回空数组
     return Array.isArray(result) ? result : []
   })
+  p2.abort = p1.abort
+  return p2
+}
 
 /**
  * 卸载应用
