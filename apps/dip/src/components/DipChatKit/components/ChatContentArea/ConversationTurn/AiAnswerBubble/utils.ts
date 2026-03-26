@@ -49,6 +49,93 @@ export const buildCodePreviewPayload = (lang: string, code: string): DipChatKitP
   }
 }
 
+const parseJsonRecord = (value: string): Record<string, unknown> | null => {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+
+  try {
+    const parsed = JSON.parse(trimmed)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return null
+    }
+    return parsed as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+const readRecordField = (source: unknown, key: string): Record<string, unknown> | null => {
+  if (!source || typeof source !== 'object' || Array.isArray(source)) return null
+  const value = (source as Record<string, unknown>)[key]
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  return value as Record<string, unknown>
+}
+
+const normalizeArchiveSubpath = (rawSubpath: unknown, rawArchiveRoot: unknown): string => {
+  const subpath = toTextFromUnknown(rawSubpath).trim().replace(/^\/+/, '')
+  if (!subpath) return ''
+
+  const archiveRoot = toTextFromUnknown(rawArchiveRoot)
+    .trim()
+    .replace(/^\/+|\/+$/g, '')
+
+  if (archiveRoot && (subpath === archiveRoot || subpath.startsWith(`${archiveRoot}/`))) {
+    return subpath.slice(archiveRoot.length).replace(/^\/+/, '')
+  }
+
+  if (!subpath.startsWith('archives/')) {
+    return subpath
+  }
+
+  const segments = subpath.split('/').filter(Boolean)
+  if (segments.length <= 1) return ''
+  if (segments.length === 2) return segments[1]
+  return segments.slice(2).join('/')
+}
+
+const resolveFileNameFromSubpath = (subpath: string, fallbackName: unknown): string => {
+  const name = toTextFromUnknown(fallbackName).trim()
+  if (name) return name
+
+  const pathSegments = subpath.split('/').filter(Boolean)
+  return pathSegments[pathSegments.length - 1] || ''
+}
+
+export const buildArchiveGridPreviewPayload = (
+  sessionKey: string | undefined,
+  code: string,
+): DipChatKitPreviewPayload | null => {
+  const normalizedSessionKey = sessionKey?.trim() || ''
+  if (!normalizedSessionKey) return null
+
+  const parsed = parseJsonRecord(code)
+  if (!parsed || parsed.type !== 'archive_grid') {
+    return null
+  }
+
+  const data = readRecordField(parsed, 'data')
+  if (!data) return null
+
+  const normalizedSubpath = normalizeArchiveSubpath(data.subpath, data.archive_root)
+  if (!normalizedSubpath) return null
+
+  const fileName = resolveFileNameFromSubpath(normalizedSubpath, data.name)
+  if (!fileName) return null
+
+  return {
+    title: intl
+      .get('dipChatKit.artifactPreviewTitle', { fileName })
+      .d(`文件预览：${fileName}`) as string,
+    content: normalizedSubpath,
+    sourceType: 'artifact',
+    artifact: {
+      sessionKey: normalizedSessionKey,
+      subpath: normalizedSubpath,
+      fileName,
+    },
+  }
+}
+
 export const buildCardPreviewPayload = (
   title: string,
   content: string,
@@ -150,17 +237,7 @@ const toTextFromUnknown = (value: unknown): string => {
 }
 
 const parseJsonObject = (value: string): Record<string, unknown> | null => {
-  const trimmed = value.trim()
-  if (!trimmed) return null
-  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return null
-
-  try {
-    const parsed = JSON.parse(trimmed)
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
-    return parsed as Record<string, unknown>
-  } catch {
-    return null
-  }
+  return parseJsonRecord(value)
 }
 
 const normalizeToolCardKind = (event: DipChatKitAnswerEvent): 'call' | 'result' | null => {

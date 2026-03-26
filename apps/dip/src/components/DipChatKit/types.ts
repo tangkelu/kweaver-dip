@@ -12,7 +12,12 @@ export interface DipChatKitAttachment {
 export interface DipChatKitPreviewPayload {
   title: string
   content: string
-  sourceType: 'card' | 'code' | 'mermaid' | 'text'
+  sourceType: 'card' | 'code' | 'mermaid' | 'text' | 'artifact'
+  artifact?: {
+    sessionKey: string
+    subpath: string
+    fileName: string
+  }
 }
 
 export type DipChatKitAnswerEventType = 'toolCall' | 'toolResult' | 'system' | 'unknown'
@@ -31,6 +36,7 @@ export interface DipChatKitAnswerEvent {
 
 export interface DipChatKitMessageTurn {
   id: string
+  sessionKey?: string
   question: string
   questionEmployees?: AiPromptMentionOption[]
   pendingSend?: boolean

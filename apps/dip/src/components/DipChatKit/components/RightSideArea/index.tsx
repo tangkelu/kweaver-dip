@@ -3,6 +3,7 @@ import { Button, Tooltip } from 'antd'
 import clsx from 'clsx'
 import type React from 'react'
 import intl from 'react-intl-universal'
+import PreviewArtifact from './PreviewArtifact'
 import PreviewCode from './PreviewCode'
 import PreviewMarkdown from './PreviewMarkdown'
 import PreviewMermaid from './PreviewMermaid'
@@ -12,7 +13,15 @@ import type { RightSideAreaProps } from './types'
 
 const RightSideArea: React.FC<RightSideAreaProps> = ({ visible, payload, onClose }) => {
   const renderPreviewContent = () => {
-    if (!payload?.content) {
+    if (!payload) {
+      return <PreviewPlaceholder />
+    }
+
+    if (payload.sourceType === 'artifact') {
+      return <PreviewArtifact payload={payload} />
+    }
+
+    if (!payload.content) {
       return <PreviewPlaceholder />
     }
 

@@ -205,6 +205,7 @@ const createSessionEvent = (
 const createEmptyTurn = (
   index: number,
   createdAt: string,
+  sessionKey: string,
   question = '',
   id?: string,
 ): DipChatKitMessageTurn => {
@@ -212,6 +213,7 @@ const createEmptyTurn = (
 
   return {
     id: `session_turn_${normalizedId}`,
+    sessionKey,
     question,
     questionEmployees: [],
     questionAttachments: [],
@@ -232,6 +234,7 @@ const normalizeSessionCreatedAt = (rawTs: unknown): string => {
 
 export const mapSessionMessagesToTurns = (
   messages: DipChatKitSessionMessage[] | undefined,
+  sessionKey = '',
 ): DipChatKitMessageTurn[] => {
   if (!Array.isArray(messages) || messages.length === 0) {
     return []
@@ -245,12 +248,12 @@ export const mapSessionMessagesToTurns = (
     const createdAt = normalizeSessionCreatedAt(message.ts)
 
     if (role === 'user') {
-      const nextTurn = createEmptyTurn(index, createdAt, content, message.id)
+      const nextTurn = createEmptyTurn(index, createdAt, sessionKey, content, message.id)
       turns.push(nextTurn)
       return
     }
 
-    const nextTurn = createEmptyTurn(index, createdAt, '', message.id)
+    const nextTurn = createEmptyTurn(index, createdAt, sessionKey, '', message.id)
 
     if (role === 'assistant' && content) {
       nextTurn.answerMarkdown = content

@@ -15,6 +15,7 @@ export interface DipChatKitStoreContextType {
   getDipChatKitStore: () => DipChatKitState
   resetDipChatKitStore: (key?: string | string[]) => void
   appendQuestionTurn: (payload: AiPromptSubmitPayload) => string
+  setTurnSessionKey: (turnId: string, sessionKey: string) => void
   startAnswerStream: (turnId: string, clearPrevious?: boolean) => void
   appendAnswerChunk: (turnId: string, chunk: string) => void
   appendAnswerEvent: (turnId: string, event: DipChatKitAnswerEvent) => void
@@ -136,6 +137,19 @@ const DipChatKitStoreProvider: React.FC<PropsWithChildren<DipChatKitStoreProvide
         answerLoading: true,
         answerStreaming: true,
         answerError: undefined,
+      })),
+    }))
+  }
+
+  const setTurnSessionKey: DipChatKitStoreContextType['setTurnSessionKey'] = (turnId, sessionKey) => {
+    const normalizedSessionKey = sessionKey.trim()
+    if (!normalizedSessionKey) return
+
+    setStore((prevState) => ({
+      ...prevState,
+      messageTurns: updateTurnById(prevState.messageTurns, turnId, (turn) => ({
+        ...turn,
+        sessionKey: normalizedSessionKey,
       })),
     }))
   }
@@ -273,6 +287,7 @@ const DipChatKitStoreProvider: React.FC<PropsWithChildren<DipChatKitStoreProvide
         getDipChatKitStore: getStore,
         resetDipChatKitStore: resetStore,
         appendQuestionTurn,
+        setTurnSessionKey,
         startAnswerStream,
         appendAnswerChunk,
         appendAnswerEvent,

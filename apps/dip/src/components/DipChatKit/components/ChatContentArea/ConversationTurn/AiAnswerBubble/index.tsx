@@ -17,6 +17,7 @@ import type { MessageAction } from '../MessageActions/types'
 import styles from './index.module.less'
 import type { AiAnswerBubbleProps, DipChatKitToolCardItem } from './types'
 import {
+  buildArchiveGridPreviewPayload,
   buildCardPreviewPayload,
   buildCodePreviewPayload,
   buildMarkdownFilePreviewPayload,
@@ -130,7 +131,8 @@ const AiAnswerBubble: React.FC<AiAnswerBubbleProps> = ({ turn, onCopy, onRegener
         <div
           className={styles.blockCodeWrap}
           onClick={() => {
-            onOpenPreview(buildCodePreviewPayload(language, codeText))
+            const artifactPreviewPayload = buildArchiveGridPreviewPayload(turn.sessionKey, codeText)
+            onOpenPreview(artifactPreviewPayload ?? buildCodePreviewPayload(language, codeText))
           }}
           role="presentation"
         >
@@ -211,7 +213,7 @@ const AiAnswerBubble: React.FC<AiAnswerBubbleProps> = ({ turn, onCopy, onRegener
       li: ListItemRenderer,
       div: DivRenderer,
     }
-  }, [onOpenPreview])
+  }, [onOpenPreview, turn.sessionKey])
 
   const answerContent =
     turn.answerMarkdown || (turn.answerLoading ? intl.get('dipChatKit.answerLoading').d('Processing...') : '')
@@ -293,12 +295,18 @@ const AiAnswerBubble: React.FC<AiAnswerBubbleProps> = ({ turn, onCopy, onRegener
             role="button"
             tabIndex={0}
             onClick={() => {
-              onOpenPreview(buildCardPreviewPayload(toolCard.title, toolCard.text))
+              const artifactPreviewPayload = buildArchiveGridPreviewPayload(turn.sessionKey, toolCard.text)
+              onOpenPreview(
+                artifactPreviewPayload ?? buildCardPreviewPayload(toolCard.title, toolCard.text),
+              )
             }}
             onKeyDown={(event) => {
               if (event.key !== 'Enter' && event.key !== ' ') return
               event.preventDefault()
-              onOpenPreview(buildCardPreviewPayload(toolCard.title, toolCard.text))
+              const artifactPreviewPayload = buildArchiveGridPreviewPayload(turn.sessionKey, toolCard.text)
+              onOpenPreview(
+                artifactPreviewPayload ?? buildCardPreviewPayload(toolCard.title, toolCard.text),
+              )
             }}
           >
             {intl.get('dipChatKit.eventActionView').d('View')} <RightOutlined />
@@ -306,7 +314,7 @@ const AiAnswerBubble: React.FC<AiAnswerBubbleProps> = ({ turn, onCopy, onRegener
         ) : null,
       }
     })
-  }, [onOpenPreview, toolCards])
+  }, [onOpenPreview, toolCards, turn.sessionKey])
 
   const renderToolCardsCollapse = () => {
     return (

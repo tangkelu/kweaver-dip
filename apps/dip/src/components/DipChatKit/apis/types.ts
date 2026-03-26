@@ -27,6 +27,30 @@ export interface DipChatKitSessionGetResponse {
   messages?: DipChatKitSessionMessage[]
 }
 
+export type DipChatKitSessionArchiveEntryType = 'file' | 'directory' | 'other'
+
+export interface DipChatKitSessionArchiveEntry {
+  name: string
+  type: DipChatKitSessionArchiveEntryType
+  [key: string]: unknown
+}
+
+export interface DipChatKitSessionArchivesResponse {
+  path: string
+  contents: DipChatKitSessionArchiveEntry[]
+  [key: string]: unknown
+}
+
+export interface DipChatKitSessionArchiveSubpathOptions {
+  responseType?: 'json' | 'text' | 'arraybuffer'
+  timeout?: number
+}
+
+export type DipChatKitSessionArchiveSubpathResponse =
+  | DipChatKitSessionArchivesResponse
+  | string
+  | ArrayBuffer
+
 export interface DipChatKitDigitalHuman {
   id: string
   name: string

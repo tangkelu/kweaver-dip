@@ -4,6 +4,8 @@ import type {
   DipChatKitCreateSessionKeyRequest,
   DipChatKitCreateSessionKeyResponse,
   DipChatKitDigitalHumanList,
+  DipChatKitSessionArchiveSubpathOptions,
+  DipChatKitSessionArchiveSubpathResponse,
   DipChatKitGetSessionMessagesParams,
   DipChatKitResponseRequestBody,
   DipChatKitResponseStreamChunk,
@@ -21,6 +23,15 @@ function cleanParams<T extends Record<string, unknown>>(obj?: T): T | undefined 
   const entries = Object.entries(obj).filter(([, value]) => value !== undefined)
   if (entries.length === 0) return undefined
   return Object.fromEntries(entries) as T
+}
+
+function encodeArchiveSubpath(subpath: string): string {
+  return subpath
+    .replace(/^\/+/, '')
+    .split('/')
+    .filter(Boolean)
+    .map(encodeURIComponent)
+    .join('/')
 }
 
 export const createChatSessionKey = (
@@ -48,6 +59,16 @@ export const getDigitalHumanSessionMessages = (
   get(`${BASE}/sessions/${sessionId}/messages`, {
     params: cleanParams(params as Record<string, unknown> | undefined),
   }) as Promise<DipChatKitSessionGetResponse>
+
+export const getSessionArchiveSubpath = (
+  sessionId: string,
+  subpath: string,
+  options?: DipChatKitSessionArchiveSubpathOptions,
+): Promise<DipChatKitSessionArchiveSubpathResponse> =>
+  get(`${BASE}/sessions/${sessionId}/archives/${encodeArchiveSubpath(subpath)}`, {
+    ...(options?.responseType !== undefined ? { responseType: options.responseType } : {}),
+    ...(options?.timeout !== undefined ? { timeout: options.timeout } : {}),
+  }) as Promise<DipChatKitSessionArchiveSubpathResponse>
 
 const buildFullRequestUrl = (path: string): string => {
   return `${window.location.protocol}//${window.location.host}${path}`

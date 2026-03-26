@@ -42,6 +42,7 @@ const ChatContentArea: React.FC<ChatContentAreaProps> = ({
     dipChatKitStore: { messageTurns, scroll },
     setDipChatKitStore,
     appendQuestionTurn,
+    setTurnSessionKey,
     startAnswerStream,
     appendAnswerChunk,
     appendAnswerEvent,
@@ -231,10 +232,13 @@ const ChatContentArea: React.FC<ChatContentAreaProps> = ({
         sessionKey = await ensureSessionKey(employeeId)
       }
 
-      return createDigitalHumanResponseSSE(
-        { input: payload.content },
-        { sessionKey, signal },
-      )
+      return {
+        sessionKey,
+        stream: createDigitalHumanResponseSSE(
+          { input: payload.content },
+          { sessionKey, signal },
+        ),
+      }
     },
     [ensureSessionKey, fixedSessionKey, resolveEmployeeId],
   )
@@ -291,8 +295,9 @@ const ChatContentArea: React.FC<ChatContentAreaProps> = ({
       startAnswerStream(turnId, regenerate)
 
       try {
-        const result = await runBuiltInSend(payload, abortController.signal)
-        await consumeSendResult(turnId, result)
+        const { sessionKey, stream } = await runBuiltInSend(payload, abortController.signal)
+        setTurnSessionKey(turnId, sessionKey)
+        await consumeSendResult(turnId, stream)
       } catch (error) {
         if (abortController.signal.aborted || isAbortError(error)) {
           finishAnswerStream(turnId)
@@ -316,6 +321,7 @@ const ChatContentArea: React.FC<ChatContentAreaProps> = ({
       failAnswerStream,
       finishAnswerStream,
       runBuiltInSend,
+      setTurnSessionKey,
       startAnswerStream,
     ],
   )
@@ -380,7 +386,8 @@ const ChatContentArea: React.FC<ChatContentAreaProps> = ({
     request
       .then((response) => {
         if (disposed) return
-        const turns = mapSessionMessagesToTurns(response.messages)
+        const resolvedSessionKey = response.key?.trim() || trimmedSessionId
+        const turns = mapSessionMessagesToTurns(response.messages, resolvedSessionKey)
         resetConversationRef.current(turns)
         setAutoScrollEnabledRef.current(true)
         setShowBackToBottomRef.current(false)
