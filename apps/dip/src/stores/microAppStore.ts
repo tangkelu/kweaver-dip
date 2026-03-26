@@ -22,16 +22,16 @@ interface MicroAppStoreState {
   homeRoute: string | null
   /**
    * 每个应用的来源 Sider 类型映射表
-   * key 为 appId, value 为 SiderType
+   * key 为应用 appkey（ApplicationBasicInfo.key）, value 为 SiderType
    * 用于支持跨应用切换时依然能正确记录每个应用的返回路径
    */
-  appSourceMap: Record<number, SiderType>
+  appSourceMap: Record<string, SiderType>
   /** 设置当前激活的微应用 */
   setCurrentMicroApp: (info: CurrentMicroAppInfo | null) => void
   /** 设置当前微应用对应的首页路由 */
   setHomeRoute: (route: string | null) => void
   /** 记录特定应用的来源类型 */
-  setAppSource: (appId: number, type: SiderType) => void
+  setAppSource: (appKey: string, type: SiderType) => void
   /** 清空当前微应用信息 */
   clearCurrentMicroApp: () => void
 }
@@ -55,11 +55,11 @@ export const useMicroAppStore = create<MicroAppStoreState>()(
         set({ homeRoute: route })
       },
 
-      setAppSource: (appId, type) => {
+      setAppSource: (appKey, type) => {
         set((state) => ({
           appSourceMap: {
             ...state.appSourceMap,
-            [appId]: type,
+            [appKey]: type,
           },
         }))
       },

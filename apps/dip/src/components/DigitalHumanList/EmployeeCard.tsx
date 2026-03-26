@@ -1,4 +1,4 @@
-import { Avatar, Card, Dropdown, type MenuProps } from 'antd'
+import { Card, Dropdown, type MenuProps } from 'antd'
 import clsx from 'clsx'
 import { LineChart as ELineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent } from 'echarts/components'
@@ -6,7 +6,6 @@ import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { useState } from 'react'
 import type { DigitalHuman } from '@/apis'
-import { formatTimeSlash } from '@/utils/handle-function/FormatTime'
 import AppIcon from '../AppIcon'
 import IconFont from '../IconFont'
 import { cardHeight } from './utils'
@@ -28,9 +27,9 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
   onCardClick,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false)
-  const updateTime = digitalHuman.updated_at
-    ? formatTimeSlash(new Date(digitalHuman.updated_at).getTime())
-    : ''
+  // const updateTime = digitalHuman.updated_at
+  //   ? formatTimeSlash(new Date(digitalHuman.updated_at).getTime())
+  //   : ''
 
   return (
     <Card

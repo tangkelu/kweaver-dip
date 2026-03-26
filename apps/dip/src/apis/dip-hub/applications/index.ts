@@ -39,19 +39,19 @@ export const getApplications = (params?: Record<string, any>): Promise<Applicati
 
 /**
  * 查看应用基础信息
- * OpenAPI: GET /applications/basic-info?app_id=xxx 或 ?package_name=xxx
- * 支持通过 appId 或 packageName 任意一个参数查询
+ * OpenAPI: GET /applications/basic-info?appkey=xxx 或 ?package_name=xxx
+ * 支持通过 appkey 或 packageName 任意一个参数查询
  */
-export const getApplicationsBasicInfo = (id?: number): Promise<ApplicationBasicInfo> => {
-  return get(`/api/dip-hub/v1/applications/basic-info`, { params: { id } })
+export const getApplicationsBasicInfo = (appkey?: string): Promise<ApplicationBasicInfo> => {
+  return get(`/api/dip-hub/v1/applications/basic-info`, { params: { appkey } })
 }
 
 /**
  * 查看业务知识网络配置
- * OpenAPI: GET /applications/ontologies?app_id=xxx
+ * OpenAPI: GET /applications/ontologies?appkey=xxx
  */
-export const getApplicationsOntologies = (id: number): Promise<OntologyInfo[]> => {
-  const p1 = get(`/api/dip-hub/v1/applications/ontologies`, { params: { id } })
+export const getApplicationsOntologies = (appkey: string): Promise<OntologyInfo[]> => {
+  const p1 = get(`/api/dip-hub/v1/applications/ontologies`, { params: { appkey } })
   const p2 = p1.then((result: any) => {
     // 如果结果不是数组，返回空数组
     return Array.isArray(result) ? result : []
@@ -62,10 +62,10 @@ export const getApplicationsOntologies = (id: number): Promise<OntologyInfo[]> =
 
 /**
  * 查看智能体配置
- * OpenAPI: GET /applications/agents?app_id=xxx
+ * OpenAPI: GET /applications/agents?appkey=xxx
  */
-export const getApplicationsAgents = (id: number): Promise<AgentInfo[]> => {
-  const p1 = get(`/api/dip-hub/v1/applications/agents`, { params: { id } })
+export const getApplicationsAgents = (appkey: string): Promise<AgentInfo[]> => {
+  const p1 = get(`/api/dip-hub/v1/applications/agents`, { params: { appkey } })
   const p2 = p1.then((result: any) => {
     // 如果结果不是数组，返回空数组
     return Array.isArray(result) ? result : []

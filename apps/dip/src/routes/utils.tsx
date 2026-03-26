@@ -37,7 +37,7 @@ const matchRoutePattern = (pattern: string, actualPath: string): boolean => {
 
 /**
  * 根据路径获取路由配置
- * 支持动态路由匹配（如 /application/:appId/* 和 studio/project-management/:projectId）
+ * 支持动态路由匹配（如 /application/:appKey/* 和 studio/project-management/:projectId）
  * 自动处理 BASE_PATH 前缀，调用方无需手动移除
  */
 export const getRouteByPath = (path: string): RouteConfig | undefined => {
@@ -50,7 +50,7 @@ export const getRouteByPath = (path: string): RouteConfig | undefined => {
   // 移除前导斜杠
   const normalizedPath = processedPath.startsWith('/') ? processedPath.slice(1) : processedPath
 
-  // 匹配动态路由 /application/:appId/*
+  // 匹配动态路由 /application/:appKey/*
   const appRouteMatch = normalizedPath.match(/^application\/([^/]+)/)
   if (appRouteMatch) {
     return {
@@ -214,7 +214,7 @@ export const removeBasePath = (path: string): string => {
 
 /**
  * 通过固定应用 key（WENSHU_APP_KEY）解析默认微应用路由
- * - 成功时返回 /application/{id}
+ * - 成功时返回 /application/{appkey}
  * - 失败或找不到应用时返回 /application/error
  */
 export const resolveDefaultMicroAppPath = async (): Promise<string> => {
@@ -222,7 +222,7 @@ export const resolveDefaultMicroAppPath = async (): Promise<string> => {
   let { fetchPinnedMicroApps, wenshuAppInfo } = usePreferenceStore.getState()
 
   if (wenshuAppInfo) {
-    return `/application/${wenshuAppInfo.id}`
+    return `/application/${encodeURIComponent(wenshuAppInfo.key)}`
   }
 
   // 如果还没有数据，则触发一次加载
@@ -232,7 +232,7 @@ export const resolveDefaultMicroAppPath = async (): Promise<string> => {
     wenshuAppInfo = state.wenshuAppInfo
 
     if (wenshuAppInfo) {
-      return `/application/${wenshuAppInfo.id}`
+      return `/application/${encodeURIComponent(wenshuAppInfo.key)}`
     }
   } catch {
     // 加载失败时，后续直接走兜底逻辑

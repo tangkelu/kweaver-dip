@@ -140,8 +140,8 @@ const MicroAppComponent = ({ appBasicInfo, homeRoute }: MicroAppComponentProps) 
     let microAppInstance: QiankunMicroApp | null = null
 
     // 检查是否已经失败过
-    const appIdStr = String(appBasicInfo.id)
-    const hasFailed = microAppLoadFailureManager.hasFailed(appIdStr)
+    const appKeyStr = appBasicInfo.key
+    const hasFailed = microAppLoadFailureManager.hasFailed(appKeyStr)
     const isPageReload = microAppLoadFailureManager.isPageReload()
 
     // console.log(`[微应用加载] 检查失败状态:`, {
@@ -152,7 +152,7 @@ const MicroAppComponent = ({ appBasicInfo, homeRoute }: MicroAppComponentProps) 
     // })
 
     if (hasFailed) {
-      const failureInfo = microAppLoadFailureManager.getFailureInfo(appIdStr)
+      const failureInfo = microAppLoadFailureManager.getFailureInfo(appKeyStr)
       if (failureInfo) {
         setLoadFailed(true)
         setFailureInfo({
@@ -163,7 +163,7 @@ const MicroAppComponent = ({ appBasicInfo, homeRoute }: MicroAppComponentProps) 
         setLoading(false)
         clearContainer() // 确保容器为空
         console.log(
-          `[微应用加载] 检测到之前的失败记录，跳过加载: ${failureInfo.appName} (${appBasicInfo.id})`,
+          `[微应用加载] 检测到之前的失败记录，跳过加载: ${failureInfo.appName} (${appBasicInfo.key})`,
           isPageReload ? '(页面刷新后恢复)' : '(组件重新渲染)',
         )
         return
@@ -275,7 +275,7 @@ const MicroAppComponent = ({ appBasicInfo, homeRoute }: MicroAppComponentProps) 
 
           // 记录失败状态
           microAppLoadFailureManager.recordFailure(
-            appIdStr,
+            appKeyStr,
             microAppName,
             entryUrl,
             err instanceof Error ? err : String(err),
@@ -338,12 +338,12 @@ const MicroAppComponent = ({ appBasicInfo, homeRoute }: MicroAppComponentProps) 
     // 只依赖应用配置和 props 的核心字段
     // 注意：不依赖整个 microAppProps 对象，而是依赖具体的值，避免对象引用变化导致的无限循环
     // retryKey 用于手动重试时触发重新加载
-  }, [appBasicInfo.id, retryKey])
+  }, [appBasicInfo.key, retryKey])
 
   // 处理重试
   const handleRetry = () => {
     // 清除失败记录
-    microAppLoadFailureManager.clearFailure(String(appBasicInfo.id))
+    microAppLoadFailureManager.clearFailure(appBasicInfo.key)
     // 重置状态
     setLoadFailed(false)
     setFailureInfo(null)
@@ -384,7 +384,7 @@ const MicroAppComponent = ({ appBasicInfo, homeRoute }: MicroAppComponentProps) 
       <div
         ref={containerRef}
         className="h-full w-full"
-        id={`micro-app-container-${appBasicInfo.id}`}
+        id={`micro-app-container-${String(appBasicInfo.key).replace(/[^a-zA-Z0-9_-]/g, '_')}`}
       />
       {loading && <Spin className="absolute inset-0 flex items-center justify-center" />}
     </>

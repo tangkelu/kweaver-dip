@@ -82,13 +82,13 @@ export const AppConfigDrawer = ({ appData, open, onClose }: AppConfigDrawerProps
           {/* 右侧配置区域 */}
           <div className="flex-1 py-4">
             {selectedMenu === ConfigMenuType.BASIC && (
-              <BasicConfig key={`basic-${appData?.id}`} appId={appData?.id} />
+              <BasicConfig key={`basic-${appData?.key}`} appKey={appData?.key} />
             )}
             {selectedMenu === ConfigMenuType.ONTOLOGY && (
-              <OntologyConfig key={`ontology-${appData?.id}`} appId={appData?.id} />
+              <OntologyConfig key={`ontology-${appData?.key}`} appKey={appData?.key} />
             )}
             {selectedMenu === ConfigMenuType.AGENT && (
-              <AgentConfig key={`agent-${appData?.id}`} appId={appData?.id} />
+              <AgentConfig key={`agent-${appData?.key}`} appKey={appData?.key} />
             )}
           </div>
         </div>

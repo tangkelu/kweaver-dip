@@ -42,11 +42,9 @@ const StoreSider = ({ collapsed, onCollapse }: StoreSiderProps) => {
 
   const { setAppSource } = useMicroAppStore()
   const handleOpenApp = useCallback(
-    (appId: number) => {
-      // 记录来源类型，针对特定 appId 进行持久化
-      setAppSource(appId, 'store')
-      // 移除 URL 中的 type 参数，完全依赖 Store 持久化
-      navigate(`/application/${appId}`)
+    (appKey: string) => {
+      setAppSource(appKey, 'store')
+      navigate(`/application/${encodeURIComponent(appKey)}`)
     },
     [navigate, setAppSource],
   )
@@ -71,11 +69,10 @@ const StoreSider = ({ collapsed, onCollapse }: StoreSiderProps) => {
       return firstVisibleRoute?.key || 'my-app'
     }
 
-    // 检查是否是应用路由（/application/:appId）
-    const appMatch = pathname.match(/^\/application\/(\d+)/)
+    // 检查是否是应用路由（/application/:appKey）
+    const appMatch = pathname.match(/^\/application\/([^/]+)/)
     if (appMatch) {
-      const appId = Number(appMatch[1])
-      return `micro-app-${appId}`
+      return `micro-app-${appMatch[1]}`
     }
 
     const route = getRouteByPath(pathname)
@@ -130,7 +127,7 @@ const StoreSider = ({ collapsed, onCollapse }: StoreSiderProps) => {
       .filter((app) => app.id !== wenshuAppInfo?.id)
       .forEach((app) => {
         items.push({
-          key: `micro-app-${app.id}`,
+          key: `micro-app-${app.key}`,
           label: (
             <div className="w-full h-full flex justify-between items-center">
               {app.name}
@@ -146,7 +143,7 @@ const StoreSider = ({ collapsed, onCollapse }: StoreSiderProps) => {
             </div>
           ),
           icon: <AppIcon icon={app.icon} name={app.name} size={16} shape="square" />,
-          onClick: () => handleOpenApp(app.id),
+          onClick: () => handleOpenApp(app.key),
         })
       })
 

@@ -10,8 +10,8 @@ import MicroAppComponent from '../../components/MicroAppComponent'
 import { useMicroAppStore } from '../../stores/microAppStore'
 
 const MicroAppContainer = () => {
-  const { appId } = useParams<{ appId: string }>()
-  const idNum = useMemo(() => (appId ? Number(appId) : NaN), [appId])
+  const { appKey } = useParams<{ appKey: string }>()
+  const appKeyParam = useMemo(() => (appKey ?? '').trim(), [appKey])
   // 移除对 URL 参数的读取，改由纯 Store 驱动，防止微应用篡改
   const currentMicroApp = useMicroAppStore((state) => state.currentMicroApp)
   const setCurrentMicroApp = useMicroAppStore((state) => state.setCurrentMicroApp)
@@ -21,7 +21,7 @@ const MicroAppContainer = () => {
 
   // 这里的优先级是：Store 记录 > 默认 'home'
   // 不再信任 URL 中的 ?type= 动态参数
-  const type = (!Number.isNaN(idNum) ? appSourceMap[idNum] : null) || 'home'
+  const type = (appKeyParam ? appSourceMap[appKeyParam] : null) || 'home'
 
   // 根据 type 计算 homeRoute
   const homeRoute = useMemo(() => {
@@ -45,7 +45,7 @@ const MicroAppContainer = () => {
 
   useEffect(() => {
     const fetchApp = async () => {
-      if (Number.isNaN(idNum)) {
+      if (!appKeyParam) {
         setError('获取应用失败')
         setLoading(false)
         return
@@ -53,14 +53,14 @@ const MicroAppContainer = () => {
 
       try {
         setLoading(true)
-        const appData = await getApplicationsBasicInfo(idNum)
+        const appData = await getApplicationsBasicInfo(appKeyParam)
         if (!appData) {
           setError('获取应用配置失败')
         } else {
           // 统一保存在全局 Store 中，组件直接从 Store 读取（含 homeRoute，供 MicroAppHeader 面包屑等使用）
           setCurrentMicroApp({
             ...appData,
-            routeBasename: getFullPath(`/application/${appData.id}`),
+            routeBasename: getFullPath(`/application/${encodeURIComponent(appData.key)}`),
           })
           setHomeRoute(homeRoute)
         }
@@ -90,7 +90,7 @@ const MicroAppContainer = () => {
         { allowAllFields: true },
       )
     }
-  }, [idNum, clearCurrentMicroApp, setCurrentMicroApp, setHomeRoute, homeRoute])
+  }, [appKeyParam, clearCurrentMicroApp, setCurrentMicroApp, setHomeRoute, homeRoute])
 
   const renderContent = () => {
     if (loading) {

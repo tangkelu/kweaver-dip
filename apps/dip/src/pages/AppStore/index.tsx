@@ -103,8 +103,8 @@ const AppStore = () => {
 
           /** 运行应用 */
           case AppStoreActionEnum.Run:
-            setAppSource(_app.id, 'store')
-            navigate(`/application/${_app.id}`)
+            setAppSource(_app.key, 'store')
+            navigate(`/application/${encodeURIComponent(_app.key)}`)
             break
 
           /** 授权管理 */

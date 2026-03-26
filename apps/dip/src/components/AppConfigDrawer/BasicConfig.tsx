@@ -4,11 +4,11 @@ import { type ApplicationBasicInfo, getApplicationsBasicInfo } from '@/apis'
 import ScrollBarContainer from '../ScrollBarContainer'
 
 interface BasicConfigProps {
-  /** 应用 ID */
-  appId?: number
+  /** 应用 appkey（ApplicationBasicInfo.key） */
+  appKey?: string
 }
 
-const BasicConfig = ({ appId }: BasicConfigProps) => {
+const BasicConfig = ({ appKey }: BasicConfigProps) => {
   const [messageApi, messageContextHolder] = message.useMessage()
   const [loading, setLoading] = useState(false)
   const [basicInfo, setBasicInfo] = useState<ApplicationBasicInfo | null>(null)
@@ -17,10 +17,10 @@ const BasicConfig = ({ appId }: BasicConfigProps) => {
     let mounted = true
 
     const loadBasicInfo = async () => {
-      if (!appId) return
+      if (!appKey) return
       setLoading(true)
       try {
-        const data = await getApplicationsBasicInfo(appId)
+        const data = await getApplicationsBasicInfo(appKey)
         if (mounted) {
           setBasicInfo(data)
         }
@@ -35,15 +35,14 @@ const BasicConfig = ({ appId }: BasicConfigProps) => {
       }
     }
 
-    // 如果有 appId，则再拉一次最新数据
-    if (appId) {
+    if (appKey) {
       loadBasicInfo()
     }
 
     return () => {
       mounted = false
     }
-  }, [appId])
+  }, [appKey])
 
   if (loading) {
     return (

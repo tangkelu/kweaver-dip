@@ -5,27 +5,27 @@ import { type AgentInfo, getApplicationsAgents } from '@/apis'
 import ScrollBarContainer from '../ScrollBarContainer'
 
 interface AgentConfigProps {
-  appId?: number
+  appKey?: string
 }
 
-const AgentConfig = ({ appId }: AgentConfigProps) => {
+const AgentConfig = ({ appKey }: AgentConfigProps) => {
   const [messageApi, messageContextHolder] = message.useMessage()
   const [loading, setLoading] = useState(false)
   const [agents, setAgents] = useState<AgentInfo[]>([])
 
   useEffect(() => {
-    if (appId) {
+    if (appKey) {
       loadAgents()
     } else {
       setAgents([])
     }
-  }, [appId])
+  }, [appKey])
 
   const loadAgents = async () => {
-    if (!appId) return
+    if (!appKey) return
     setLoading(true)
     try {
-      const data = await getApplicationsAgents(appId)
+      const data = await getApplicationsAgents(appKey)
       setAgents(data)
     } catch (error: any) {
       if (error?.description) {

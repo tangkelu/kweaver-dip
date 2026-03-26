@@ -70,8 +70,8 @@ const MyApp = () => {
           break
         }
         case MyAppActionEnum.Use:
-          setAppSource(_app.id, 'store')
-          navigate(`/application/${_app.id}`)
+          setAppSource(_app.key, 'store')
+          navigate(`/application/${encodeURIComponent(_app.key)}`)
           break
         default:
           break

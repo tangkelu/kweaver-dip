@@ -16,7 +16,7 @@ import { UserInfo } from '../components/UserInfo'
 /**
  * 微应用壳导航头（MicroAppHeader）
  *
- * - 只在微应用容器路由下使用（/application/:appId/*）
+ * - 只在微应用容器路由下使用（/application/:appKey/*）
  * - 负责渲染：应用菜单 + 微应用图标和名称 + 微应用面包屑 + Copilot + 用户信息
  */
 const MicroAppHeader = () => {
@@ -72,11 +72,11 @@ const MicroAppHeader = () => {
      * ]
      *
      * 这里的 path 视为「微应用内部路径」，需要统一挂载到 routeBasename 之下：
-     * - routeBasename: /dip-hub/application/:appId (包含 BASE_PATH)
-     * - 去掉 BASE_PATH 后: /application/:appId
-     * - '/alarm'           -> /application/:appId/alarm
-     * - '/alarm/problem'   -> /application/:appId/alarm/problem
-     * - 'alarm'            -> /application/:appId/alarm
+     * - routeBasename: /dip-hub/application/:appKey (包含 BASE_PATH)
+     * - 去掉 BASE_PATH 后: /application/:appKey
+     * - '/alarm'           -> /application/:appKey/alarm
+     * - '/alarm/problem'   -> /application/:appKey/alarm/problem
+     * - 'alarm'            -> /application/:appKey/alarm
      */
     if (microAppBreadcrumb.length > 0 && currentMicroApp?.routeBasename) {
       // 先去掉 BASE_PATH 前缀，得到相对于 basename 的路径

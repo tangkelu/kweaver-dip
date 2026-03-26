@@ -5,27 +5,27 @@ import { getApplicationsOntologies, type OntologyInfo } from '@/apis'
 import ScrollBarContainer from '../ScrollBarContainer'
 
 interface OntologyConfigProps {
-  appId?: number
+  appKey?: string
 }
 
-const OntologyConfig = ({ appId }: OntologyConfigProps) => {
+const OntologyConfig = ({ appKey }: OntologyConfigProps) => {
   const [messageApi, messageContextHolder] = message.useMessage()
   const [loading, setLoading] = useState(false)
   const [ontologies, setOntologies] = useState<OntologyInfo[]>([])
 
   useEffect(() => {
-    if (appId) {
+    if (appKey) {
       loadOntologies()
     } else {
       setOntologies([])
     }
-  }, [appId])
+  }, [appKey])
 
   const loadOntologies = async () => {
-    if (!appId) return
+    if (!appKey) return
     setLoading(true)
     try {
-      const data = await getApplicationsOntologies(appId)
+      const data = await getApplicationsOntologies(appKey)
       setOntologies(data)
     } catch (error: any) {
       if (error?.description) {
