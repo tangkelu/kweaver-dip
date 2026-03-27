@@ -24,7 +24,7 @@ interface ArtifactPreviewState {
 }
 
 const TEXT_EXTENSIONS = new Set(['txt', 'json', 'log', 'csv', 'xml', 'yaml', 'yml'])
-const MARKDOWN_EXTENSIONS = new Set(['md', 'markdown'])
+const MARKDOWN_EXTENSIONS = new Set(['md', 'markdown', 'bkn'])
 const HTML_EXTENSIONS = new Set(['html', 'htm'])
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'])
 const PDF_EXTENSIONS = new Set(['pdf'])

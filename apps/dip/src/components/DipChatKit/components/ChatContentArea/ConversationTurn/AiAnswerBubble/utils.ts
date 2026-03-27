@@ -99,12 +99,30 @@ const normalizeArchiveRoot = (rawArchiveRoot: unknown): string => {
     .replace(/^\/+|\/+$/g, '')
 }
 
-const resolveFileNameFromSubpath = (subpath: string, fallbackName: unknown): string => {
-  const name = toTextFromUnknown(fallbackName).trim()
-  if (name) return name
+const hasFileExtension = (fileName: string): boolean => {
+  const normalizedFileName = fileName.trim()
+  const dotIndex = normalizedFileName.lastIndexOf('.')
+  return dotIndex > 0 && dotIndex < normalizedFileName.length - 1
+}
 
-  const pathSegments = subpath.split('/').filter(Boolean)
-  return pathSegments[pathSegments.length - 1] || ''
+const getPathTail = (pathValue: string): string => {
+  const segments = pathValue.split(/[\\/]/).filter(Boolean)
+  return segments[segments.length - 1] || ''
+}
+
+const resolveFileNameFromSubpath = (subpath: string, fallbackName: unknown): string => {
+  const fallbackNameText = toTextFromUnknown(fallbackName).trim()
+  const fallbackTail = getPathTail(fallbackNameText)
+  if (fallbackTail && hasFileExtension(fallbackTail)) {
+    return fallbackTail
+  }
+
+  const subpathTail = getPathTail(subpath)
+  if (subpathTail) {
+    return subpathTail
+  }
+
+  return fallbackTail
 }
 
 export const buildArchiveGridPreviewPayload = (
