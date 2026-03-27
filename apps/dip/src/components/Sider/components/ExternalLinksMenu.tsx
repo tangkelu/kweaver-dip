@@ -63,7 +63,7 @@ export const ExternalLinksMenu = ({ collapsed, roleIds }: ExternalLinksMenuProps
             rel="noopener noreferrer"
             className="flex items-center gap-1 justify-between"
           >
-            <span>AI Store</span> <span>&gt;</span>
+            <span>AI Store</span> <IconFont type="icon-right" />
           </a>
         ),
         icon: <SidebarAiStoreIcon />,
@@ -78,7 +78,8 @@ export const ExternalLinksMenu = ({ collapsed, roleIds }: ExternalLinksMenuProps
             rel="noopener noreferrer"
             className="flex items-center gap-1 justify-between"
           >
-            <span>业务知识网络</span> <span>&gt;</span>
+            <span>业务知识网络</span>
+            <IconFont type="icon-arrowup" rotate={45} />
           </a>
         ),
         icon: <IconFont type="icon-graph" />,
@@ -93,7 +94,8 @@ export const ExternalLinksMenu = ({ collapsed, roleIds }: ExternalLinksMenuProps
             rel="noopener noreferrer"
             className="flex items-center gap-1 justify-between"
           >
-            <span>系统工作台</span> <span>&gt;</span>
+            <span>系统工作台</span>
+            <IconFont type="icon-arrowup" rotate={45} />
           </a>
         ),
         icon: <SidebarSystemIcon />,

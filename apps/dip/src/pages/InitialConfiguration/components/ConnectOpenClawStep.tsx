@@ -55,7 +55,7 @@ const ConnectOpenClawStep = ({
             </Form.Item>
 
             <div className="flex justify-between">
-              <div className="text-sm text-[--dip-error-color] mb-3">{submitError}</div>
+              <div className="text-sm text-[--dip-error-color]">{submitError}</div>
               <Button type="primary" htmlType="submit" loading={submitting}>
                 下一步
               </Button>
