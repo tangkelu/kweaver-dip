@@ -56,7 +56,7 @@
     "eventCallId": "呼叫ID",
     "eventActionView": "檢視",
     "eventActionError": "錯誤",
-    "inputDisclaimer": "數字員工可能會犯錯，請核查重要業務信息",
+    "inputDisclaimer": "\u7b54\u6848\u7531\u6578\u4f4d\u54e1\u5de5\u751f\u6210\uff0c\u8acb\u4ed4\u7d30\u7504\u5225\uff01",
     "toolCountText": "{count} 個工具",
     "toolMoreSuffix": "+{count} 個",
     "toolCompleted": "已完成",
