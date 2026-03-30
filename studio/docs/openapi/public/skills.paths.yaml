@@ -41,6 +41,57 @@ paths:
         "500":
           $ref: '../common.schemas.yaml#/errors/InternalServerError'
 
+  /skills/install:
+    post:
+      operationId: installSkill
+      summary: 上传并安装 .skill 包（zip）
+      description: |
+        使用 `multipart/form-data`：字段 **`file`** 为 **ZIP** 包（PK zip；`.skill` 与 `.zip` 扩展名均可，内容格式相同）。
+        `Content-Type` 不强制；常见 `application/zip`、`application/octet-stream`。
+        可选 **`overwrite`** 为 `true` 或 `1` 时若目标技能目录已存在则覆盖；
+        可选 **`skillName`**（slug）；不传时按上传文件名（basename、去 `.skill`/`.zip` 后缀）推导为技能目录名。
+        扁平包（根含 **`SKILL.md`**）时若无法从文件名得到合法 slug，须显式传 **`skillName`**。
+        Studio 将文件读入内存后转发至 OpenClaw 网关 `dip` 插件 `POST /v1/config/agents/skills/install`（`skillName` 以查询参数传递）。
+        单文件大小上限 32MB。
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: ZIP 包（建议扩展名 .skill 或 .zip；与 OpenClaw .skill 约定一致）
+                overwrite:
+                  type: string
+                  description: 为 `true` 或 `1` 时覆盖已存在的技能目录
+                skillName:
+                  type: string
+                  description: 技能目录名（slug）；不传则使用上传文件名推导（与 DIP slug 规则一致）
+      responses:
+        "200":
+          description: 安装成功
+          content:
+            application/json:
+              schema:
+                $ref: './skills.schemas.yaml#/components/schemas/InstallSkillResult'
+        "400":
+          $ref: '../common.schemas.yaml#/errors/InvalidParameter'
+        "401":
+          $ref: '../common.schemas.yaml#/errors/Unauthorized'
+        "403":
+          $ref: '../common.schemas.yaml#/errors/Forbidden'
+        "413":
+          description: 请求体超过大小限制
+        "502":
+          $ref: '../common.schemas.yaml#/errors/BadGateway'
+        "500":
+          $ref: '../common.schemas.yaml#/errors/InternalServerError'
+
   /digital-human/{id}/skills:
     get:
       operationId: getDigitalHumanSkills

@@ -203,6 +203,35 @@ GitHub：https://github.com/kweaver-ai/web
 | [\].description | string | 技能描述，可选 |
 | [\].built_in | boolean | 是否为 DIP 数字员工内置技能（`archive-protocol`、`schedule-plan`、`kweaver-core`） |
 
+#### 安装 .skill 包（zip）
+
+`POST /api/dip-studio/v1/skills/install`
+
+使用 **`multipart/form-data`**。服务端将 zip 读入内存后转发至 OpenClaw 网关 `dip` 插件（`skillName`、`overwrite` 作为上游查询参数），详见插件 README。单文件大小上限 **32MB**。
+
+**支持的文件类型**
+
+| 项目 | 说明 |
+| -- | -- |
+| 包格式 | **ZIP**（标准 PK zip 压缩包；OpenClaw `.skill` 包与此相同，仅为扩展名约定） |
+| 建议扩展名 | **`.skill`** 或 **`.zip`**（用于浏览器/系统识别；服务端以二进制内容为准） |
+| `Content-Type` | 不强制校验；常见为 `application/zip`、`application/x-zip-compressed`、`application/octet-stream` |
+
+| 字段 | 类型 | 必填 | 说明 |
+| -- | -- | -- | -- |
+| file | binary | 是 | 上述 ZIP 包的字节内容（字段名固定为 `file`） |
+| overwrite | string | 否 | 为 `true` 或 `1` 时，若 `skills/<name>/` 已存在则覆盖 |
+| skillName | string | 否 | 技能目录名（slug）。不传则按**上传文件名**推导（basename，去 `.skill`/`.zip` 后缀，须符合 slug）。扁平包（zip 根含 `SKILL.md`）时用该名作为 `skills/<skillName>/` |
+
+前端示例：`form.append("file", fileBlob, "my-skill.skill")`（可用文件名代替显式 `skillName`）；覆盖时 `form.append("overwrite", "true")`；覆盖推导名时 `form.append("skillName", "other-id")`。
+
+响应：`200 application/json`
+
+| 参数 | 类型 | 说明 |
+| -- | -- | -- |
+| skillName | string | 技能 ID（与包内顶层目录名一致） |
+| skillPath | string | 网关上落盘目录的绝对路径 |
+
 #### 业务知识网络转发
 
 公开接口基础路径：`/api/dip-studio/v1`

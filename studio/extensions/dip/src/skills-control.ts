@@ -2,9 +2,52 @@ import path from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { discoverSkillNames } from "./skills-discovery";
+import {
+  installSkillFromZipBuffer,
+  SkillInstallError,
+  skillInstallErrorHttpStatus
+} from "./skills-install";
+
+/** Maximum `.skill` upload size for the Gateway install route (bytes). */
+const MAX_SKILL_INSTALL_BYTES = 32 * 1024 * 1024;
 
 /**
- * Registers skills CLI command and `/v1/config/agents/skills` HTTP routes.
+ * Reads the raw request body with a hard size cap.
+ *
+ * @param req Incoming HTTP request.
+ * @param maxBytes Maximum allowed body length.
+ * @returns Concatenated body buffer.
+ */
+function readRequestBodyLimited(
+  req: IncomingMessage,
+  maxBytes: number
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let total = 0;
+    req.on("data", (chunk: Buffer) => {
+      total += chunk.length;
+      if (total > maxBytes) {
+        req.destroy();
+        reject(
+          new SkillInstallError(
+            "TOO_LARGE",
+            `Request body exceeds ${maxBytes} bytes`
+          )
+        );
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => {
+      resolve(Buffer.concat(chunks));
+    });
+    req.on("error", reject);
+  });
+}
+
+/**
+ * Registers skills CLI command, `/v1/config/agents/skills/install`, and `/v1/config/agents/skills` HTTP routes.
  *
  * @param api OpenClaw plugin API.
  * @param repoRoot Repository / studio root (parent of `skills/`).
@@ -16,6 +59,66 @@ export function registerSkillsControl(
   bundledSkillsDir: string
 ): void {
   const repoSkillsDir = path.join(repoRoot, "skills");
+
+  api.registerHttpRoute({
+    path: "/v1/config/agents/skills/install",
+    match: "prefix",
+    auth: "gateway",
+    handler: async (req: IncomingMessage, res: ServerResponse) => {
+      if (req.method !== "POST") {
+        res.statusCode = 405;
+        res.setHeader("Content-Type", "application/json");
+        res.end(
+          JSON.stringify({
+            error: "Method not allowed. Use POST with a raw application/zip body."
+          })
+        );
+        return true;
+      }
+
+      const url = new URL(req.url || "", "http://localhost");
+      const overwrite = url.searchParams.get("overwrite") === "true";
+      const skillNameParam = url.searchParams.get("skillName");
+      const skillName =
+        skillNameParam !== null && skillNameParam.trim().length > 0
+          ? skillNameParam.trim()
+          : undefined;
+
+      try {
+        const body = await readRequestBodyLimited(req, MAX_SKILL_INSTALL_BYTES);
+        const result = installSkillFromZipBuffer(body, repoSkillsDir, {
+          overwrite,
+          maxBytes: MAX_SKILL_INSTALL_BYTES,
+          skillName
+        });
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        res.end(
+          JSON.stringify({
+            skillName: result.skillName,
+            skillPath: result.skillPath
+          })
+        );
+        return true;
+      } catch (e: unknown) {
+        if (e instanceof SkillInstallError) {
+          res.statusCode = skillInstallErrorHttpStatus(e.code);
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({ error: e.message, code: e.code }));
+          return true;
+        }
+        api.logger.error?.(`dip skills install failed: ${String(e)}`);
+        res.statusCode = 500;
+        res.setHeader("Content-Type", "application/json");
+        res.end(
+          JSON.stringify({
+            error: e instanceof Error ? e.message : String(e)
+          })
+        );
+        return true;
+      }
+    }
+  });
 
   api.registerCommand({
     name: "skills-manage",

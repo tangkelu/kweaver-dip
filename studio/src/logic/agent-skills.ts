@@ -7,6 +7,7 @@ import type {
 import type {
   AgentSkillsBinding,
   AgentSkillsCatalog,
+  InstallSkillResult,
   UpdateAgentSkillsResult
 } from "../types/agent-skills";
 import type { OpenClawSkillStatusEntry } from "../types/openclaw";
@@ -51,6 +52,17 @@ export interface AgentSkillsLogic {
     agentId: string,
     skills: string[]
   ): Promise<UpdateAgentSkillsResult>;
+
+  /**
+   * Installs a `.skill` zip via the OpenClaw `dip` plugin Gateway route.
+   *
+   * @param zipBody Raw zip bytes.
+   * @param options Optional overwrite flag forwarded upstream.
+   */
+  installSkill(
+    zipBody: Buffer,
+    options?: { overwrite?: boolean; skillName?: string }
+  ): Promise<InstallSkillResult>;
 }
 
 /**
@@ -133,6 +145,20 @@ export class DefaultAgentSkillsLogic implements AgentSkillsLogic {
     skills: string[]
   ): Promise<UpdateAgentSkillsResult> {
     return this.client.updateAgentSkills(agentId, skills);
+  }
+
+  /**
+   * Installs a `.skill` archive through the Gateway plugin HTTP route.
+   *
+   * @param zipBody Raw zip bytes.
+   * @param options Optional overwrite flag.
+   * @returns The plugin install payload.
+   */
+  public async installSkill(
+    zipBody: Buffer,
+    options?: { overwrite?: boolean; skillName?: string }
+  ): Promise<InstallSkillResult> {
+    return this.client.installSkill(zipBody, options);
   }
 
   /**

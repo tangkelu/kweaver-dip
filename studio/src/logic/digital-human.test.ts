@@ -38,6 +38,10 @@ function stubAgentSkills(overrides?: Partial<AgentSkillsLogic>): AgentSkillsLogi
       agentId: "",
       skills: []
     }),
+    installSkill: vi.fn().mockResolvedValue({
+      skillName: "",
+      skillPath: ""
+    }),
     ...overrides
   } as AgentSkillsLogic;
 }

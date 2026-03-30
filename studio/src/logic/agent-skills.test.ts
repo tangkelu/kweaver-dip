@@ -14,7 +14,8 @@ describe("DefaultAgentSkillsLogic", () => {
       {
         listAvailableSkills: vi.fn(),
         getAgentSkills: vi.fn(),
-        updateAgentSkills: vi.fn()
+        updateAgentSkills: vi.fn(),
+        installSkill: vi.fn()
       },
       {
         listAgents: vi.fn(),
@@ -43,7 +44,8 @@ describe("DefaultAgentSkillsLogic", () => {
       {
         listAvailableSkills: vi.fn(),
         getAgentSkills: vi.fn(),
-        updateAgentSkills: vi.fn()
+        updateAgentSkills: vi.fn(),
+        installSkill: vi.fn()
       },
       {
         listAgents: vi.fn(),
@@ -80,7 +82,8 @@ describe("DefaultAgentSkillsLogic", () => {
       {
         listAvailableSkills: vi.fn(),
         getAgentSkills,
-        updateAgentSkills: vi.fn()
+        updateAgentSkills: vi.fn(),
+        installSkill: vi.fn()
       },
       {
         listAgents: vi.fn(),
@@ -125,7 +128,8 @@ describe("DefaultAgentSkillsLogic", () => {
       {
         listAvailableSkills: vi.fn(),
         getAgentSkills,
-        updateAgentSkills: vi.fn()
+        updateAgentSkills: vi.fn(),
+        installSkill: vi.fn()
       },
       {
         listAgents: vi.fn(),
@@ -153,7 +157,8 @@ describe("DefaultAgentSkillsLogic", () => {
         skills: ["weather", "search"]
       }),
       getAgentSkills: vi.fn(),
-      updateAgentSkills: vi.fn()
+      updateAgentSkills: vi.fn(),
+      installSkill: vi.fn()
     });
 
     await expect(logic.listAvailableSkills()).resolves.toEqual({
@@ -168,7 +173,8 @@ describe("DefaultAgentSkillsLogic", () => {
         agentId: "agent-1",
         skills: ["weather"]
       }),
-      updateAgentSkills: vi.fn()
+      updateAgentSkills: vi.fn(),
+      installSkill: vi.fn()
     });
 
     await expect(logic.getAgentSkills("agent-1")).resolves.toEqual({
@@ -185,7 +191,8 @@ describe("DefaultAgentSkillsLogic", () => {
         success: true,
         agentId: "agent-1",
         skills: ["weather", "search"]
-      })
+      }),
+      installSkill: vi.fn()
     });
 
     await expect(
@@ -195,6 +202,26 @@ describe("DefaultAgentSkillsLogic", () => {
       agentId: "agent-1",
       skills: ["weather", "search"]
     });
+  });
+
+  it("delegates installSkill to the client", async () => {
+    const installSkill = vi.fn().mockResolvedValue({
+      skillName: "weather",
+      skillPath: "/data/skills/weather"
+    });
+    const logic = new DefaultAgentSkillsLogic({
+      listAvailableSkills: vi.fn(),
+      getAgentSkills: vi.fn(),
+      updateAgentSkills: vi.fn(),
+      installSkill
+    });
+
+    const buf = Buffer.from([0x50, 0x4b]);
+    await expect(logic.installSkill(buf, { overwrite: true })).resolves.toEqual({
+      skillName: "weather",
+      skillPath: "/data/skills/weather"
+    });
+    expect(installSkill).toHaveBeenCalledWith(buf, { overwrite: true });
   });
 
   it("getSkillEntryName prefers name and trims whitespace", () => {

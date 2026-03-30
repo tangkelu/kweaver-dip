@@ -51,3 +51,18 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/DigitalHumanAgentSkill'
+
+    InstallSkillResult:
+      summary: 安装 .skill 包后的响应
+      type: object
+      properties:
+        skillName:
+          type: string
+          title: 技能 ID（与 zip 内顶层目录名一致）
+        skillPath:
+          type: string
+          title: 网关上落盘的绝对路径
+      required:
+        - skillName
+        - skillPath
+      additionalProperties: false

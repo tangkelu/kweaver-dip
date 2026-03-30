@@ -1,8 +1,23 @@
+import path from "node:path";
+
 /**
- * Pure helpers for digital-human skill slugs (defaults + merge on create).
+ * Skill helpers: digital-human default slugs / merge, and install-upload filename → skill id.
  * Kept in `utils` so `logic/digital-human` does not pull skill-binding implementation from
  * `logic/agent-skills` for stateless transforms.
  */
+
+/** Matches DIP `skills-install` slug rules for skill directory names. */
+const SKILL_NAME_SLUG_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
+
+function isSafeSkillNameSegment(name: string): boolean {
+  return (
+    name.length > 0 &&
+    name !== "." &&
+    name !== ".." &&
+    !name.includes("/") &&
+    !name.includes("\\")
+  );
+}
 
 /**
  * Built-in skill slugs merged into every new digital human agent.
@@ -46,4 +61,36 @@ export function mergeCreateDigitalHumanSkills(requestSkills?: string[]): string[
     }
   }
   return out;
+}
+
+/**
+ * Strips `.skill` / `.zip` suffixes (case-insensitive, repeated) from an upload basename.
+ *
+ * @param originalname Value from `multer` `file.originalname`.
+ * @returns A valid skill id, or `undefined` if the name cannot be derived.
+ */
+export function deriveSkillIdFromUploadedFilename(
+  originalname: string
+): string | undefined {
+  const base = path.basename(originalname.trim());
+  if (base.length === 0) {
+    return undefined;
+  }
+  let name = base;
+  for (;;) {
+    const next = name.replace(/\.(skill|zip)$/i, "");
+    if (next === name) {
+      break;
+    }
+    name = next;
+  }
+  name = name.trim();
+  if (
+    name.length === 0 ||
+    !isSafeSkillNameSegment(name) ||
+    !SKILL_NAME_SLUG_RE.test(name)
+  ) {
+    return undefined;
+  }
+  return name;
 }

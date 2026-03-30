@@ -1,62 +1,71 @@
 # DIP OpenClaw 插件
 
-`dip` 是一个 OpenClaw 网关扩展，当前实现只做两件事：
+`dip` 是一个 OpenClaw 网关扩展，当前主要提供三类能力：
 
-1. 提供 agent skills 的查询与配置接口
-2. 提供工作区 `archives/` 的 HTTP 访问，以及写文件后的归档补齐
+1. **Agent skills**：可发现技能列表、按 agent 读写技能绑定、以及通过 Gateway 上传 `.skill`（zip）安装到仓库 `skills/`。
+2. **工作区 archives**：HTTP 读取 `archives/`，以及写文件后的归档路径补齐。
+3. **内置技能包**：插件目录下附带若干 skill 文档，参与发现逻辑。
 
-另外，插件自身打包了 3 个 skills：
+插件自身打包了 2 个 skills：
 
 - `archive-protocol`
 - `schedule-plan`
-- `contextloader`
 
 ## 当前实现的能力
 
 ### 1. Skills 管理
 
-插件注册了一个 CLI 命令：
+#### CLI
 
 ```text
 /skills-manage [list | enable <name> | disable <name>]
 ```
 
-当前行为：
+- `list`：返回当前可发现的 skill 名称，以及全局配置中的启用状态（`skills.entries.<name>.enabled`）。
+- `enable <name>` / `disable <name>`：写入 `openclaw` 配置里的 `skills.entries.<name>.enabled`。
 
-- `list`：返回当前可发现的 skill 名称，以及全局配置中的启用状态
-- `enable <name>` / `disable <name>`：写入 `openclaw` 配置里的 `skills.entries.<name>.enabled`
-
-插件还注册了 HTTP 路由：
+#### HTTP
 
 ```text
 GET    /v1/config/agents/skills
 GET    /v1/config/agents/skills?agentId=<id>
 POST   /v1/config/agents/skills
 PUT    /v1/config/agents/skills
+POST   /v1/config/agents/skills/install
 ```
 
-当前行为：
+**查询与更新 agent 技能绑定**
 
-- `GET` 无 `agentId`：返回当前可发现的 skill 列表
+- `GET` 无 `agentId`：返回当前可发现的 skill id 列表（JSON：`{ "skills": string[] }`）。
 - `GET` 带 `agentId`：
-  - 若该 agent 在配置中显式设置了 `skills`，直接返回该值
-  - 若未显式设置，则按发现逻辑返回该 agent 可见的 skills
-- `POST` / `PUT`：要求 JSON body 中包含 `agentId` 与 `skills` 数组，并写回 `agents.list[].skills`
+  - 若该 agent 在配置中显式设置了 `skills`，直接返回该数组；
+  - 若未显式设置，则按发现逻辑返回该 agent 可见的 skills（JSON：`{ "agentId", "skills" }`）。
+- `POST` / `PUT`：请求体为 JSON，需包含 `agentId`（string）与 `skills`（string[]），整组写回 `agents.list[].skills`（JSON：`{ "success", "agentId", "skills" }`）。
+
+**安装 `.skill` 包（zip）**
+
+- `POST /v1/config/agents/skills/install`
+- 查询参数：`overwrite=true`（可选）。为 `true` 时，若 `skills/<skillName>/` 已存在则先删除再写入。
+- 查询参数：`skillName=<slug>`（可选）。当 zip **根目录**含 **`SKILL.md`**（扁平布局，可多顶层文件/目录）时**必填**，用于指定安装目录名；若 zip 为**单一顶层目录** `<name>/` 且内含 `<name>/SKILL.md`，则技能 id 取自目录名，**不需要** `skillName`。
+- 请求体：**原始 zip 字节**（推荐 `Content-Type: application/zip`）。
+- 成功响应示例：`{ "skillName": "<id>", "skillPath": "<绝对路径>" }`（路径为网关进程所在机器上的落盘路径）。
+- 包内结构（二选一）：**嵌套** — zip 根下仅一个顶层目录 `<skillName>/`，且含 `<skillName>/SKILL.md`；**扁平** — zip 根下含 `SKILL.md`，且通过 `skillName` 指定安装名。目录名需符合常见 slug 字符集。
+- 解压**不引入 npm 压缩库**，通过宿主环境的 `tar -xf` 或 `unzip` 执行。运行 OpenClaw 的进程需在 `PATH` 上能调用其中之一（多数 Linux/macOS/Windows 10+ 自带可读 zip 的 `tar`；极简容器可能需自行安装 `tar` 或 `unzip`，二者并非在所有环境都保证存在）。
 
 ### 2. Skills 发现
 
-当前 skill 发现逻辑按下面顺序执行：
+发现顺序（`discoverSkillNames`）：
 
-1. 扫描仓库根目录下的 `skills/`
-2. 扫描插件目录下的 `studio/extensions/dip/skills/`
-3. 合并去重并排序
-4. 如果本地没有发现任何 skill，则回退到 `openclaw/plugin-sdk` 的 `listSkillCommandsForAgents`
+1. 扫描**仓库根目录**下的 `skills/`（与 `extensions/` 同级，由插件入口中的 `repoRoot/skills` 决定）。
+2. 扫描插件内置目录 `extensions/dip/skills/`（相对仓库根的路径为 `studio/extensions/dip/skills/`）。
+3. 合并、去重、按字典序排序。
+4. 若上述路径下没有任何可识别项，则回退到 `openclaw/plugin-sdk` 的 `listSkillCommandsForAgents`。
 
-当前扫描规则：
+`skills/` 下单个路径的识别规则（`listSkillNamesFromDir`）：
 
-- 识别普通目录
-- 识别以 `.skill` 结尾的目录，并去掉 `.skill` 后缀作为 skill 名
-- 忽略以 `.` 开头的目录
+- **子目录**：目录名即 skill id。
+- **以 `.skill` 结尾的条目**：可为目录或文件；去掉 `.skill` 后缀后作为 skill id（与 OpenClaw 对 `.skill` 包约定一致时，可由目录或单文件形式存在）。
+- 忽略以 `.` 开头的条目。
 
 ### 3. Archives 访问
 
@@ -131,43 +140,6 @@ GET /v1/archives...
 
 注意：插件代码当前没有直接提供 Cron、提醒或自动化创建接口；这里只打包了该 skill 文档。
 
-### `contextloader`
-
-这是一个用于调用 Context Loader API 的 skill，当前文档覆盖的能力包括：
-
-- 概念识别与 schema 检索
-- 混合知识检索
-- 对象实例查询
-- 实例子图扩展
-- 逻辑属性值查询
-- 动态动作信息召回
-- 知识网络构建任务状态查询
-
-当前 skill 文档声明依赖以下环境变量：
-
-- `APP_USER_ID`
-- `CONTEXT_LOADER_BASE_URL`
-
-推荐配置方式是在 `openclaw.json` 中设置：
-
-```json
-{
-  "skills": {
-    "entries": {
-      "contextloader": {
-        "enabled": true,
-        "env": {
-          "APP_USER_ID": "your-app-user-id",
-          "CONTEXT_LOADER_BASE_URL": "http://agent-retrieval:30779"
-        }
-      }
-    }
-  }
-}
-```
-
-当前插件代码本身不解析也不注入这两个变量，只是把 skill 打包出来；运行时环境注入仍由 OpenClaw 负责。
-
 ## 安装与启用
 
 将本目录部署到 OpenClaw 扩展目录后，在配置中启用插件：
@@ -189,3 +161,5 @@ GET /v1/archives...
 - 插件 id：`dip`
 - 插件扩展入口：`./index.ts`
 - 插件内置 skills 目录：`./skills`
+
+若使用 `POST /v1/config/agents/skills/install`，请确保网关进程所在环境可调用 `tar` 或 `unzip`（见上文「安装 `.skill` 包」）。

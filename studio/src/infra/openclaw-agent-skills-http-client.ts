@@ -2,6 +2,7 @@ import { HttpError } from "../errors/http-error";
 import type {
   AgentSkillsBinding,
   AgentSkillsCatalog,
+  InstallSkillResult,
   UpdateAgentSkillsResult
 } from "../types/agent-skills";
 
@@ -56,6 +57,17 @@ export interface OpenClawAgentSkillsHttpClient {
     agentId: string,
     skills: string[]
   ): Promise<UpdateAgentSkillsResult>;
+
+  /**
+   * Installs a `.skill` zip by POSTing raw bytes to the DIP Gateway install route.
+   *
+   * @param zipBody Raw zip bytes (same format as a `.skill` file).
+   * @param options When `overwrite` is true, replaces an existing skill directory.
+   */
+  installSkill(
+    zipBody: Buffer | Uint8Array,
+    options?: { overwrite?: boolean; skillName?: string }
+  ): Promise<InstallSkillResult>;
 }
 
 /**
@@ -149,6 +161,35 @@ implements OpenClawAgentSkillsHttpClient {
 
     return (await response.json()) as UpdateAgentSkillsResult;
   }
+
+  /**
+   * Installs a `.skill` archive through the Gateway plugin HTTP route.
+   *
+   * @param zipBody Raw zip bytes.
+   * @param options Optional overwrite flag forwarded as `?overwrite=true`.
+   * @returns Parsed install payload from the plugin.
+   */
+  public async installSkill(
+    zipBody: Buffer | Uint8Array,
+    options?: { overwrite?: boolean; skillName?: string }
+  ): Promise<InstallSkillResult> {
+    const response = await this.fetchImpl(
+      buildOpenClawSkillInstallUrl(this.options.gatewayUrl, options),
+      {
+        method: "POST",
+        headers: createOpenClawSkillInstallHeaders(this.options.token),
+        body: new Uint8Array(zipBody)
+      }
+    ).catch((error: unknown) => {
+      throw normalizeOpenClawSkillInstallError(error);
+    });
+
+    if (!response.ok) {
+      throw await createOpenClawSkillInstallStatusError(response);
+    }
+
+    return (await response.json()) as InstallSkillResult;
+  }
 }
 
 /**
@@ -182,6 +223,38 @@ export function buildOpenClawAgentSkillsUrl(
 }
 
 /**
+ * Builds the OpenClaw `dip` plugin skill install endpoint URL.
+ *
+ * @param gatewayUrl The configured OpenClaw gateway HTTP URL.
+ * @param options Optional query flags for the install route.
+ * @returns The derived HTTP endpoint URL.
+ */
+export function buildOpenClawSkillInstallUrl(
+  gatewayUrl: string,
+  options?: { overwrite?: boolean; skillName?: string }
+): string {
+  const url = new URL(gatewayUrl);
+
+  if (url.protocol === "ws:") {
+    url.protocol = "http:";
+  } else if (url.protocol === "wss:") {
+    url.protocol = "https:";
+  }
+
+  url.pathname = "/v1/config/agents/skills/install";
+  url.hash = "";
+  url.search = "";
+  if (options?.overwrite === true) {
+    url.searchParams.set("overwrite", "true");
+  }
+  if (options?.skillName !== undefined && options.skillName.trim().length > 0) {
+    url.searchParams.set("skillName", options.skillName.trim());
+  }
+
+  return url.toString();
+}
+
+/**
  * Builds request headers for the `dip` plugin skills API.
  *
  * @param token Optional bearer token.
@@ -199,6 +272,25 @@ export function createOpenClawAgentSkillsHeaders(
   if (includeJsonContentType) {
     headers.set("content-type", "application/json");
   }
+
+  if (token !== undefined && token.trim().length > 0) {
+    headers.set("authorization", `Bearer ${token}`);
+  }
+
+  return headers;
+}
+
+/**
+ * Builds request headers for posting a `.skill` zip to the install route.
+ *
+ * @param token Optional bearer token.
+ * @returns Headers including `application/zip` body type.
+ */
+export function createOpenClawSkillInstallHeaders(token?: string): Headers {
+  const headers = new Headers({
+    accept: "application/json",
+    "content-type": "application/zip"
+  });
 
   if (token !== undefined && token.trim().length > 0) {
     headers.set("authorization", `Bearer ${token}`);
@@ -242,5 +334,43 @@ export function normalizeOpenClawAgentSkillsError(error: unknown): HttpError {
   return new HttpError(
     502,
     `Failed to communicate with OpenClaw /v1/config/agents/skills: ${description}`
+  );
+}
+
+/**
+ * Converts an upstream non-2xx install response into an application error.
+ *
+ * @param response Upstream fetch response.
+ * @returns A typed HTTP error.
+ */
+export async function createOpenClawSkillInstallStatusError(
+  response: Response
+): Promise<HttpError> {
+  const text = (await response.text()).trim();
+  const detail = text.length > 0 ? `: ${text}` : "";
+
+  return new HttpError(
+    502,
+    `OpenClaw /v1/config/agents/skills/install returned HTTP ${response.status}${detail}`
+  );
+}
+
+/**
+ * Normalizes transport errors produced while calling the install route.
+ *
+ * @param error Unknown thrown value.
+ * @returns A typed HTTP error.
+ */
+export function normalizeOpenClawSkillInstallError(error: unknown): HttpError {
+  if (error instanceof HttpError) {
+    return error;
+  }
+
+  const description =
+    error instanceof Error ? error.message : "Unknown upstream error";
+
+  return new HttpError(
+    502,
+    `Failed to communicate with OpenClaw /v1/config/agents/skills/install: ${description}`
   );
 }

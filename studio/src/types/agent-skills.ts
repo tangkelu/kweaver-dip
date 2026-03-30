@@ -42,3 +42,18 @@ export interface UpdateAgentSkillsResult extends AgentSkillsBinding {
    */
   success: boolean;
 }
+
+/**
+ * Response returned after installing a `.skill` zip via the DIP Gateway route.
+ */
+export interface InstallSkillResult {
+  /**
+   * Installed skill id (directory name under `skills/`).
+   */
+  skillName: string;
+
+  /**
+   * Absolute path written by the plugin (Gateway host filesystem).
+   */
+  skillPath: string;
+}
