@@ -25,7 +25,20 @@ KWeaver DIP is an AI-native platform for developing and managing digital employe
 
 ## Quick Start
 
-Installation and deployment content: TODO.
+To deploy KWeaver DIP quickly, use the built-in `deploy` directory in this repository:
+
+```bash
+git clone https://github.com/kweaver-ai/kweaver-dip.git
+cd kweaver-dip/deploy
+sudo ./deploy.sh kweaver-dip install
+```
+
+After deployment, open:
+
+- `https://<node-ip>/deploy` for the deployment console
+- `https://<node-ip>/studio` for KWeaver Studio
+
+For full installation requirements, flags, and offline deployment options, see [deploy/README.md](deploy/README.md).
 
 ## Platform Architecture
 
