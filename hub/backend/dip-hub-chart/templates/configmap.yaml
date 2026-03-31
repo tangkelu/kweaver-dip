@@ -50,20 +50,27 @@ data:
   DIP_HUB_AGENT_FACTORY_URL: {{ index .depServices "agent-factory" "url" | quote }}
   DIP_HUB_AGENT_FACTORY_TIMEOUT: "{{ index .depServices "agent-factory" "timeout" }}"
   
-  # Redis 配置
-  DIP_HUB_REDIS_HOST: {{ .depServices.redis.host | quote }}
-  {{- if .depServices.redis.password }}
-  DIP_HUB_REDIS_PASSWORD: {{ .depServices.redis.password | quote }}
+  # Redis Sentinel 配置
+  DIP_HUB_REDIS_SENTINEL_HOST: {{ .depServices.redis.connectInfo.sentinelHost | quote }}
+  DIP_HUB_REDIS_SENTINEL_PORT: "{{ .depServices.redis.connectInfo.sentinelPort }}"
+  {{- if .depServices.redis.connectInfo.sentinelPassword }}
+  DIP_HUB_REDIS_SENTINEL_PASSWORD: {{ .depServices.redis.connectInfo.sentinelPassword | quote }}
   {{- end }}
-  DIP_HUB_REDIS_DB: "{{ .depServices.redis.database }}"
-  DIP_HUB_REDIS_MIN_IDLE_CONNS: "{{ .depServices.redis.minIdleConns }}"
+  {{- if .depServices.redis.connectInfo.sentinelUsername }}
+  DIP_HUB_REDIS_SENTINEL_USERNAME: {{ .depServices.redis.connectInfo.sentinelUsername | quote }}
+  {{- end }}
+  DIP_HUB_REDIS_MASTER_GROUP_NAME: {{ .depServices.redis.connectInfo.masterGroupName | quote }}
+  {{- if .depServices.redis.connectInfo.password }}
+  DIP_HUB_REDIS_PASSWORD: {{ .depServices.redis.connectInfo.password | quote }}
+  {{- end }}
+  {{- if .depServices.redis.connectInfo.username }}
+  DIP_HUB_REDIS_USERNAME: {{ .depServices.redis.connectInfo.username | quote }}
+  {{- end }}
+  DIP_HUB_REDIS_DB: "{{ .depServices.redis.connectInfo.database }}"
+  DIP_HUB_REDIS_ENABLE_SSL: "{{ if eq (toString .depServices.redis.enableSSL) "true" }}true{{ else }}false{{ end }}"
   
-  # OAuth2 配置
-  DIP_HUB_OAUTH_CLIENT_ID: {{ .service.oauthClientID | quote }}
-  DIP_HUB_OAUTH_CLIENT_SECRET: {{ .service.oauthClientSecret | quote }}
-  {{- if .service.oauthClientID2 }}
-  DIP_HUB_OAUTH_CLIENT_ID2: {{ .service.oauthClientID2 | quote }}
-  {{- end }}
+  # OAuth2 自注册配置
+  DIP_HUB_OAUTH_CLIENT_NAME: {{ .service.oauthClientName | quote }}
   
   # Hydra 配置
   DIP_HUB_HYDRA_HOST: "http://{{ .depServices.hydra.administrativeHost }}:{{ .depServices.hydra.administrativePort }}"
@@ -87,10 +94,6 @@ data:
   
   # 其他依赖服务配置（如果需要）
   LOG_PATH: {{ .depServices.logPath | quote }}
-  REDIS_HOST: {{ .depServices.redis.host | quote }}
-  REDIS_PASSWORD: {{ .depServices.redis.password | quote }}
-  REDIS_DB: {{ .depServices.redis.database | quote }}
-  REDIS_MIN_IDLE_CONNS: {{ .depServices.redis.minIdleConns | quote }}
   HYDRA_HOST: "http://{{ .depServices.hydra.administrativeHost}}:{{ .depServices.hydra.administrativePort}}"
   HYDRA_PUBLIC_HOST: "http://{{ .depServices.hydra.publicHost}}:{{ .depServices.hydra.publicPort}}"
   USER_MANAGE_HOST: "http://{{index .depServices "user-management" "privateHost"}}:{{index .depServices "user-management" "privatePort"}}"

@@ -38,9 +38,7 @@ service:
   type: ClusterIP
   port: 8000
   version: "1.0"
-  oauthClientID: ""
-  oauthClientSecret: ""
-  oauthClientID2: ""
+  oauthClientName: "dip-hub"
   telemetry:
     log:
       enabled: true
@@ -57,16 +55,31 @@ depServices:
   class-443:
     ingressClass: class-443
   rds:
+    system_id: ""
     host: mariadb-mariadb-master.resource
     port: 3330
-    user: anyshare
-    password: eisoo.com123
-    database: dip
+    database: "dip"
+    user: "anyshare"
+    password: "xxxxxx"
+    type: "mysql"
   redis:
-    host: proton-redis-proton-redis.resource:6379
-    password: eisoo.com123
-    database: 1
-    minIdleConns: 8
+    connectInfo:
+      host: ""
+      port: 26379
+      masterHost: ""
+      masterPort: 26379
+      slaveHost: ""
+      slavePort: 26379
+      masterGroupName: mymaster
+      password: EJlRgakfKM
+      sentinelHost: redis-proton-redis-sentinel.resource.svc.cluster.local
+      sentinelPassword: EJlRgakfKM
+      sentinelPort: 26379
+      sentinelUsername: root
+      username: root
+      database: 1
+    connectType: sentinel
+    enableSSL: false
   user-management:
     publicHost: user-management-public
     publicPort: 30980

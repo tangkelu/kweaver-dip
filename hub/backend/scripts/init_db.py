@@ -2,15 +2,14 @@
 数据库初始化脚本
 
 创建 DIP Hub 所需的数据库表。
+使用 pymysql（由 proton-rds-sdk-py 依赖提供）进行数据库操作。
 """
 import pymysql
 import os
 from dotenv import load_dotenv
 
-# 加载环境变量
 load_dotenv()
 
-# 数据库连接配置
 DB_HOST = os.getenv('DIP_HUB_DB_HOST', 'localhost')
 DB_PORT = int(os.getenv('DIP_HUB_DB_PORT', '3306'))
 DB_USER = os.getenv('DIP_HUB_DB_USER', 'root')
@@ -20,26 +19,21 @@ DB_NAME = os.getenv('DIP_HUB_DB_NAME', 'dip')
 
 def init_database():
     """初始化数据库和表。"""
-    # 首先连接到 MySQL（不指定数据库）
     connection = pymysql.connect(
         host=DB_HOST,
         port=DB_PORT,
         user=DB_USER,
         password=DB_PASSWORD,
         charset='utf8mb4',
-        cursorclass=pymysql.cursors.DictCursor
     )
 
     try:
         with connection.cursor() as cursor:
-            # 创建数据库（如果不存在）
             cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{DB_NAME}` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
             print(f"✓ 数据库 '{DB_NAME}' 已创建或已存在")
 
-            # 使用该数据库
             cursor.execute(f"USE `{DB_NAME}`")
 
-            # 创建用户表
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS `t_user` (
                     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
@@ -51,7 +45,6 @@ def init_database():
             """)
             print("✓ 表 't_user' 已创建")
 
-            # 创建角色表
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS `t_role` (
                     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
@@ -63,7 +56,6 @@ def init_database():
             """)
             print("✓ 表 't_role' 已创建")
 
-            # 创建用户-角色关系表
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS `t_user_role` (
                     `user_id` CHAR(36) NOT NULL COMMENT '用户ID',
@@ -73,7 +65,6 @@ def init_database():
             """)
             print("✓ 表 't_user_role' 已创建")
 
-            # 创建应用表（包含所有新字段）
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS `t_application` (
                     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
@@ -83,12 +74,15 @@ def init_database():
                     `icon` BLOB NULL COMMENT '应用图标（二进制数据）',
                     `version` VARCHAR(128) NULL COMMENT '当前上传的版本号',
                     `category` VARCHAR(128) NULL COMMENT '应用所属分组',
+                    `business_domain` VARCHAR(128) NULL DEFAULT 'db_public' COMMENT '业务域',
                     `micro_app` TEXT NULL COMMENT '微应用配置（JSON对象）',
                     `release_config` TEXT NULL COMMENT '应用安装配置（JSON数组，helm release名称列表）',
                     `ontology_ids` TEXT NULL COMMENT '业务知识网络配置（JSON数组，每个元素包含id和is_config字段）',
                     `agent_ids` TEXT NULL COMMENT '智能体配置（JSON数组，每个元素包含id和is_config字段）',
                     `is_config` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '是否完成配置',
-                    `updated_by` CHAR(36) NOT NULL COMMENT '更新者ID',
+                    `pinned` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '是否被钉（置顶）',
+                    `updated_by` VARCHAR(128) NOT NULL COMMENT '更新者用户显示名称',
+                    `updated_by_id` CHAR(36) NULL COMMENT '更新者用户ID',
                     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
                     PRIMARY KEY (`id`),
                     UNIQUE INDEX `idx_key` (`key`),
@@ -117,56 +111,40 @@ def migrate_database():
         port=DB_PORT,
         user=DB_USER,
         password=DB_PASSWORD,
-        db=DB_NAME,
+        database=DB_NAME,
         charset='utf8mb4',
-        cursorclass=pymysql.cursors.DictCursor
     )
 
     try:
         with connection.cursor() as cursor:
-            # 检查并添加新字段
             migrations = [
                 ("category", "ALTER TABLE `t_application` ADD COLUMN `category` VARCHAR(128) NULL COMMENT '应用所属分组' AFTER `version`"),
-                ("micro_app", "ALTER TABLE `t_application` ADD COLUMN `micro_app` TEXT NULL COMMENT '微应用配置（JSON对象）' AFTER `category`"),
+                ("business_domain", "ALTER TABLE `t_application` ADD COLUMN `business_domain` VARCHAR(128) NULL DEFAULT 'db_public' COMMENT '业务域' AFTER `category`"),
+                ("micro_app", "ALTER TABLE `t_application` ADD COLUMN `micro_app` TEXT NULL COMMENT '微应用配置（JSON对象）' AFTER `business_domain`"),
                 ("release_config", "ALTER TABLE `t_application` ADD COLUMN `release_config` TEXT NULL COMMENT '应用安装配置（JSON数组，helm release名称列表）' AFTER `micro_app`"),
                 ("ontology_ids", "ALTER TABLE `t_application` ADD COLUMN `ontology_ids` TEXT NULL COMMENT '业务知识网络ID列表（JSON数组）' AFTER `release_config`"),
                 ("agent_ids", "ALTER TABLE `t_application` ADD COLUMN `agent_ids` TEXT NULL COMMENT '智能体ID列表（JSON数组）' AFTER `ontology_ids`"),
                 ("is_config", "ALTER TABLE `t_application` ADD COLUMN `is_config` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '是否完成配置' AFTER `agent_ids`"),
+                ("pinned", "ALTER TABLE `t_application` ADD COLUMN `pinned` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '是否被钉（置顶）' AFTER `is_config`"),
+                ("updated_by_id", "ALTER TABLE `t_application` ADD COLUMN `updated_by_id` CHAR(36) NULL COMMENT '更新者用户ID' AFTER `updated_by`"),
             ]
 
             for column_name, sql in migrations:
                 try:
-                    # 检查列是否存在
-                    cursor.execute(f"""
-                        SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
-                        WHERE TABLE_SCHEMA = '{DB_NAME}' 
-                        AND TABLE_NAME = 't_application' 
-                        AND COLUMN_NAME = '{column_name}'
-                    """)
+                    cursor.execute(
+                        "SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 't_application' AND COLUMN_NAME = %s",
+                        (DB_NAME, column_name)
+                    )
                     result = cursor.fetchone()
-                    
-                    if result['cnt'] == 0:
+                    count = result[0] if isinstance(result, tuple) else result.get('cnt', 0)
+
+                    if count == 0:
                         cursor.execute(sql)
                         print(f"✓ 已添加列 '{column_name}'")
                     else:
                         print(f"○ 列 '{column_name}' 已存在，跳过")
                 except Exception as e:
                     print(f"✗ 添加列 '{column_name}' 失败: {e}")
-
-            # 删除旧的 config 字段（如果存在且迁移完成）
-            try:
-                cursor.execute(f"""
-                    SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
-                    WHERE TABLE_SCHEMA = '{DB_NAME}' 
-                    AND TABLE_NAME = 't_application' 
-                    AND COLUMN_NAME = 'config'
-                """)
-                result = cursor.fetchone()
-                
-                if result['cnt'] > 0:
-                    print("○ 旧 'config' 列仍存在，可在确认迁移成功后手动删除")
-            except Exception:
-                pass
 
         connection.commit()
         print("\n✓ 数据库迁移完成！")
@@ -181,13 +159,13 @@ def migrate_database():
 
 if __name__ == '__main__':
     import sys
-    
+
     print("DIP Hub 数据库初始化/迁移脚本")
     print(f"数据库主机: {DB_HOST}:{DB_PORT}")
     print(f"数据库名称: {DB_NAME}")
     print(f"数据库用户: {DB_USER}")
     print("-" * 50)
-    
+
     if len(sys.argv) > 1 and sys.argv[1] == 'migrate':
         print("执行数据库迁移...")
         migrate_database()

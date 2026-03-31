@@ -2,16 +2,18 @@
 # Multi-stage build for optimized image
 
 # Build stage
-FROM acr.aishu.cn/dip/py.build:3.10.18-20251020 as builder
+FROM python:3.10-slim AS builder
 
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies (git needed for pip install from GitHub)
 COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN apt-get update && apt-get install -y --no-install-recommends git && \
+    pip install --no-cache-dir --user -r requirements.txt && \
+    apt-get purge -y --auto-remove git && rm -rf /var/lib/apt/lists/*
 
 # Runtime stage
-FROM acr.aishu.cn/dip/py.build:3.10.18-20251020
+FROM python:3.10-slim
 
 WORKDIR /app
 

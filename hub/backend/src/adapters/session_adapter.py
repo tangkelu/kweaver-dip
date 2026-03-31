@@ -3,16 +3,13 @@ Session 适配器
 
 实现 SessionPort 接口的 Redis 适配器。
 负责与 Redis 交互，完成 Session 数据的存储操作。
+使用 Redis Sentinel 模式进行连接。
 """
 import json
 import logging
 from typing import Optional
 
-try:
-    import redis.asyncio as redis
-except ImportError:
-    # 兼容旧版本的 redis 库
-    import aioredis as redis
+from redis.asyncio.sentinel import Sentinel
 
 from src.domains.session import SessionInfo
 from src.ports.session_port import SessionPort
@@ -23,45 +20,59 @@ logger = logging.getLogger(__name__)
 
 class SessionAdapter(SessionPort):
     """
-    Session Redis 适配器实现。
+    Session Redis 适配器实现（Sentinel 模式）。
 
     该适配器实现了 SessionPort 接口，提供 Session 数据的 Redis 访问操作。
-    使用 redis.asyncio 进行异步 Redis 操作。
+    通过 Redis Sentinel 发现 Master 节点并进行异步操作。
     """
 
     def __init__(self, settings: Settings):
-        """
-        初始化 Session 适配器。
-
-        参数:
-            settings: 应用配置
-        """
         self._settings = settings
-        self._redis_client: Optional[redis.Redis] = None
-        self._parse_redis_host()
+        self._sentinel: Optional[Sentinel] = None
+        self._redis_client = None
 
-    def _parse_redis_host(self):
-        """解析 Redis 主机地址"""
-        host_port = self._settings.redis_host.split(":")
-        self._redis_host = host_port[0]
-        self._redis_port = int(host_port[1]) if len(host_port) > 1 else 6379
+    def _build_sentinel(self) -> Sentinel:
+        sentinel_kwargs = {}
+        if self._settings.redis_sentinel_password:
+            sentinel_kwargs["password"] = self._settings.redis_sentinel_password
+        if self._settings.redis_sentinel_username:
+            sentinel_kwargs["username"] = self._settings.redis_sentinel_username
 
-    async def _get_client(self) -> redis.Redis:
+        connection_kwargs = {
+            "db": self._settings.redis_db,
+            "decode_responses": True,
+        }
+        if self._settings.redis_password:
+            connection_kwargs["password"] = self._settings.redis_password
+        if self._settings.redis_username:
+            connection_kwargs["username"] = self._settings.redis_username
+        if self._settings.redis_enable_ssl:
+            connection_kwargs["ssl"] = True
+
+        sentinels = [(self._settings.redis_sentinel_host, self._settings.redis_sentinel_port)]
+
+        sentinel = Sentinel(
+            sentinels,
+            sentinel_kwargs=sentinel_kwargs,
+            **connection_kwargs,
+        )
+        logger.info(
+            "Redis Sentinel 已初始化: sentinels=%s, master_group=%s, db=%s",
+            sentinels,
+            self._settings.redis_master_group_name,
+            self._settings.redis_db,
+        )
+        return sentinel
+
+    async def _get_client(self):
         """
-        获取 Redis 客户端。
-
-        返回:
-            redis.Redis: Redis 客户端
+        通过 Sentinel 获取 Master 节点的 Redis 客户端。
         """
+        if self._sentinel is None:
+            self._sentinel = self._build_sentinel()
         if self._redis_client is None:
-            self._redis_client = await redis.Redis(
-                host=self._redis_host,
-                port=self._redis_port,
-                password=self._settings.redis_password,
-                db=self._settings.redis_db,
-                decode_responses=True,
-            )
-            logger.info(f"Redis 客户端已创建: {self._redis_host}:{self._redis_port}/{self._settings.redis_db}")
+            self._redis_client = self._sentinel.master_for(self._settings.redis_master_group_name)
+            logger.info("已通过 Sentinel 获取 Redis Master 客户端: group=%s", self._settings.redis_master_group_name)
         return self._redis_client
 
     async def get_session(self, session_id: str) -> Optional[SessionInfo]:
@@ -121,11 +132,9 @@ class SessionAdapter(SessionPort):
                 "visitor_typ": session_info.visitor_typ,
                 "sso": session_info.sso,
             }
-            # 移除 None 值
             session_dict = {k: v for k, v in session_dict.items() if v is not None}
             
             data = json.dumps(session_dict)
-            # 设置过期时间为 cookie_timeout
             await client.setex(
                 f"session:{session_id}",
                 self._settings.cookie_timeout,
@@ -154,7 +163,7 @@ class SessionAdapter(SessionPort):
     async def close(self):
         """关闭 Redis 客户端连接。"""
         if self._redis_client is not None:
-            await self._redis_client.close()
+            await self._redis_client.aclose()
             self._redis_client = None
-            logger.info("Redis 客户端连接已关闭")
-
+        self._sentinel = None
+        logger.info("Redis Sentinel 连接已关闭")

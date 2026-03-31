@@ -26,6 +26,7 @@ from src.infrastructure.container import init_container, get_container
 from src.infrastructure.logging.logger import setup_logging
 from src.infrastructure.middleware.auth_middleware import AuthMiddleware
 from src.infrastructure.database.init import ensure_tables_exist
+from src.infrastructure.oauth_register import register_oauth_client
 from src.routers.health_router import create_health_router
 from src.routers.application_router import create_application_router
 from src.routers.login_router import create_login_router
@@ -65,9 +66,20 @@ def create_app(settings: Settings = None) -> FastAPI:
             await ensure_tables_exist(settings)
         except Exception as e:
             logger.error(f"数据库表初始化失败: {e}", exc_info=True)
-            # 根据需求决定是否继续启动或退出
-            # 这里选择继续启动，但记录错误
             logger.warning("服务将在数据库表可能不完整的情况下启动")
+
+        # OAuth2 客户端自注册
+        try:
+            logger.info("开始 OAuth2 客户端自注册...")
+            client_id, client_secret = await register_oauth_client(
+                settings, container.deploy_manager_adapter
+            )
+            object.__setattr__(settings, "oauth_client_id", client_id)
+            object.__setattr__(settings, "oauth_client_secret", client_secret)
+            logger.info("OAuth2 客户端自注册完成: client_id=%s", client_id)
+        except Exception as e:
+            logger.error(f"OAuth2 客户端自注册失败: {e}", exc_info=True)
+            logger.warning("服务将在 OAuth2 客户端未注册的情况下启动，登录功能可能不可用")
 
         # 初始化完成后标记服务为就绪状态
         container.set_ready(True)

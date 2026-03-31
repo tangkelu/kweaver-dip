@@ -4,39 +4,11 @@
 使用 pydantic-settings 进行配置管理。
 配置可以通过环境变量或 .env 文件进行设置。
 """
-import os
 from functools import lru_cache
 from typing import Optional
 
-import yaml
-from pydantic import Field, model_validator
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-# OAuth registry 配置文件路径
-OAUTH_REGISTRY_CONFIG_PATH = "/etc/globalConfig/oauth/oauth-registry-info.yaml"
-
-
-def _load_oauth_config_from_registry() -> tuple[Optional[str], Optional[str]]:
-    """
-    从 oauth-registry-info.yaml 文件中读取 dip-hub 的 OAuth 配置。
-    
-    返回:
-        tuple[Optional[str], Optional[str]]: (oauthClientID, oauthClientSecret)
-    """
-    if not os.path.exists(OAUTH_REGISTRY_CONFIG_PATH):
-        return None, None
-    
-    try:
-        with open(OAUTH_REGISTRY_CONFIG_PATH, "r", encoding="utf-8") as f:
-            config = yaml.safe_load(f)
-        
-        if config and "dip-hub" in config:
-            dip_hub = config["dip-hub"]
-            return dip_hub.get("oauthClientID"), dip_hub.get("oauthClientSecret")
-    except Exception:
-        pass
-    
-    return None, None
 
 
 class Settings(BaseSettings):
@@ -117,41 +89,29 @@ class Settings(BaseSettings):
         description="是否使用 Mock 外部服务（用于本地开发调试）"
     )
 
-    # Redis 配置
-    redis_host: str = Field(default="localhost:6379", description="Redis 主机地址")
+    # Redis Sentinel 配置
+    redis_sentinel_host: str = Field(default="localhost", description="Redis Sentinel 主机地址")
+    redis_sentinel_port: int = Field(default=26379, description="Redis Sentinel 端口")
+    redis_sentinel_password: Optional[str] = Field(default=None, description="Redis Sentinel 密码")
+    redis_sentinel_username: Optional[str] = Field(default=None, description="Redis Sentinel 用户名")
+    redis_master_group_name: str = Field(default="mymaster", description="Redis Sentinel Master 组名")
     redis_password: Optional[str] = Field(default=None, description="Redis 密码")
+    redis_username: Optional[str] = Field(default=None, description="Redis 用户名")
     redis_db: int = Field(default=1, description="Redis 数据库编号")
-    redis_min_idle_conns: int = Field(default=8, description="Redis 最小空闲连接数")
+    redis_enable_ssl: bool = Field(default=False, description="Redis 是否启用 SSL")
 
-    # OAuth2 配置
-    oauth_client_id: str = Field(default="", description="OAuth2 客户端 ID")
-    oauth_client_secret: str = Field(default="", description="OAuth2 客户端 Secret")
-    oauth_client_id2: Optional[str] = Field(default=None, description="OAuth2 客户端 ID2")
-
-    @model_validator(mode="after")
-    def load_oauth_config_from_registry(self) -> "Settings":
-        """
-        从 oauth-registry-info.yaml 文件中加载 OAuth 配置。
-        
-        优先级逻辑：
-        1. 如果配置文件中有值，使用配置文件中的值（最高优先级）
-        2. 如果配置文件中没有值，但环境变量有值，保持环境变量的值
-        3. 如果都没有，使用默认空字符串
-        """
-        registry_client_id, registry_client_secret = _load_oauth_config_from_registry()
-        if registry_client_id:
-            object.__setattr__(self, "oauth_client_id", registry_client_id)
-        if registry_client_secret:
-            object.__setattr__(self, "oauth_client_secret", registry_client_secret)
-        return self
+    # OAuth2 配置（通过启动时自注册获取 client_id 和 client_secret）
+    oauth_client_name: str = Field(default="dip-hub", description="OAuth2 客户端名称（用于自注册）")
+    oauth_client_id: str = Field(default="", description="OAuth2 客户端 ID（启动时自动注册获取）")
+    oauth_client_secret: str = Field(default="", description="OAuth2 客户端 Secret（启动时自动注册获取）")
 
     # Hydra 配置
     hydra_host: str = Field(
-        default="http://localhost:4445",
+        default="http://lhydra-admin:4445",
         description="Hydra 管理服务地址（Admin API）"
     )
     hydra_public_url: str = Field(
-        default="http://localhost:4444",
+        default="http://hydra-public:4444",
         description="Hydra 公开服务地址（Public API）"
     )
     hydra_timeout: int = Field(default=30, description="Hydra 请求超时时间（秒）")
@@ -168,7 +128,7 @@ class Settings(BaseSettings):
 
     # Deploy Manager 服务配置
     deploy_manager_url: str = Field(
-        default="http://deploy-manager",
+        default="http://deploy-manager:9703",
         description="Deploy Manager 服务地址"
     )
     deploy_manager_timeout: int = Field(
