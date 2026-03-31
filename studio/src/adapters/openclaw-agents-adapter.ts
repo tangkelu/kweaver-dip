@@ -20,9 +20,10 @@ import type {
   OpenClawRequestFrame,
   OpenClawSkillStatusEntry,
   OpenClawSkillsStatusParams,
-  SkillOriginType
+  OpenClawSkillOriginType,
+  OpenClawSkillStatusEntryRaw,
+  OpenClawSkillStatusReport
 } from "../types/openclaw";
-import type { SkillOriginType } from "../types/openclaw";
 
 /**
  * Outbound adapter used to manage OpenClaw agents through the gateway port.
@@ -341,7 +342,7 @@ export class OpenClawAgentsGatewayAdapter implements OpenClawAgentsAdapter {
   public async getSkillStatuses(
     params: OpenClawSkillsStatusParams = {}
   ): Promise<OpenClawSkillStatusEntry[]> {
-    const result = await this.gatewayPort.invoke<unknown>(
+    const result = await this.gatewayPort.invoke<OpenClawSkillStatusReport>(
       createSkillsStatusRequest(params)
     );
 
@@ -382,7 +383,7 @@ export class OpenClawAgentsGatewayAdapter implements OpenClawAgentsAdapter {
  * @param skillOriginContext Resolved home + workspace for classification; omit for tests.
  */
 export function normalizeSkillStatusesFromRpcResult(
-  result: unknown
+  result: OpenClawSkillStatusReport
 ): OpenClawSkillStatusEntry[] {
   return parseAndNormalizeSkillStatusEntries(result, {});
 }
@@ -393,7 +394,7 @@ export function normalizeSkillStatusesFromRpcResult(
  * @param result Raw `skills.status` payload.
  */
 export function normalizeSkillStatusEntries(
-  result: unknown
+  result: OpenClawSkillStatusReport
 ): OpenClawSkillStatusEntry[] {
   return parseAndNormalizeSkillStatusEntries(result, {});
 }
@@ -407,24 +408,6 @@ export function enrichSkillEntriesWithOrigin(
   return entries;
 }
 
-/** RPC envelope keys that are not per-skill entries (see `skills.status` response shape). */
-const SKILLS_STATUS_ENVELOPE_KEYS = new Set([
-  "bins",
-  "diagnostics",
-  "installRoot",
-  "skillsRoot",
-  "skillRoot",
-  "skillsInstallRoot",
-  "skillsDir",
-  "skillStorePath",
-  "skillsPath",
-  "workspaceDir",
-  "managedSkillsDir",
-  "skills",
-  "entries",
-  "items"
-]);
-
 /**
  * Resolves full `skillPath` from the raw RPC (envelope `installRoot`, nested fields, etc.).
  * Does not set `skillOriginType` — call {@link attachSkillOriginTypesAfterPathsResolved} after.
@@ -433,77 +416,15 @@ const SKILLS_STATUS_ENVELOPE_KEYS = new Set([
  * @param options Optional `installRoot` override (tests).
  */
 export function parseAndNormalizeSkillStatusEntries(
-  result: unknown,
+  result: OpenClawSkillStatusReport,
   options: { installRoot?: string } = {}
 ): OpenClawSkillStatusEntry[] {
-  if (Array.isArray(result)) {
-    return result
-      .map((entry) => normalizeSkillStatusEntry(entry, undefined, options))
-      .filter((entry): entry is OpenClawSkillStatusEntry => entry !== undefined);
-  }
-
-  if (typeof result !== "object" || result === null) {
-    return [];
-  }
-
-  const top = result as Record<string, unknown>;
-  const installRoot =
-    options.installRoot ?? readTopLevelSkillInstallRoot(top);
-
+  const installRoot = options.installRoot;
   const mergedOptions: NormalizeSkillStatusEntryOptions = { installRoot };
 
-  for (const collectionKey of ["skills", "entries", "items"]) {
-    const collection = top[collectionKey];
-
-    if (Array.isArray(collection)) {
-      return collection
-        .map((entry) => normalizeSkillStatusEntry(entry, undefined, mergedOptions))
-        .filter((entry): entry is OpenClawSkillStatusEntry => entry !== undefined);
-    }
-  }
-
-  return Object.entries(top).flatMap(([skillKey, value]) => {
-    if (SKILLS_STATUS_ENVELOPE_KEYS.has(skillKey)) {
-      return [];
-    }
-
-    const normalized = normalizeSkillStatusEntry(value, skillKey, mergedOptions);
-
-    return normalized === undefined ? [] : [normalized];
-  });
-}
-
-function readTopLevelSkillInstallRoot(top: Record<string, unknown>): string | undefined {
-  const direct = readFirstString(
-    top.installRoot,
-    top.skillsRoot,
-    top.skillRoot,
-    top.skillsInstallRoot,
-    top.skillsDir,
-    top.skillStorePath,
-    top.skillsPath
-  );
-
-  if (direct !== undefined) {
-    return direct;
-  }
-
-  const bins = top.bins;
-
-  if (Array.isArray(bins)) {
-    for (const bin of bins) {
-      if (typeof bin === "object" && bin !== null) {
-        const b = bin as Record<string, unknown>;
-        const p = readFirstString(b.path, b.root, b.dir, b.skillsDir);
-
-        if (p !== undefined) {
-          return p;
-        }
-      }
-    }
-  }
-
-  return undefined;
+  return result.skills
+    .map((entry) => normalizeSkillStatusEntry(entry, mergedOptions))
+    .filter((entry): entry is OpenClawSkillStatusEntry => entry !== undefined);
 }
 
 /**
@@ -517,71 +438,38 @@ export interface NormalizeSkillStatusEntryOptions {
  * Normalizes one raw `skills.status` entry.
  *
  * @param candidate The raw status entry.
- * @param fallbackKey The fallback skill key derived from object keys.
  * @param options Envelope `installRoot` for path join when entry omits a path.
  * @returns The normalized entry, or `undefined` when it cannot be parsed.
  */
 export function normalizeSkillStatusEntry(
-  candidate: unknown,
-  fallbackKey?: string,
+  candidate: OpenClawSkillStatusEntryRaw,
   options: NormalizeSkillStatusEntryOptions = {}
 ): OpenClawSkillStatusEntry | undefined {
-  if (typeof candidate === "boolean") {
-    if (fallbackKey === undefined) {
-      return undefined;
-    }
-
-    return {
-      skillKey: fallbackKey,
-      name: fallbackKey,
-      enabled: candidate,
-      ...deriveSkillPathFields(fallbackKey, undefined, options)
-    };
-  }
-
-  if (typeof candidate !== "object" || candidate === null) {
-    return fallbackKey === undefined
-      ? undefined
-      : {
-          skillKey: fallbackKey,
-          name: fallbackKey,
-          enabled: undefined,
-          ...deriveSkillPathFields(fallbackKey, undefined, options)
-        };
-  }
-
-  const raw = candidate as Record<string, unknown>;
-  const skillKey = readFirstString(raw.skillKey, raw.key, raw.id, fallbackKey);
-
-  if (skillKey === undefined) {
+  const rawSkillKey = (candidate.skillKey ?? "").trim();
+  if (rawSkillKey.length === 0) {
     return undefined;
   }
 
-  const skillPath = resolveSkillDirectoryPath(skillKey, raw, options);
-  const source = readFirstString(raw.source);
+  const skillPath = resolveSkillDirectoryPath(rawSkillKey, candidate, options);
+  const source = readFirstString(candidate.source);
 
   return {
-    skillKey,
-    name: readFirstString(raw.name, raw.skillName, raw.skill, skillKey),
-    description: readFirstString(
-      raw.description,
-      raw.desc,
-      raw.summary,
-      raw.prompt
-    ),
-    enabled: readEnabledFlag(raw),
+    skillKey: rawSkillKey,
+    name: resolveSkillName(candidate, rawSkillKey),
+    description: resolveSkillDescription(candidate),
+    enabled: readEnabledFlag(candidate),
     ...(skillPath !== undefined ? { skillPath } : {}),
     ...(source !== undefined ? { source } : {}),
-    ...readSkillOriginType(raw.skillOriginType)
+    ...readSkillOriginType(candidate.skillOriginType)
   };
 }
 
 function resolveSkillDirectoryPath(
   skillKey: string,
-  raw: Record<string, unknown>,
+  raw: OpenClawSkillStatusEntryRaw,
   options: NormalizeSkillStatusEntryOptions
 ): string | undefined {
-  const fromEntry = readFirstSkillPathDeep(raw);
+  const fromEntry = readSkillDirectoryFromEntry(raw);
 
   if (fromEntry !== undefined) {
     return fromEntry;
@@ -592,11 +480,11 @@ function resolveSkillDirectoryPath(
 
 function deriveSkillPathFields(
   skillKey: string,
-  raw: Record<string, unknown> | undefined,
+  raw: OpenClawSkillStatusEntryRaw | undefined,
   options: NormalizeSkillStatusEntryOptions
 ): { skillPath?: string } {
   const fromEntry =
-    raw === undefined ? undefined : readFirstSkillPathDeep(raw);
+    raw === undefined ? undefined : readSkillDirectoryFromEntry(raw);
   const skillPath =
     fromEntry ?? derivePathFromInstallRoot(skillKey, options.installRoot);
 
@@ -614,57 +502,17 @@ function derivePathFromInstallRoot(
   return path.join(installRoot.trim(), skillKey.trim());
 }
 
-function readFirstSkillPathDeep(raw: Record<string, unknown>): string | undefined {
-  const direct = readFirstString(
-    raw.path,
-    raw.skillPath,
-    raw.dir,
-    raw.skillDir,
-    raw.root,
-    raw.location,
-    raw.file,
-    raw.folder,
-    raw.diskPath,
-    raw.localPath,
-    raw.absolutePath,
-    raw.fsPath,
-    raw.workspacePath,
-    raw.home,
-    raw.resolvedPath,
-    raw.installPath,
-    raw.basePath,
-    raw.directory,
-    raw.folderPath,
-    raw.uri,
-    raw.baseDir,
-    raw.baseDirectory,
-    raw.skillBaseDir,
-    raw.filePath
-  );
+function readSkillDirectoryFromEntry(raw: OpenClawSkillStatusEntryRaw): string | undefined {
+  const fromBaseDir = readFirstString(raw.baseDir);
 
-  if (direct !== undefined) {
-    return normalizeSkillDirCandidate(direct);
+  if (fromBaseDir !== undefined) {
+    return normalizeSkillDirCandidate(fromBaseDir);
   }
 
-  for (const nestedKey of [
-    "meta",
-    "info",
-    "source",
-    "config",
-    "detail",
-    "details",
-    "location",
-    "data"
-  ]) {
-    const value = raw[nestedKey];
+  const fromFilePath = readFirstString(raw.filePath);
 
-    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-      const nested = readFirstSkillPathDeep(value as Record<string, unknown>);
-
-      if (nested !== undefined) {
-        return normalizeSkillDirCandidate(nested);
-      }
-    }
+  if (fromFilePath !== undefined) {
+    return normalizeSkillDirCandidate(fromFilePath);
   }
 
   return undefined;
@@ -695,48 +543,28 @@ function normalizeSkillDirCandidate(value: string): string {
 }
 
 /**
- * Reads the first non-empty string from a candidate list.
- *
- * @param values Raw candidate values.
- * @returns The first trimmed string, or `undefined`.
- */
-function readFirstString(...values: unknown[]): string | undefined {
-  for (const value of values) {
-    if (typeof value === "string" && value.trim().length > 0) {
-      return value.trim();
-    }
-  }
-
-  return undefined;
-}
-
-/**
  * Derives one normalized enabled flag from a raw skill status entry.
  *
  * @param candidate The raw skill status object.
  * @returns The normalized enabled flag, or `undefined`.
  */
-function readEnabledFlag(candidate: Record<string, unknown>): boolean | undefined {
-  for (const key of ["enabled", "isEnabled", "active"]) {
-    const value = candidate[key];
-
-    if (typeof value === "boolean") {
-      return value;
+function readEnabledFlag(candidate: OpenClawSkillStatusEntryRaw): boolean | undefined {
+  for (const flag of [candidate.enabled, candidate.isEnabled, candidate.active]) {
+    if (flag !== undefined) {
+      return flag;
     }
   }
 
-  if (typeof candidate.disabled === "boolean") {
+  if (candidate.disabled !== undefined) {
     return candidate.disabled !== true;
   }
 
-  for (const key of ["status", "state"]) {
-    const value = candidate[key];
+  for (const value of [candidate.status, candidate.state]) {
+    const normalized = value?.trim().toLowerCase();
 
-    if (typeof value !== "string") {
+    if (normalized === undefined) {
       continue;
     }
-
-    const normalized = value.trim().toLowerCase();
 
     if (["enabled", "enable", "active", "on"].includes(normalized)) {
       return true;
@@ -751,12 +579,36 @@ function readEnabledFlag(candidate: Record<string, unknown>): boolean | undefine
 }
 
 function readSkillOriginType(
-  candidate: unknown
-): { skillOriginType: SkillOriginType } | undefined {
-  if (typeof candidate !== "string") {
+  candidate: string | undefined
+): { skillOriginType: OpenClawSkillOriginType } | undefined {
+  if (candidate === undefined) {
     return undefined;
   }
 
   const normalized = candidate.trim();
   return normalized.length > 0 ? { skillOriginType: normalized } : undefined;
+}
+
+function resolveSkillName(raw: OpenClawSkillStatusEntryRaw, fallback: string): string {
+  return readFirstString(raw.name, raw.skillName, raw.skill, fallback) ?? fallback;
+}
+
+function resolveSkillDescription(
+  raw: OpenClawSkillStatusEntryRaw
+): string | undefined {
+  return readFirstString(raw.description, raw.desc, raw.summary, raw.prompt);
+}
+
+function readFirstString(...values: Array<string | undefined | null>): string | undefined {
+  for (const value of values) {
+    if (value !== undefined && value !== null) {
+      const trimmed = value.trim();
+
+      if (trimmed.length > 0) {
+        return trimmed;
+      }
+    }
+  }
+
+  return undefined;
 }

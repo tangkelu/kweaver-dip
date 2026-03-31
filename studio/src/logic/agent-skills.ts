@@ -11,7 +11,10 @@ import type {
   UninstallSkillResult,
   UpdateAgentSkillsResult
 } from "../types/agent-skills";
-import type { OpenClawSkillStatusEntry, SkillOriginType } from "../types/openclaw";
+import type {
+  OpenClawSkillStatusEntry,
+  OpenClawSkillOriginType
+} from "../types/openclaw";
 import { isDefaultDigitalHumanSkillSlug } from "../utils/skills";
 
 /**
@@ -253,7 +256,7 @@ export class DefaultAgentSkillsLogic implements AgentSkillsLogic {
  */
 export function resolveSkillEntryOriginType(
   entry: OpenClawSkillStatusEntry
-): SkillOriginType {
+): OpenClawSkillOriginType {
   if (entry.source !== undefined && entry.source.trim().length > 0) {
     return entry.source;
   }

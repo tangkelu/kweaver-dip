@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 
-import path from "node:path";
 
 import {
   createAgentsCreateRequest,
@@ -220,7 +219,7 @@ describe("OpenClawAgentsGatewayAdapter", () => {
         skills: [
           {
             skillKey: "ws-skill",
-            path: "/Users/h/agent-workspace/skills/ws-skill",
+            baseDir: "/Users/h/agent-workspace/skills/ws-skill",
             enabled: true
           }
         ]
@@ -336,31 +335,18 @@ describe("createSkillsStatusRequest", () => {
 });
 
 describe("normalizeSkillStatusEntries", () => {
-  it("joins top-level installRoot with skillKey when entry has no path", () => {
-    expect(
-      normalizeSkillStatusEntries({
-        installRoot: "/data/openclaw/skills-root",
-        skills: [{ skillKey: "weather", enabled: true }]
-      })
-    ).toEqual([
-      {
-        skillKey: "weather",
-        name: "weather",
-        description: undefined,
-        enabled: true,
-        skillPath: path.join("/data/openclaw/skills-root", "weather")
-      }
-    ]);
-  });
-
   it("retains upstream skillOriginType when provided by the gateway", () => {
     expect(
-      normalizeSkillStatusEntries([
-        {
-          skillKey: "planner",
-          skillOriginType: "workspace"
-        }
-      ])
+      normalizeSkillStatusEntries({
+        workspaceDir: "/home/ws",
+        managedSkillsDir: "/home/skills",
+        skills: [
+          {
+            skillKey: "planner",
+            skillOriginType: "workspace"
+          }
+        ]
+      })
     ).toEqual([
       {
         skillKey: "planner",
@@ -396,64 +382,19 @@ describe("normalizeSkillStatusEntries", () => {
     ]);
   });
 
-  it("reads nested meta.path for skill directory", () => {
+  it("captures filesystem paths from gateway payloads", () => {
     expect(
       normalizeSkillStatusEntries({
+        workspaceDir: "/home/ws",
+        managedSkillsDir: "/home/skills",
         skills: [
           {
-            skillKey: "k",
-            enabled: true,
-            meta: { path: "/repo/skills/k" }
+            skillKey: "a",
+            baseDir: "/tmp/skills/a",
+            enabled: true
           }
         ]
       })
-    ).toEqual([
-      {
-        skillKey: "k",
-        name: "k",
-        description: undefined,
-        enabled: true,
-        skillPath: "/repo/skills/k"
-      }
-    ]);
-  });
-
-  it("ignores envelope-only keys when falling back to keyed map", () => {
-    expect(
-      normalizeSkillStatusEntries({
-        installRoot: "/r",
-        bins: [{ name: "b", path: "/bin" }],
-        diagnostics: []
-      })
-    ).toEqual([]);
-  });
-
-  it("uses first bins[].path as install root when installRoot is absent", () => {
-    expect(
-      normalizeSkillStatusEntries({
-        bins: [{ name: "default", path: "/gw/store" }],
-        skills: [{ skillKey: "weather", enabled: true }]
-      })
-    ).toEqual([
-      {
-        skillKey: "weather",
-        name: "weather",
-        description: undefined,
-        enabled: true,
-        skillPath: path.join("/gw/store", "weather")
-      }
-    ]);
-  });
-
-  it("captures filesystem paths from gateway payloads", () => {
-    expect(
-      normalizeSkillStatusEntries([
-        {
-          skillKey: "a",
-          path: "/tmp/skills/a",
-          enabled: true
-        }
-      ])
     ).toEqual([
       {
         skillKey: "a",
@@ -467,42 +408,17 @@ describe("normalizeSkillStatusEntries", () => {
 
   it("normalizes array payloads", () => {
     expect(
-      normalizeSkillStatusEntries([
-        {
-          skillKey: "planner",
-          name: "planner",
-          description: undefined,
-          enabled: true
-        },
-        {
-          key: "writer",
-          desc: "writer skill",
-          disabled: false
-        }
-      ])
-    ).toEqual([
-      {
-        skillKey: "planner",
-        name: "planner",
-        description: undefined,
-        enabled: true
-      },
-      {
-        skillKey: "writer",
-        name: "writer",
-        description: "writer skill",
-        enabled: true
-      }
-    ]);
-  });
-
-  it("normalizes keyed object payloads", () => {
-    expect(
       normalizeSkillStatusEntries({
-        planner: {
-          enabled: true
-        },
-        writer: false
+        workspaceDir: "/home/ws",
+        managedSkillsDir: "/home/skills",
+        skills: [
+          {
+            skillKey: "planner",
+            name: "planner",
+            description: undefined,
+            enabled: true
+          }
+        ]
       })
     ).toEqual([
       {
@@ -510,13 +426,8 @@ describe("normalizeSkillStatusEntries", () => {
         name: "planner",
         description: undefined,
         enabled: true
-      },
-      {
-        skillKey: "writer",
-        name: "writer",
-        description: undefined,
-        enabled: false
       }
     ]);
   });
+
 });

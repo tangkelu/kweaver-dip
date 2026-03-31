@@ -371,7 +371,7 @@ export interface OpenClawSkillsStatusParams {
 /**
  * Gateway-reported classification for a skill entry (mirrors `skills.status` `source` field).
  */
-export type SkillOriginType = string;
+export type OpenClawSkillOriginType = string;
 
 /**
  * Normalized skill status entry returned by `skills.status`.
@@ -380,7 +380,7 @@ export interface OpenClawSkillStatusEntry {
   /**
    * Gateway-reported source classification (see `skills.status` payloads).
    */
-  source?: SkillOriginType;
+  source?: OpenClawSkillOriginType;
 
   /**
    * Stable skill identifier.
@@ -410,8 +410,273 @@ export interface OpenClawSkillStatusEntry {
   /**
    * Classified origin for {@link OpenClawSkillStatusEntry.skillPath} when present.
    */
-  skillOriginType?: SkillOriginType;
+  skillOriginType?: OpenClawSkillOriginType;
 }
+
+/**
+ * Snapshot returned by `skills.status`, containing directories and skill entries.
+ */
+export interface OpenClawSkillStatusReport {
+  /**
+   * Absolute workspace directory resolved by the gateway.
+   */
+  workspaceDir: string;
+
+  /**
+   * Directory that stores managed skills inside the gateway repo.
+   */
+  managedSkillsDir: string;
+
+  /**
+   * Skills reported in this snapshot.
+   */
+  skills: OpenClawSkillStatusEntryRaw[];
+}
+
+/**
+ * Raw skill status entry reported by the gateway.
+ */
+export interface OpenClawSkillStatusEntryRaw {
+  /**
+   * Stable skill identifier.
+   */
+  skillKey: string;
+
+  /**
+   * Human-readable skill name (mirrors `SKILL.md`).
+   */
+  name?: string;
+
+  /**
+   * Alias for {@link name} observed in older payloads.
+   */
+  skillName?: string;
+
+  /**
+   * Alias for {@link name} observed in older payloads.
+   */
+  skill?: string;
+
+  /**
+   * Human-readable description derived from `SKILL.md`.
+   */
+  description?: string;
+
+  /**
+   * Alias for {@link description}.
+   */
+  desc?: string;
+
+  /**
+   * Fallback aliases for {@link description}.
+   */
+  summary?: string;
+
+  /**
+   * Legacy description alias.
+   */
+  prompt?: string;
+
+  /**
+   * Gateway-provided source classification, e.g. `openclaw-extra`.
+   */
+  source?: string;
+
+  /**
+   * Indicates whether the skill ships with the gateway bundle.
+   */
+  bundled?: boolean;
+
+  /**
+   * Path to `SKILL.md` on disk.
+   */
+  filePath?: string;
+
+  /**
+   * Absolute directory that hosts the skill.
+   */
+  baseDir?: string;
+
+  /**
+   * Optional primary environment indicator from metadata.
+   */
+  primaryEnv?: string;
+
+  /**
+   * Optional emoji set inside the skill metadata.
+   */
+  emoji?: string;
+
+  /**
+   * Optional homepage URL declared by the skill.
+   */
+  homepage?: string;
+
+  /**
+   * Indicates whether the skill should always run.
+   */
+  always?: boolean;
+
+  /**
+   * Indicates whether the skill is currently disabled.
+   */
+  disabled?: boolean;
+
+  /**
+   * Whether the skill is blocked by an allowlist restriction.
+   */
+  blockedByAllowlist?: boolean;
+
+  /**
+   * Whether the gateway deems this skill eligible to run.
+   */
+  eligible?: boolean;
+
+  /**
+   * Optional enabled flag variations.
+   */
+  enabled?: boolean;
+
+  /**
+   * Legacy enabled alias.
+   */
+  isEnabled?: boolean;
+
+  /**
+   * Legacy active alias.
+   */
+  active?: boolean;
+
+  /**
+   * Legacy string status flag.
+   */
+  status?: string;
+
+  /**
+   * Legacy string state flag.
+   */
+  state?: string;
+
+  /**
+   * Requirements declared by the skill.
+   */
+  requirements?: OpenClawSkillRequirements;
+
+  /**
+   * Requirements that are currently missing on the host.
+   */
+  missing?: OpenClawSkillRequirements;
+
+  /**
+   * Config checks that must pass before the skill can run.
+   */
+  configChecks?: OpenClawSkillStatusConfigCheck[];
+
+  /**
+   * Installation options such as scripts or commands.
+   */
+  install?: OpenClawSkillInstallOption[];
+
+  /**
+   * Raw origin type reported by the gateway.
+   */
+  skillOriginType?: OpenClawSkillOriginType;
+
+  /**
+   * Allow future fields without breaking the parser.
+   */
+  [key: string]: unknown;
+}
+
+/**
+ * Requirement buckets surfaced by the gateway for one skill entry.
+ */
+export type OpenClawSkillRequirements = {
+  /**
+   * Required binaries that must exist on PATH.
+   */
+  bins: string[];
+
+  /**
+   * Alternative binaries where any of the entries can satisfy the requirement.
+   */
+  anyBins: string[];
+
+  /**
+   * Environment variables required by the skill.
+   */
+  env: string[];
+
+  /**
+   * Configuration entries required by the skill.
+   */
+  config: string[];
+
+  /**
+   * Operating systems supported or required by the skill.
+   */
+  os: string[];
+};
+
+/**
+ * Gateway-reported config check entry.
+ */
+export type OpenClawRequirementConfigCheck = {
+  /**
+   * Configuration path inspected by the gateway.
+   */
+  path: string;
+
+  /**
+   * Whether the gateway considers this path satisfied.
+   */
+  satisfied: boolean;
+};
+
+/**
+ * Configuration validation result emitted by the gateway.
+ */
+export type OpenClawSkillStatusConfigCheck = OpenClawRequirementConfigCheck;
+
+/**
+ * Install spec surfaced by the gateway for one skill entry.
+ */
+export interface OpenClawSkillInstallSpec {
+  /**
+   * Discriminator for the install spec variant.
+   */
+  kind: string;
+
+  /**
+   * Additional install spec fields passed through as-is.
+   */
+  [key: string]: unknown;
+}
+
+/**
+ * Installation option defined by the gateway for one skill.
+ */
+export type OpenClawSkillInstallOption = {
+  /**
+   * Stable identifier for this install option.
+   */
+  id: string;
+
+  /**
+   * Install spec variant for this option.
+   */
+  kind: OpenClawSkillInstallSpec["kind"];
+
+  /**
+   * Human-readable label for this option.
+   */
+  label: string;
+
+  /**
+   * Binary requirements needed for this option.
+   */
+  bins: string[];
+};
 
 /**
  * Represents a request frame sent to the OpenClaw gateway.

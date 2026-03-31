@@ -1,4 +1,4 @@
-import type { SkillOriginType } from "./openclaw";
+import type { OpenClawSkillOriginType } from "./openclaw";
 
 /**
  * Describes the public digital human payload exposed by DIP Studio.
@@ -54,7 +54,7 @@ export interface DigitalHumanSkill {
   /**
    * Where the skill directory lives on the gateway host (OpenClaw layout).
    */
-  type: SkillOriginType;
+  type: OpenClawSkillOriginType;
 }
 
 /**
@@ -80,7 +80,7 @@ export interface DigitalHumanAgentSkill {
   /**
    * Where the skill directory lives on the gateway host (OpenClaw layout).
    */
-  type: SkillOriginType;
+  type: OpenClawSkillOriginType;
 
   /**
    * Whether the target digital human currently enables this skill.
