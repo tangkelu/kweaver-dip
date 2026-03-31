@@ -109,7 +109,6 @@ spec:
             {{- if .Values.persistence.config.enabled }}
             - name: openclaw-config
               mountPath: {{ .Values.persistence.config.mountPath }}
-              subPath: {{ base .Values.persistence.config.mountPath }}
             {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
