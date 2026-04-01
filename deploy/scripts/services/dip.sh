@@ -9,6 +9,8 @@ declare -a DIP_PRERELEASES=(
 declare -a DIP_RELEASES=(
     "anyfabric-frontend"
     "dip-frontend"
+    "dip-studio"
+    "dip-hub"
     "auth-service"
     "basic-search"
     "configuration-center"
@@ -389,6 +391,7 @@ _dip_show_access_hints() {
 
     log_info "Access KWeaver deploy console: ${base_url}/deploy"
     log_info "Access KWeaver studio: ${base_url}/studio"
+    log_info "Access KWeaver dip-hub: ${base_url}/dip-hub"
 }
 
 _dip_confirm_missing_openclaw_paths() {
@@ -408,19 +411,200 @@ _dip_confirm_missing_openclaw_paths() {
         log_warn "${message}"
     done
 
-    if [[ ! -t 0 ]]; then
-        log_error "One or more dipStudio.openClaw paths do not exist. If you really want to continue, rerun with --confirm-missing-openclaw-paths."
+    echo ""
+    echo "Options:"
+    echo "  1) Re-enter the paths"
+    echo "  2) Continue with these paths anyway"
+    echo "  3) Cancel installation"
+    echo ""
+    
+    local choice
+    read -r -p "Choose an option [1/2/3]: " choice </dev/tty || {
+        log_error "Failed to read input. Rerun with --confirm-missing-openclaw-paths to skip this check."
+        return 1
+    }
+
+    case "${choice}" in
+        1)
+            # Return special code to indicate re-entry is needed
+            return 2
+            ;;
+        2)
+            log_info "Continuing with configured paths. Ensure they will be created before dip-studio starts."
+            return 0
+            ;;
+        3|*)
+            log_error "Installation cancelled. You can update dipStudio.openClaw paths in ${CONFIG_YAML_PATH} or rerun with --confirm-missing-openclaw-paths."
+            return 1
+            ;;
+    esac
+}
+
+_dip_prompt_openclaw_paths() {
+    local config_host_path="$1"
+    local workspace_host_path="$2"
+
+    echo ""
+    log_warn "dipStudio.openClaw configuration is missing or incomplete in ${CONFIG_YAML_PATH}"
+    log_info "dip-studio requires two host paths for OpenClaw persistence:"
+    log_info "  - configHostPath: Directory for OpenClaw configuration files"
+    log_info "  - workspaceHostPath: Directory for OpenClaw workspace data"
+    echo ""
+
+    # Always try to prompt for input
+    local input_config_path=""
+    local input_workspace_path=""
+    
+    if [[ -z "${config_host_path}" ]]; then
+        read -r -p "Enter configHostPath: " input_config_path </dev/tty || {
+            log_error "Failed to read input. Please run in interactive mode or pre-configure dipStudio.openClaw paths in ${CONFIG_YAML_PATH}"
+            return 1
+        }
+        config_host_path="${input_config_path}"
+    fi
+
+    if [[ -z "${workspace_host_path}" ]]; then
+        read -r -p "Enter workspaceHostPath: " input_workspace_path </dev/tty || {
+            log_error "Failed to read input. Please run in interactive mode or pre-configure dipStudio.openClaw paths in ${CONFIG_YAML_PATH}"
+            return 1
+        }
+        workspace_host_path="${input_workspace_path}"
+    fi
+
+    # Validate that paths are not empty
+    if [[ -z "${config_host_path}" || -z "${workspace_host_path}" ]]; then
+        log_error "OpenClaw paths cannot be empty. Please provide valid paths."
         return 1
     fi
 
     echo ""
-    read -r -p "One or more OpenClaw paths do not exist. Continue with these paths anyway? [y/N]: " confirm_answer
-    if [[ ! "${confirm_answer}" =~ ^[Yy]$ ]]; then
-        log_error "Installation cancelled. Update dipStudio.openClaw paths in ${CONFIG_YAML_PATH}, or rerun with --confirm-missing-openclaw-paths after confirming the paths are intentional."
+    log_info "Will use:"
+    log_info "  configHostPath: ${config_host_path}"
+    log_info "  workspaceHostPath: ${workspace_host_path}"
+    echo ""
+
+    # Return the paths via global variables
+    DIP_OPENCLAW_CONFIG_PATH="${config_host_path}"
+    DIP_OPENCLAW_WORKSPACE_PATH="${workspace_host_path}"
+}
+
+_dip_update_config_with_openclaw_paths() {
+    local config_path="$1"
+    local workspace_path="$2"
+
+    if [[ ! -f "${CONFIG_YAML_PATH}" ]]; then
+        log_error "Config file does not exist: ${CONFIG_YAML_PATH}"
         return 1
     fi
 
-    return 0
+    local tmp_file
+    tmp_file="$(mktemp)"
+
+    # If both paths are empty, remove the dipStudio.openClaw section
+    if [[ -z "${config_path}" && -z "${workspace_path}" ]]; then
+        awk '
+            BEGIN {
+                in_dip_studio=0
+                in_openclaw=0
+            }
+            {
+                if ($1=="dipStudio:") {
+                    in_dip_studio=1
+                    next
+                }
+                if (in_dip_studio && $1=="openClaw:") {
+                    in_openclaw=1
+                    next
+                }
+                if (in_dip_studio && in_openclaw) {
+                    if ($0 ~ /^  [^ ]/) {
+                        in_openclaw=0
+                        in_dip_studio=0
+                        print $0
+                    } else if ($0 ~ /^[^ ]/) {
+                        in_dip_studio=0
+                        in_openclaw=0
+                        print $0
+                    }
+                    next
+                }
+                if (in_dip_studio && $0 ~ /^[^ ]/) {
+                    in_dip_studio=0
+                }
+                if (!in_dip_studio) {
+                    print $0
+                }
+            }
+        ' "${CONFIG_YAML_PATH}" > "${tmp_file}"
+    else
+        # Use awk to update or insert the dipStudio.openClaw section
+        awk -v cfg_path="${config_path}" -v ws_path="${workspace_path}" '
+            BEGIN {
+                in_dip_studio=0
+                in_openclaw=0
+                dip_studio_found=0
+                openclaw_updated=0
+            }
+            {
+                if ($1=="dipStudio:") {
+                    print $0
+                    in_dip_studio=1
+                    dip_studio_found=1
+                    next
+                }
+                if (in_dip_studio && $1=="openClaw:") {
+                    print "  openClaw:"
+                    print "    configHostPath: " cfg_path
+                    print "    workspaceHostPath: " ws_path
+                    in_openclaw=1
+                    openclaw_updated=1
+                    next
+                }
+                if (in_dip_studio && in_openclaw) {
+                    if ($0 ~ /^  [^ ]/) {
+                        in_openclaw=0
+                        print $0
+                    } else if ($0 ~ /^[^ ]/) {
+                        in_dip_studio=0
+                        in_openclaw=0
+                        print $0
+                    }
+                    next
+                }
+                if (in_dip_studio && $0 ~ /^[^ ]/) {
+                    if (openclaw_updated==0) {
+                        print "  openClaw:"
+                        print "    configHostPath: " cfg_path
+                        print "    workspaceHostPath: " ws_path
+                        openclaw_updated=1
+                    }
+                    in_dip_studio=0
+                    print $0
+                    next
+                }
+                print $0
+            }
+            END {
+                if (dip_studio_found==0) {
+                    print "dipStudio:"
+                    print "  openClaw:"
+                    print "    configHostPath: " cfg_path
+                    print "    workspaceHostPath: " ws_path
+                } else if (in_dip_studio==1 && openclaw_updated==0) {
+                    print "  openClaw:"
+                    print "    configHostPath: " cfg_path
+                    print "    workspaceHostPath: " ws_path
+                }
+            }
+        ' "${CONFIG_YAML_PATH}" > "${tmp_file}"
+    fi
+
+    mv "${tmp_file}" "${CONFIG_YAML_PATH}"
+    if [[ -z "${config_path}" && -z "${workspace_path}" ]]; then
+        log_info "Removed dipStudio.openClaw configuration from ${CONFIG_YAML_PATH}"
+    else
+        log_info "Updated ${CONFIG_YAML_PATH} with dipStudio.openClaw configuration"
+    fi
 }
 
 _dip_append_release_extra_helm_args() {
@@ -432,27 +616,64 @@ _dip_append_release_extra_helm_args() {
         return 0
     fi
 
-    local config_host_path
-    local workspace_host_path
-    config_host_path="$(get_dip_studio_openclaw_field "configHostPath")"
-    workspace_host_path="$(get_dip_studio_openclaw_field "workspaceHostPath")"
-
-    if [[ -z "${config_host_path}" || -z "${workspace_host_path}" ]]; then
-        log_error "dip-studio requires dipStudio.openClaw.configHostPath and dipStudio.openClaw.workspaceHostPath in ${CONFIG_YAML_PATH}."
+    # Check if config file exists
+    if [[ ! -f "${CONFIG_YAML_PATH}" ]]; then
+        log_error "Configuration file not found: ${CONFIG_YAML_PATH}"
+        log_error "Please run 'config generate' first or ensure the config file exists."
         return 1
     fi
 
-    local -a missing_messages=()
-    if [[ ! -e "${config_host_path}" ]]; then
-        missing_messages+=("Configured OpenClaw config path does not exist: ${config_host_path}")
-    fi
-    if [[ ! -e "${workspace_host_path}" ]]; then
-        missing_messages+=("Configured OpenClaw workspace path does not exist: ${workspace_host_path}")
-    fi
+    local config_host_path
+    local workspace_host_path
+    local need_reprompt=true
 
-    if [[ ${#missing_messages[@]} -gt 0 ]]; then
-        _dip_confirm_missing_openclaw_paths "${missing_messages[@]}" || return 1
-    fi
+    # Loop to allow re-entering paths if validation fails
+    while [[ "${need_reprompt}" == "true" ]]; do
+        config_host_path="$(get_dip_studio_openclaw_field "configHostPath")"
+        workspace_host_path="$(get_dip_studio_openclaw_field "workspaceHostPath")"
+
+        # If either path is missing, prompt for input
+        if [[ -z "${config_host_path}" || -z "${workspace_host_path}" ]]; then
+            _dip_prompt_openclaw_paths "${config_host_path}" "${workspace_host_path}" || return 1
+            config_host_path="${DIP_OPENCLAW_CONFIG_PATH}"
+            workspace_host_path="${DIP_OPENCLAW_WORKSPACE_PATH}"
+
+            # Update config file with the new paths
+            _dip_update_config_with_openclaw_paths "${config_host_path}" "${workspace_host_path}" || return 1
+        fi
+
+        # Validate that paths are not empty strings after prompting
+        if [[ -z "${config_host_path}" || -z "${workspace_host_path}" ]]; then
+            log_error "OpenClaw paths cannot be empty."
+            return 1
+        fi
+
+        # Check if paths exist on disk
+        local -a missing_messages=()
+        if [[ ! -e "${config_host_path}" ]]; then
+            missing_messages+=("Configured OpenClaw config path does not exist: ${config_host_path}")
+        fi
+        if [[ ! -e "${workspace_host_path}" ]]; then
+            missing_messages+=("Configured OpenClaw workspace path does not exist: ${workspace_host_path}")
+        fi
+
+        if [[ ${#missing_messages[@]} -gt 0 ]]; then
+            _dip_confirm_missing_openclaw_paths "${missing_messages[@]}"
+            local confirm_result=$?
+            if [[ ${confirm_result} -eq 2 ]]; then
+                # User chose to re-enter paths, clear the config and loop again
+                log_info "Re-entering OpenClaw paths..."
+                _dip_update_config_with_openclaw_paths "" "" || return 1
+                continue
+            elif [[ ${confirm_result} -ne 0 ]]; then
+                # User cancelled or error occurred
+                return 1
+            fi
+        fi
+
+        # Paths are valid or user confirmed to continue
+        need_reprompt=false
+    done
 
     target_args+=(
         "--set-string" "persistence.config.hostPath=${config_host_path}"

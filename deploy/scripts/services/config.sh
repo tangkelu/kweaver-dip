@@ -19,10 +19,13 @@ generate_config_yaml() {
         if [[ -n "${v}" ]]; then cfg_tz="${v}"; fi
     fi
 
+    # Read existing OpenClaw paths from config if present (preserve user settings)
     local dip_studio_openclaw_config_host_path=""
     local dip_studio_openclaw_workspace_host_path=""
-    dip_studio_openclaw_config_host_path="$(get_dip_studio_openclaw_field "configHostPath")"
-    dip_studio_openclaw_workspace_host_path="$(get_dip_studio_openclaw_field "workspaceHostPath")"
+    if [[ -f "${out}" ]]; then
+        dip_studio_openclaw_config_host_path="$(get_dip_studio_openclaw_field "configHostPath")"
+        dip_studio_openclaw_workspace_host_path="$(get_dip_studio_openclaw_field "workspaceHostPath")"
+    fi
 
     local node_ip
     # Try to get the first non-loopback IP address

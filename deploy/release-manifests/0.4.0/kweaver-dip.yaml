@@ -55,7 +55,7 @@ releases:
     version: 0.4.0-main.202600401.1
   sailor:
     chart: sailor
-    version: 0.4.0-main.20260331.2
+    version: 0.4.0-main.20260401.1
   sailor-agent:
     chart: sailor-agent
     version: 0.4.0-main.20260331.4
@@ -71,3 +71,9 @@ releases:
   task-center:
     chart: task-center
     version: 0.4.0-main.20260331.2
+  dip-hub:
+    chart: dip-hub
+    version: 0.4.0
+  dip-studio:
+    chart: dip-studio
+    version: 0.4.0
