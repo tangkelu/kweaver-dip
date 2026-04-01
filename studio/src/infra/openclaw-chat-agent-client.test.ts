@@ -13,11 +13,13 @@ import {
   createSessionsPatchRequest,
   createResponseResource,
   enqueueSseEvent,
+  isTextAgentEventFrame,
   isToolAgentEventFrame,
   mergeOutputItems,
   readAssistantText,
   readChatEventPayload,
   readChatSendAckPayload,
+  readTextAgentEventPayload,
   readToolAgentEventPayload
 } from "./openclaw-chat-agent-client";
 import {
@@ -212,6 +214,45 @@ describe("chat agent helpers", () => {
         phase: "update",
         name: "web_search",
         toolCallId: "tool-1"
+      }
+    });
+    expect(
+      isTextAgentEventFrame({
+        type: "event",
+        event: "agent",
+        payload: {
+          runId: "run-1",
+          seq: 4,
+          stream: "assistant",
+          ts: 1710000000300,
+          data: {
+            text: "Hello",
+            delta: "lo"
+          }
+        }
+      })
+    ).toBe(true);
+    expect(
+      readTextAgentEventPayload({
+        type: "event",
+        event: "agent",
+        payload: {
+          runId: "run-1",
+          seq: 4,
+          stream: "assistant",
+          ts: 1710000000300,
+          data: {
+            text: "Hello",
+            delta: "lo"
+          }
+        }
+      })
+    ).toMatchObject({
+      runId: "run-1",
+      stream: "assistant",
+      data: {
+        text: "Hello",
+        delta: "lo"
       }
     });
   });
@@ -504,6 +545,144 @@ describe("DefaultOpenClawChatAgentClient", () => {
     expect(body).toContain("event: response.output_text.delta");
     expect(body).toContain("event: response.completed");
     expect(body).toContain("\"status\":\"completed\"");
+  });
+
+  it("maps assistant agent text frames to OpenResponse SSE events", async () => {
+    const socket = new FakeWebSocket();
+    const client = new DefaultOpenClawChatAgentClient(
+      {
+        url: "ws://127.0.0.1:18789",
+        token: "secret-token",
+        timeoutMs: 1_000,
+        deviceIdentity: loadDeviceIdentityFromAssets(),
+        now: () => 1_710_000_000_500
+      },
+      () => socket
+    );
+
+    const pending = client.createResponseStream(
+      {
+        sessionKey: "agent:agent-1:user:user-1:direct:chat-1",
+        message: "hello",
+        idempotencyKey: "run-1"
+      },
+      "agent-1"
+    );
+
+    socket.emit("message", JSON.stringify({
+      type: "event",
+      event: "connect.challenge",
+      payload: {
+        nonce: "abc123"
+      }
+    }));
+
+    const connectFrame = JSON.parse(socket.sentMessages[0] ?? "{}") as { id: string };
+
+    socket.emit("message", JSON.stringify({
+      type: "res",
+      id: connectFrame.id,
+      ok: true,
+      payload: {}
+    }));
+
+    const patchFrame = JSON.parse(socket.sentMessages[1] ?? "{}") as { id: string };
+
+    socket.emit("message", JSON.stringify({
+      type: "res",
+      id: patchFrame.id,
+      ok: true,
+      payload: {
+        ok: true
+      }
+    }));
+
+    const chatSendFrame = JSON.parse(socket.sentMessages[2] ?? "{}") as { id: string };
+
+    socket.emit("message", JSON.stringify({
+      type: "res",
+      id: chatSendFrame.id,
+      ok: true,
+      payload: {
+        runId: "run-1",
+        status: "started"
+      }
+    }));
+
+    const result = await pending;
+    const reader = result.body.getReader();
+
+    socket.emit("message", JSON.stringify({
+      type: "event",
+      event: "agent",
+      payload: {
+        runId: "run-1",
+        sessionKey: "agent:agent-1:user:user-1:direct:chat-1",
+        seq: 1,
+        stream: "assistant",
+        ts: 1710000000100,
+        data: {
+          text: "Hel",
+          delta: "Hel"
+        }
+      }
+    }));
+
+    socket.emit("message", JSON.stringify({
+      type: "event",
+      event: "agent",
+      payload: {
+        runId: "run-1",
+        sessionKey: "agent:agent-1:user:user-1:direct:chat-1",
+        seq: 2,
+        stream: "assistant",
+        ts: 1710000000200,
+        data: {
+          text: "Hello",
+          delta: "lo"
+        }
+      }
+    }));
+
+    socket.emit("message", JSON.stringify({
+      type: "event",
+      event: "chat",
+      payload: {
+        runId: "run-1",
+        sessionKey: "agent:agent-1:user:user-1:direct:chat-1",
+        seq: 3,
+        state: "final",
+        message: {
+          role: "assistant",
+          content: [
+            {
+              type: "text",
+              text: "ignored final"
+            }
+          ],
+          timestamp: 1710000000300
+        }
+      }
+    }));
+
+    let body = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      body += new TextDecoder().decode(value);
+    }
+
+    expect(body).toContain("event: response.output_text.delta");
+    expect(body).toContain("\"delta\":\"Hel\"");
+    expect(body).toContain("\"delta\":\"lo\"");
+    expect(body).toContain("event: response.completed");
+    expect(body).toContain("\"text\":\"Hello\"");
+    expect(body).not.toContain("ignored final");
   });
 
   it("fails before streaming when chat.send acknowledgement is invalid", async () => {

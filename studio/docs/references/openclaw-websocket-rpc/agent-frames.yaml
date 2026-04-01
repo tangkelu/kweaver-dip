@@ -40,6 +40,7 @@ $defs:
 
   AgentEventPayload:
     oneOf:
+      - $ref: "#/$defs/TextAgentEvent"
       - $ref: "#/$defs/ToolAgentEvent"
       - $ref: "#/$defs/LifecycleAgentEvent"
       - $ref: "#/$defs/ErrorAgentEvent"
@@ -69,6 +70,29 @@ $defs:
         type: object
         additionalProperties: true
         summary: "事件数据。"
+  
+  TextAgentEvent:
+    allOf:
+      - $ref: "#/$defs/AgentEventBase"
+      - type: object
+        summary: "文本事件。"
+        properties:
+          stream:
+            const: assistant
+            summary: "流类型，固定为 assistant。"
+          data:
+            type: object
+            additionalProperties: true
+            required:
+              - text
+            summary: "agent assistant 文本数据。"
+            properties:
+              text:
+                type: string
+                summary: "当前这次 assistant 事件携带的文本。"
+              delta:
+                type: string
+                summary: "可选增量文本片段。"
 
   ToolPhase:
     type: string

@@ -291,6 +291,51 @@ export interface OpenClawToolAgentEventPayload {
 }
 
 /**
+ * Text event payload emitted by OpenClaw `agent` frames.
+ */
+export interface OpenClawTextAgentEventPayload {
+  /**
+   * Stable run id.
+   */
+  runId: string;
+
+  /**
+   * Session key carried by the event when present.
+   */
+  sessionKey?: string;
+
+  /**
+   * Event sequence number.
+   */
+  seq: number;
+
+  /**
+   * Stream discriminator.
+   */
+  stream: "assistant";
+
+  /**
+   * Event timestamp in milliseconds.
+   */
+  ts: number;
+
+  /**
+   * Assistant text event data.
+   */
+  data: {
+    /**
+     * Full text snapshot carried by the event.
+     */
+    text: string;
+
+    /**
+     * Optional incremental text fragment.
+     */
+    delta?: string;
+  };
+}
+
+/**
  * Default dedicated chat agent client backed by one WebSocket per request.
  */
 export class DefaultOpenClawChatAgentClient implements OpenClawChatAgentClient {
@@ -342,6 +387,7 @@ export class DefaultOpenClawChatAgentClient implements OpenClawChatAgentClient {
       let messageStarted = false;
       let finalText = "";
       let finalTimestampMs = this.now();
+      let textEventSource: "chat" | "assistant" | undefined;
       const outputItems: Record<string, unknown>[] = [];
       const outputIndexByItemId = new Map<string, number>();
 
@@ -636,6 +682,12 @@ export class DefaultOpenClawChatAgentClient implements OpenClawChatAgentClient {
             finalTimestampMs = payload.message?.timestamp ?? this.now();
 
             if (payload.state === "delta") {
+              if (textEventSource === "assistant") {
+                return;
+              }
+
+              textEventSource = "chat";
+
               const deltaText = readAssistantText(payload.message);
 
               if (deltaText.length === 0) {
@@ -661,9 +713,13 @@ export class DefaultOpenClawChatAgentClient implements OpenClawChatAgentClient {
               return;
             }
 
+            if (textEventSource !== "assistant") {
+              textEventSource = "chat";
+            }
+
             const terminalText = readAssistantText(payload.message);
 
-            if (terminalText.length > 0) {
+            if (textEventSource !== "assistant" && terminalText.length > 0) {
               finalText = terminalText;
             }
 
@@ -706,6 +762,46 @@ export class DefaultOpenClawChatAgentClient implements OpenClawChatAgentClient {
             });
 
             completeStream();
+            return;
+          }
+
+          if (isTextAgentEventFrame(frame)) {
+            if (ackPayload === undefined) {
+              return;
+            }
+
+            const payload = readTextAgentEventPayload(frame);
+
+            if (payload.runId !== ackPayload.runId) {
+              return;
+            }
+
+            if (textEventSource === "chat") {
+              return;
+            }
+
+            textEventSource = "assistant";
+            finalTimestampMs = payload.ts;
+
+            const nextText = payload.data.text;
+            const deltaText = payload.data.delta ?? nextText;
+
+            if (deltaText.length > 0) {
+              finalText = nextText;
+
+              const { itemId, outputIndex } = ensureMessageStarted();
+
+              enqueueSseEvent(enqueue, {
+                type: "response.output_text.delta",
+                item_id: itemId,
+                output_index: outputIndex,
+                content_index: 0,
+                delta: deltaText
+              });
+            } else if (nextText.length > 0) {
+              finalText = nextText;
+            }
+
             return;
           }
 
@@ -1143,6 +1239,88 @@ export function isToolAgentEventFrame(frame: unknown): frame is OpenClawEventFra
       : undefined;
 
   return record.type === "event" && record.event === "agent" && payload?.stream === "tool";
+}
+
+/**
+ * Checks whether one gateway frame is a text `agent` event frame.
+ *
+ * @param frame The parsed gateway frame.
+ * @returns Whether the frame is an assistant text `agent` event.
+ */
+export function isTextAgentEventFrame(frame: unknown): frame is OpenClawEventFrame {
+  if (typeof frame !== "object" || frame === null) {
+    return false;
+  }
+
+  const record = frame as Record<string, unknown>;
+  const payload =
+    typeof record.payload === "object" && record.payload !== null
+      ? (record.payload as Record<string, unknown>)
+      : undefined;
+
+  return record.type === "event" && record.event === "agent" && payload?.stream === "assistant";
+}
+
+/**
+ * Reads and validates one OpenClaw text `agent` event payload.
+ *
+ * @param frame The gateway event frame.
+ * @returns The normalized text event payload.
+ */
+export function readTextAgentEventPayload(
+  frame: OpenClawEventFrame
+): OpenClawTextAgentEventPayload {
+  const payload =
+    typeof frame.payload === "object" && frame.payload !== null
+      ? (frame.payload as Record<string, unknown>)
+      : undefined;
+  const runId = payload?.runId;
+  const seq = payload?.seq;
+  const stream = payload?.stream;
+  const ts = payload?.ts;
+  const data =
+    typeof payload?.data === "object" && payload.data !== null
+      ? (payload.data as Record<string, unknown>)
+      : undefined;
+  const text = data?.text;
+  const delta = data?.delta;
+
+  if (typeof runId !== "string" || runId.trim() === "") {
+    throw new HttpError(502, "OpenClaw assistant text event is missing runId");
+  }
+
+  if (!Number.isInteger(seq) || (seq as number) < 0) {
+    throw new HttpError(502, "OpenClaw assistant text event is missing seq");
+  }
+
+  if (stream !== "assistant") {
+    throw new HttpError(502, "OpenClaw assistant text event is missing stream");
+  }
+
+  if (!Number.isInteger(ts) || (ts as number) < 0) {
+    throw new HttpError(502, "OpenClaw assistant text event is missing ts");
+  }
+
+  if (typeof text !== "string") {
+    throw new HttpError(502, "OpenClaw assistant text event is missing text");
+  }
+
+  if (delta !== undefined && typeof delta !== "string") {
+    throw new HttpError(502, "OpenClaw assistant text event delta must be a string");
+  }
+
+  return {
+    runId,
+    sessionKey:
+      typeof payload?.sessionKey === "string" ? payload.sessionKey : undefined,
+    seq: seq as number,
+    stream,
+    ts: ts as number,
+    data: {
+      text,
+      delta: typeof delta === "string" ? delta : undefined
+    }
+  };
 }
 
 /**
