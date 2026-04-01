@@ -20,11 +20,6 @@ components:
       required:
         - sessionKey
 
-    DigitalHumanResponseRequest:
-      summary: 数字员工响应请求
-      type: object
-      additionalProperties: true
-
     ChatAgentInputTextContentPart:
       summary: Chat Agent 输入文本片段
       type: object
@@ -82,5 +77,5 @@ components:
         - input
 
     DigitalHumanResponseStream:
-      summary: 数字员工响应事件流
+      summary: Chat Agent 响应事件流
       type: string

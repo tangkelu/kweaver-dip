@@ -8,10 +8,6 @@ import {
   DefaultOpenClawChatAgentClient,
   type OpenClawChatAgentClient
 } from "../infra/openclaw-chat-agent-client";
-import {
-  DefaultOpenClawResponsesHttpClient,
-  type OpenClawResponsesHttpClient
-} from "../infra/openclaw-responses-http-client";
 import { OpenClawGatewayClient } from "../infra/openclaw-gateway-client";
 import { DefaultSessionsLogic, type SessionsLogic } from "../logic/sessions";
 import type {
@@ -20,7 +16,6 @@ import type {
   ChatAgentRequest,
   NormalizedChatAgentRequest
 } from "../types/chat-agent";
-import type { DigitalHumanResponseRequest } from "../types/digital-human-response";
 import type {
   CreateSessionKeyRequest,
   CreateSessionKeyResponse
@@ -30,11 +25,6 @@ import { getEnv } from "../utils/env";
 import { parseSession } from "../utils/session";
 
 const env = getEnv();
-const openClawResponsesHttpClient = new DefaultOpenClawResponsesHttpClient({
-  gatewayUrl: env.openClawGatewayUrl,
-  token: env.openClawGatewayToken,
-  timeoutMs: env.openClawGatewayTimeoutMs
-});
 const openClawChatAgentClient = new DefaultOpenClawChatAgentClient({
   url: env.openClawGatewayUrl,
   token: env.openClawGatewayToken,
@@ -73,11 +63,6 @@ export interface ChatRouterDependencies {
    * Optional OpenClaw chat agent client.
    */
   chatAgentClient?: OpenClawChatAgentClient;
-
-  /**
-   * Optional OpenClaw responses HTTP client.
-   */
-  responsesHttpClient?: OpenClawResponsesHttpClient;
 }
 
 /**
@@ -93,8 +78,6 @@ export function createChatRouter(
   const sessionsLogic = dependencies.sessionsLogic ?? chatSessionsLogic;
   const chatAgentClient =
     dependencies.chatAgentClient ?? openClawChatAgentClient;
-  const responsesHttpClient =
-    dependencies.responsesHttpClient ?? openClawResponsesHttpClient;
 
   router.post(
     "/api/dip-studio/v1/chat/session",
@@ -143,49 +126,6 @@ export function createChatRouter(
           error instanceof HttpError
             ? error
             : new HttpError(502, "Failed to query chat messages")
-        );
-      }
-    }
-  );
-
-  router.post(
-    "/api/dip-studio/v1/chat/responses",
-    async (
-      request: Request<Record<string, never>, unknown, DigitalHumanResponseRequest>,
-      response: Response,
-      next: NextFunction
-    ): Promise<void> => {
-      const abortController = new AbortController();
-
-      attachDownstreamAbortHandlers(request, response, abortController);
-
-      try {
-        const requestBody = readDigitalHumanResponseRequestBody(request.body);
-        const sessionKey = readRequiredSessionKeyHeader(request.headers);
-        const agentId = readAgentIdFromSessionKey(sessionKey);
-        const upstreamResponse = await responsesHttpClient.createResponseStream(
-          agentId,
-          requestBody,
-          abortController.signal,
-          createDigitalHumanResponseRequestHeaders(sessionKey)
-        );
-
-        writeEventStreamHeaders(response, upstreamResponse.status, upstreamResponse.headers);
-        await pipeEventStream(upstreamResponse.body, response);
-      } catch (error) {
-        if (abortController.signal.aborted || response.destroyed) {
-          return;
-        }
-
-        if (response.headersSent) {
-          response.end();
-          return;
-        }
-
-        next(
-          error instanceof HttpError
-            ? error
-            : new HttpError(502, "Failed to proxy digital human response")
         );
       }
     }
@@ -318,25 +258,6 @@ export function readChatHistoryParams(
 }
 
 /**
- * Validates the incoming digital human response request body.
- *
- * @param requestBody The raw request body parsed by Express.
- * @returns The validated proxy payload.
- */
-export function readDigitalHumanResponseRequestBody(
-  requestBody: unknown
-): DigitalHumanResponseRequest {
-  if (typeof requestBody !== "object" || requestBody === null || Array.isArray(requestBody)) {
-    throw new HttpError(
-      400,
-      "Digital human response request body must be a JSON object"
-    );
-  }
-
-  return requestBody as DigitalHumanResponseRequest;
-}
-
-/**
  * Reads the OpenClaw session key from the downstream HTTP request headers.
  *
  * @param requestHeaders The raw downstream request headers.
@@ -377,20 +298,6 @@ export function readAgentIdFromSessionKey(sessionKey: string): string {
   }
 
   return parsedSession.agent;
-}
-
-/**
- * Creates the supported upstream request headers from the downstream session key.
- *
- * @param sessionKey The normalized session key.
- * @returns The filtered headers forwarded to OpenClaw.
- */
-export function createDigitalHumanResponseRequestHeaders(
-  sessionKey: string
-): Headers {
-  return new Headers({
-    "x-openclaw-session-key": sessionKey
-  });
 }
 
 /**

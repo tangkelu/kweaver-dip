@@ -99,7 +99,6 @@ describe("createChatRouter", () => {
 
     expect(findRouteLayer(router, "/api/dip-studio/v1/chat/session", "post")).toBeDefined();
     expect(findRouteLayer(router, "/api/dip-studio/v1/chat/messages", "get")).toBeDefined();
-    expect(findRouteLayer(router, "/api/dip-studio/v1/chat/responses", "post")).toBeDefined();
     expect(findRouteLayer(router, "/api/dip-studio/v1/chat/agent", "post")).toBeDefined();
   });
 
