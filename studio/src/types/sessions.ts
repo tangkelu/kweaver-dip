@@ -44,6 +44,21 @@ export interface OpenClawSessionGetParams {
 }
 
 /**
+ * Request payload sent to OpenClaw `chat.history`.
+ */
+export interface OpenClawChatHistoryParams {
+  /**
+   * Session key.
+   */
+  sessionKey: string;
+
+  /**
+   * Maximum number of messages to return.
+   */
+  limit?: number;
+}
+
+/**
  * Request payload sent to OpenClaw `sessions.delete`.
  */
 export interface OpenClawSessionDeleteParams {
@@ -261,6 +276,46 @@ export interface OpenClawSessionGetResult {
    * Returned message list.
    */
   messages?: OpenClawSessionMessage[];
+
+  /**
+   * Accepts additional OpenClaw fields for forward compatibility.
+   */
+  [key: string]: unknown;
+}
+
+/**
+ * Result payload returned by OpenClaw `chat.history`.
+ */
+export interface OpenClawChatHistoryResult {
+  /**
+   * Session key.
+   */
+  sessionKey: string;
+
+  /**
+   * Runtime session id.
+   */
+  sessionId?: string;
+
+  /**
+   * Returned message list.
+   */
+  messages?: OpenClawSessionMessage[];
+
+  /**
+   * Thinking level used by the session.
+   */
+  thinkingLevel?: string;
+
+  /**
+   * Whether fast mode is enabled.
+   */
+  fastMode?: boolean;
+
+  /**
+   * Verbose level used by the session.
+   */
+  verboseLevel?: string;
 
   /**
    * Accepts additional OpenClaw fields for forward compatibility.

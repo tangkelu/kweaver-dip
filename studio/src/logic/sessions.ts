@@ -6,6 +6,8 @@ import type {
 } from "../infra/openclaw-archives-http-client";
 import { parseSession } from "../utils/session";
 import type {
+  OpenClawChatHistoryParams,
+  OpenClawChatHistoryResult,
   OpenClawSessionDeleteParams,
   OpenClawSessionDeleteResult,
   OpenClawSessionGetParams,
@@ -23,6 +25,14 @@ import type {
  * Application logic used to fetch sessions and message previews.
  */
 export interface SessionsLogic {
+  /**
+   * Fetches one chat history payload.
+   *
+   * @param params Query parameters forwarded to OpenClaw.
+   * @returns The OpenClaw chat history payload.
+   */
+  getChatMessages?(params: OpenClawChatHistoryParams): Promise<OpenClawChatHistoryResult>;
+
   /**
    * Fetches sessions list.
    *
@@ -133,7 +143,39 @@ export class DefaultSessionsLogic implements SessionsLogic {
   public async getSession(
     params: OpenClawSessionGetParams
   ): Promise<OpenClawSessionGetResult> {
-    return this.openClawSessionsAdapter.getSession(params);
+    const result = await this.getChatMessages({
+      sessionKey: params.key,
+      limit: params.limit
+    });
+
+    return {
+      ...result,
+      key: result.sessionKey
+    };
+  }
+
+  /**
+   * Fetches chat history from OpenClaw.
+   *
+   * @param params Query parameters forwarded to OpenClaw.
+   * @returns The OpenClaw chat history payload.
+   */
+  public async getChatMessages(
+    params: OpenClawChatHistoryParams
+  ): Promise<OpenClawChatHistoryResult> {
+    if (this.openClawSessionsAdapter.getChatMessages !== undefined) {
+      return this.openClawSessionsAdapter.getChatMessages(params);
+    }
+
+    const result = await this.openClawSessionsAdapter.getSession({
+      key: params.sessionKey,
+      limit: params.limit
+    });
+
+    return {
+      ...result,
+      sessionKey: result.key
+    };
   }
 
   /**

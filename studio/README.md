@@ -545,6 +545,23 @@ GitHub：https://github.com/kweaver-ai/web
 
 #### 获取会话消息详情
 
+`GET /api/dip-studio/v1/chat/messages`
+
+请求头：
+
+| 参数 | 类型 | 是否必填 | 说明 |
+| -- | -- | -- | -- |
+| Authorization | string | 是 | `Bearer <access-token>`，用于 Hydra 内省鉴权 |
+| x-openclaw-session-key | string | 是 | 必须先通过 `POST /api/dip-studio/v1/chat/session` 获取 |
+
+支持查询参数：`limit`
+
+响应：`200 application/json`
+
+返回指定 Chat 会话的历史消息详情，底层通过 OpenClaw WebSocket `chat.history` 获取。
+
+#### 获取会话消息详情
+
 `GET /api/dip-studio/v1/sessions/{key}/messages`
 
 路径参数：
@@ -557,7 +574,7 @@ GitHub：https://github.com/kweaver-ai/web
 
 响应：`200 application/json`
 
-返回指定会话的完整消息详情。
+返回指定会话的完整消息详情。该接口内部复用 `GET /api/dip-studio/v1/chat/messages` 的消息查询逻辑，但保持原有路径参数与响应结构不变。
 
 #### 获取会话归档列表
 

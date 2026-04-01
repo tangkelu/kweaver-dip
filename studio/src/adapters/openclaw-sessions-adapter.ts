@@ -3,6 +3,8 @@ import type {
   OpenClawRequestFrame
 } from "../types/openclaw";
 import type {
+  OpenClawChatHistoryParams,
+  OpenClawChatHistoryResult,
   OpenClawSessionDeleteParams,
   OpenClawSessionDeleteResult,
   OpenClawSessionGetParams,
@@ -17,6 +19,16 @@ import type {
  * Outbound adapter used to fetch OpenClaw sessions through the gateway port.
  */
 export interface OpenClawSessionsAdapter {
+  /**
+   * Fetches chat messages using OpenClaw `chat.history`.
+   *
+   * @param params Query parameters forwarded to OpenClaw.
+   * @returns The OpenClaw chat history payload.
+   */
+  getChatMessages?(
+    params: OpenClawChatHistoryParams
+  ): Promise<OpenClawChatHistoryResult>;
+
   /**
    * Fetches sessions using OpenClaw `sessions.list`.
    *
@@ -93,6 +105,25 @@ export function createSessionsGetRequest(
 }
 
 /**
+ * Creates the OpenClaw `chat.history` request.
+ *
+ * @param requestId The frame correlation id.
+ * @param params Query parameters forwarded to OpenClaw.
+ * @returns A serialized OpenClaw request frame.
+ */
+export function createChatHistoryRequest(
+  requestId: string,
+  params: OpenClawChatHistoryParams
+): OpenClawRequestFrame {
+  return {
+    type: "req",
+    id: requestId,
+    method: "chat.history",
+    params
+  };
+}
+
+/**
  * Creates the OpenClaw `sessions.delete` request.
  *
  * @param requestId The frame correlation id.
@@ -140,6 +171,20 @@ export class OpenClawSessionsGatewayAdapter implements OpenClawSessionsAdapter {
    * @param gatewayPort The OpenClaw Gateway RPC port.
    */
   public constructor(private readonly gatewayPort: OpenClawGatewayPort) {}
+
+  /**
+   * Queries `chat.history` over the gateway RPC port.
+   *
+   * @param params Query parameters forwarded to OpenClaw.
+   * @returns The OpenClaw chat history payload.
+   */
+  public async getChatMessages(
+    params: OpenClawChatHistoryParams
+  ): Promise<OpenClawChatHistoryResult> {
+    return this.gatewayPort.invoke<OpenClawChatHistoryResult>(
+      createChatHistoryRequest("chat.history", params)
+    );
+  }
 
   /**
    * Queries `sessions.list` over the gateway RPC port.

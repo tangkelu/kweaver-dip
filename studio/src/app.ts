@@ -5,13 +5,11 @@ import { errorHandler } from "./middleware/error-handler";
 import { createHydraAuthMiddleware } from "./middleware/hydra-auth";
 import { notFoundHandler } from "./middleware/not-found";
 import { createBknRouter } from "./routes/bkn";
+import { createChatRouter } from "./routes/chat";
 import { createCronRouter } from "./routes/plan";
-import { createChatAgentRouter } from "./routes/chat-agent";
-import { createDigitalHumanResponseRouter } from "./routes/digital-human-response";
 import { createDigitalHumanRouter } from "./routes/digital-human";
 import { createHealthRouter } from "./routes/health";
 import { createGuideRouter } from "./routes/guide";
-import { createSessionKeyRouter } from "./routes/session-key";
 import { createSessionsRouter } from "./routes/sessions";
 import { createSkillsRouter } from "./routes/skills";
 
@@ -56,12 +54,10 @@ export function createApp(options: AppOptions = {}): Express {
   app.use(createGuideRouter());
   app.use(createBknRouter());
   app.use(createCronRouter());
-  app.use(createSessionKeyRouter());
+  app.use(createChatRouter());
   app.use(createSessionsRouter());
   app.use(createSkillsRouter());
   app.use(createDigitalHumanRouter());
-  app.use(createChatAgentRouter());
-  app.use(createDigitalHumanResponseRouter());
 
   if (options.enableDiagnostics === true) {
     app.get("/__diagnostics/error", raiseDiagnosticError);

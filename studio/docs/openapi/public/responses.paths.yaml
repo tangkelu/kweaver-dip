@@ -41,6 +41,44 @@ paths:
         "500":
           $ref: '../common.schemas.yaml#/errors/InternalServerError'
 
+  /chat/messages:
+    get:
+      operationId: getChatMessages
+      summary: 获取 Chat 会话历史消息
+      parameters:
+        - name: x-openclaw-session-key
+          in: header
+          required: true
+          description: 调用前必须先通过 `POST /chat/session` 获取
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: 返回消息数量上限
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        "200":
+          description: 指定 Chat 会话的历史消息
+          content:
+            application/json:
+              schema:
+                $ref: './sessions.schemas.yaml#/components/schemas/ChatMessagesResponse'
+        "400":
+          $ref: '../common.schemas.yaml#/errors/InvalidParameter'
+        "401":
+          $ref: '../common.schemas.yaml#/errors/Unauthorized'
+        "403":
+          $ref: '../common.schemas.yaml#/errors/Forbidden'
+        "404":
+          $ref: '../common.schemas.yaml#/errors/NotFound'
+        "409":
+          $ref: '../common.schemas.yaml#/errors/Conflict'
+        "500":
+          $ref: '../common.schemas.yaml#/errors/InternalServerError'
+
   /chat/responses:
     post:
       operationId: createDigitalHumanResponse

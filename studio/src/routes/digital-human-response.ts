@@ -1,21 +1,28 @@
-import { Router, type NextFunction, type Request, type Response } from "express";
-import type { IncomingHttpHeaders } from "node:http";
+import type { Router } from "express";
 
-import { getEnv } from "../utils/env";
-import { parseSession } from "../utils/session";
-import { HttpError } from "../errors/http-error";
+import type { OpenClawResponsesHttpClient } from "../infra/openclaw-responses-http-client";
 import {
-  DefaultOpenClawResponsesHttpClient,
-  type OpenClawResponsesHttpClient,
-} from "../infra/openclaw-responses-http-client";
-import type { DigitalHumanResponseRequest } from "../types/digital-human-response";
+  attachDownstreamAbortHandlers,
+  createChatRouter,
+  createDigitalHumanResponseRequestHeaders,
+  pipeEventStream,
+  readAgentIdFromSessionKey,
+  readDigitalHumanResponseRequestBody,
+  readOptionalHeaderValue,
+  readRequiredSessionKeyHeader,
+  writeEventStreamHeaders
+} from "./chat";
 
-const env = getEnv();
-const openClawResponsesHttpClient = new DefaultOpenClawResponsesHttpClient({
-  gatewayUrl: env.openClawGatewayUrl,
-  token: env.openClawGatewayToken,
-  timeoutMs: env.openClawGatewayTimeoutMs
-});
+export {
+  attachDownstreamAbortHandlers,
+  createDigitalHumanResponseRequestHeaders,
+  pipeEventStream,
+  readAgentIdFromSessionKey,
+  readDigitalHumanResponseRequestBody,
+  readOptionalHeaderValue,
+  readRequiredSessionKeyHeader,
+  writeEventStreamHeaders
+} from "./chat";
 
 /**
  * Builds the digital human response router.
@@ -24,226 +31,9 @@ const openClawResponsesHttpClient = new DefaultOpenClawResponsesHttpClient({
  * @returns The router exposing digital human response endpoints.
  */
 export function createDigitalHumanResponseRouter(
-  responsesHttpClient: OpenClawResponsesHttpClient = openClawResponsesHttpClient
+  responsesHttpClient?: OpenClawResponsesHttpClient
 ): Router {
-  const router = Router();
-
-  router.post(
-    "/api/dip-studio/v1/chat/responses",
-    async (
-      request: Request<Record<string, never>, unknown, DigitalHumanResponseRequest>,
-      response: Response,
-      next: NextFunction
-    ): Promise<void> => {
-      const abortController = new AbortController();
-
-      attachDownstreamAbortHandlers(request, response, abortController);
-
-      try {
-        const requestBody = readDigitalHumanResponseRequestBody(request.body);
-        const sessionKey = readRequiredSessionKeyHeader(request.headers);
-        const agentId = readAgentIdFromSessionKey(sessionKey);
-        const upstreamResponse = await responsesHttpClient.createResponseStream(
-          agentId,
-          requestBody,
-          abortController.signal,
-          createDigitalHumanResponseRequestHeaders(sessionKey)
-        );
-
-        writeEventStreamHeaders(response, upstreamResponse.status, upstreamResponse.headers);
-        await pipeEventStream(upstreamResponse.body, response);
-      } catch (error) {
-        if (abortController.signal.aborted || response.destroyed) {
-          return;
-        }
-
-        if (response.headersSent) {
-          response.end();
-          return;
-        }
-
-        next(
-          error instanceof HttpError
-            ? error
-            : new HttpError(502, "Failed to proxy digital human response")
-        );
-      }
-    }
-  );
-
-  return router;
-}
-
-/**
- * Aborts the upstream request only when the downstream client disconnects unexpectedly.
- *
- * @param request The downstream HTTP request.
- * @param response The downstream HTTP response.
- * @param abortController The controller used to cancel the upstream fetch.
- */
-export function attachDownstreamAbortHandlers(
-  request: Request,
-  response: Response,
-  abortController: AbortController
-): void {
-  request.on("aborted", () => {
-    abortController.abort();
+  return createChatRouter({
+    responsesHttpClient
   });
-  response.on("close", () => {
-    if (!response.writableEnded) {
-      abortController.abort();
-    }
-  });
-}
-
-/**
- * Validates the incoming digital human response request body.
- *
- * @param requestBody The raw request body parsed by Express.
- * @returns The validated proxy payload.
- */
-export function readDigitalHumanResponseRequestBody(
-  requestBody: unknown
-): DigitalHumanResponseRequest {
-  if (typeof requestBody !== "object" || requestBody === null || Array.isArray(requestBody)) {
-    throw new HttpError(
-      400,
-      "Digital human response request body must be a JSON object"
-    );
-  }
-
-  return requestBody as DigitalHumanResponseRequest;
-}
-
-/**
- * Reads the OpenClaw session key from the downstream HTTP request headers.
- *
- * @param requestHeaders The raw downstream request headers.
- * @returns The normalized session key.
- */
-export function readRequiredSessionKeyHeader(
-  requestHeaders?: IncomingHttpHeaders
-): string {
-  if (requestHeaders === undefined) {
-    throw new HttpError(401, "x-openclaw-session-key header is required");
-  }
-
-  const sessionKey = readOptionalHeaderValue(
-    requestHeaders["x-openclaw-session-key"]
-  );
-
-  if (sessionKey === undefined) {
-    throw new HttpError(401, "x-openclaw-session-key header is required");
-  }
-
-  return sessionKey;
-}
-
-/**
- * Parses the target agent id from the OpenClaw session key.
- *
- * @param sessionKey The OpenClaw session key header value.
- * @returns The agent id encoded in the session key.
- */
-export function readAgentIdFromSessionKey(sessionKey: string): string {
-  const parsedSession = parseSession(sessionKey);
-
-  if (parsedSession.agent === undefined || parsedSession.agent.trim() === "") {
-    throw new HttpError(
-      400,
-      "x-openclaw-session-key must start with agent:<agentId>:"
-    );
-  }
-
-  return parsedSession.agent;
-}
-
-/**
- * Creates the supported upstream request headers from the downstream session key.
- *
- * @param sessionKey The normalized session key.
- * @returns The filtered headers forwarded to OpenClaw.
- */
-export function createDigitalHumanResponseRequestHeaders(
-  sessionKey: string
-): Headers {
-  return new Headers({
-    "x-openclaw-session-key": sessionKey
-  });
-}
-
-/**
- * Normalizes a possibly repeated HTTP header value to a single string.
- *
- * @param headerValue The raw Node.js header value.
- * @returns The normalized header value when present.
- */
-export function readOptionalHeaderValue(
-  headerValue: string | string[] | undefined
-): string | undefined {
-  if (headerValue === undefined) {
-    return undefined;
-  }
-
-  if (Array.isArray(headerValue)) {
-    return headerValue[0];
-  }
-
-  return headerValue;
-}
-/**
- * Writes the SSE response headers expected by Studio Web.
- *
- * @param response The downstream Express response.
- * @param statusCode The upstream HTTP status code.
- * @param headers The upstream OpenClaw response headers.
- */
-export function writeEventStreamHeaders(
-  response: Response,
-  statusCode: number,
-  headers: Headers
-): void {
-  response.status(statusCode);
-  response.setHeader(
-    "content-type",
-    headers.get("content-type") ?? "text/event-stream; charset=utf-8"
-  );
-  response.setHeader(
-    "cache-control",
-    headers.get("cache-control") ?? "no-cache, no-transform"
-  );
-  response.setHeader("connection", headers.get("connection") ?? "keep-alive");
-  response.setHeader("x-accel-buffering", "no");
-  response.flushHeaders?.();
-}
-
-/**
- * Pipes the upstream OpenClaw event stream to the downstream response.
- *
- * @param stream The upstream event stream body.
- * @param response The downstream Express response.
- * @returns Nothing once the stream has fully completed.
- */
-export async function pipeEventStream(
-  stream: ReadableStream<Uint8Array>,
-  response: Response
-): Promise<void> {
-  const reader = stream.getReader();
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) {
-        break;
-      }
-
-      if (value !== undefined) {
-        response.write(Buffer.from(value));
-      }
-    }
-  } finally {
-    reader.releaseLock();
-    response.end();
-  }
 }

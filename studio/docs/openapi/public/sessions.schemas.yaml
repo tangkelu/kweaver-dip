@@ -101,6 +101,28 @@ components:
         - key
       additionalProperties: true
 
+    ChatMessagesResponse:
+      summary: Chat 历史消息响应
+      type: object
+      properties:
+        sessionKey:
+          type: string
+        sessionId:
+          type: string
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionMessage'
+        thinkingLevel:
+          type: string
+        fastMode:
+          type: boolean
+        verboseLevel:
+          type: string
+      required:
+        - sessionKey
+      additionalProperties: true
+
     SessionMessage:
       summary: 会话消息
       type: object

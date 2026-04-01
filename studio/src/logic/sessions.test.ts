@@ -82,8 +82,13 @@ describe("DefaultSessionsLogic", () => {
   it("delegates getSession to the adapter", async () => {
     const logic = new DefaultSessionsLogic({
       listSessions: vi.fn(),
+      getChatMessages: vi.fn().mockResolvedValue({
+        sessionKey: "key1",
+        sessionId: "runtime-1",
+        messages: []
+      }),
       getSession: vi.fn().mockResolvedValue({
-        key: "key1",
+        key: "legacy-key",
         messages: []
       }),
       deleteSession: vi.fn(),
@@ -97,7 +102,39 @@ describe("DefaultSessionsLogic", () => {
       })
     ).resolves.toEqual({
       key: "key1",
+      sessionKey: "key1",
+      sessionId: "runtime-1",
       messages: []
+    });
+  });
+
+  it("delegates getChatMessages to the adapter", async () => {
+    const getChatMessages = vi.fn().mockResolvedValue({
+      sessionKey: "key1",
+      sessionId: "runtime-1",
+      messages: []
+    });
+    const logic = new DefaultSessionsLogic({
+      listSessions: vi.fn(),
+      getChatMessages,
+      getSession: vi.fn(),
+      deleteSession: vi.fn(),
+      previewSessions: vi.fn()
+    });
+
+    await expect(
+      logic.getChatMessages({
+        sessionKey: "key1",
+        limit: 100
+      })
+    ).resolves.toEqual({
+      sessionKey: "key1",
+      sessionId: "runtime-1",
+      messages: []
+    });
+    expect(getChatMessages).toHaveBeenCalledWith({
+      sessionKey: "key1",
+      limit: 100
     });
   });
 

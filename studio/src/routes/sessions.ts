@@ -9,7 +9,6 @@ import {
 } from "../infra/openclaw-archives-http-client";
 import { OpenClawGatewayClient } from "../infra/openclaw-gateway-client";
 import { DefaultSessionsLogic, type SessionsLogic } from "../logic/sessions";
-import { parseSession } from "../utils/session";
 import type {
   OpenClawSessionGetParams,
   OpenClawSessionsListParams,

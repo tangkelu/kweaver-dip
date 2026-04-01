@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  createChatHistoryRequest,
   OpenClawSessionsGatewayAdapter,
   createSessionsDeleteRequest,
   createSessionsGetRequest,
@@ -42,6 +43,25 @@ describe("createSessionsGetRequest", () => {
       method: "sessions.get",
       params: {
         key: "session_key_here",
+        limit: 100
+      }
+    });
+  });
+});
+
+describe("createChatHistoryRequest", () => {
+  it("builds the chat.history JSON RPC frame", () => {
+    expect(
+      createChatHistoryRequest("req-chat-1", {
+        sessionKey: "session_key_here",
+        limit: 100
+      })
+    ).toEqual({
+      type: "req",
+      id: "req-chat-1",
+      method: "chat.history",
+      params: {
+        sessionKey: "session_key_here",
         limit: 100
       }
     });
@@ -132,6 +152,28 @@ describe("OpenClawSessionsGatewayAdapter", () => {
       })
     ).resolves.toEqual({
       key: "key1",
+      messages: []
+    });
+  });
+
+  it("delegates chat.history to the gateway port", async () => {
+    const gatewayPort = {
+      invoke: vi.fn().mockResolvedValue({
+        sessionKey: "key1",
+        sessionId: "runtime-1",
+        messages: []
+      })
+    };
+    const adapter = new OpenClawSessionsGatewayAdapter(gatewayPort);
+
+    await expect(
+      adapter.getChatMessages({
+        sessionKey: "key1",
+        limit: 100
+      })
+    ).resolves.toEqual({
+      sessionKey: "key1",
+      sessionId: "runtime-1",
       messages: []
     });
   });
