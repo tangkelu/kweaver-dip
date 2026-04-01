@@ -126,66 +126,6 @@ export function registerSkillsControl(
     }
   });
 
-  api.registerHttpRoute({
-    path: "/v1/config/agents/skills/",
-    match: "prefix",
-    auth: "gateway",
-    handler: async (req: IncomingMessage, res: ServerResponse) => {
-      if (req.method !== "DELETE") {
-        res.statusCode = 405;
-        res.setHeader("Content-Type", "application/json");
-        res.end(
-          JSON.stringify({
-            error: "Method not allowed. Use DELETE with ?name=<id>."
-          })
-        );
-        return true;
-      }
-
-      const url = new URL(req.url || "", "http://localhost");
-      const name = extractSkillNameFromPath(url.pathname);
-
-      if (name === undefined) {
-        res.statusCode = 400;
-        res.setHeader("Content-Type", "application/json");
-        res.end(
-          JSON.stringify({
-            error: "Path parameter name is required"
-          })
-        );
-        return true;
-      }
-
-      try {
-        const result = uninstallSkillFromRepo(
-          name,
-          repoSkillsDir,
-          bundledSkillsDir
-        );
-        res.statusCode = 200;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ name: result.name }));
-        return true;
-      } catch (e: unknown) {
-        if (e instanceof SkillUninstallError) {
-          res.statusCode = skillUninstallErrorHttpStatus(e.code);
-          res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ error: e.message, code: e.code }));
-          return true;
-        }
-        api.logger.error?.(`dip skills uninstall failed: ${String(e)}`);
-        res.statusCode = 500;
-        res.setHeader("Content-Type", "application/json");
-        res.end(
-          JSON.stringify({
-            error: e instanceof Error ? e.message : String(e)
-          })
-        );
-        return true;
-      }
-    }
-  });
-
   api.registerCommand({
     name: "skills-manage",
     description: "Manage agent skills (list, enable, disable)",
@@ -234,6 +174,59 @@ export function registerSkillsControl(
     auth: "gateway",
     handler: async (req: IncomingMessage, res: ServerResponse) => {
       const url = new URL(req.url || "", "http://localhost");
+      const isBasePath =
+        url.pathname === "/v1/config/agents/skills" ||
+        url.pathname === "/v1/config/agents/skills/";
+
+      if (req.method === "DELETE") {
+        const name = extractSkillNameFromPath(url.pathname);
+
+        if (name === undefined) {
+          res.statusCode = 400;
+          res.setHeader("Content-Type", "application/json");
+          res.end(
+            JSON.stringify({
+              error: "Path parameter name is required"
+            })
+          );
+          return true;
+        }
+
+        try {
+          const result = uninstallSkillFromRepo(
+            name,
+            repoSkillsDir,
+            bundledSkillsDir
+          );
+          res.statusCode = 200;
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({ name: result.name }));
+          return true;
+        } catch (e: unknown) {
+          if (e instanceof SkillUninstallError) {
+            res.statusCode = skillUninstallErrorHttpStatus(e.code);
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: e.message, code: e.code }));
+            return true;
+          }
+          api.logger.error?.(`dip skills uninstall failed: ${String(e)}`);
+          res.statusCode = 500;
+          res.setHeader("Content-Type", "application/json");
+          res.end(
+            JSON.stringify({
+              error: e instanceof Error ? e.message : String(e)
+            })
+          );
+          return true;
+        }
+      }
+
+      if (!isBasePath) {
+        res.statusCode = 404;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ error: "Not found" }));
+        return true;
+      }
 
       if (req.method === "GET") {
         const agentId = url.searchParams.get("agentId");
