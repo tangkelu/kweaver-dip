@@ -14,5 +14,5 @@ data:
   OPENCLAW_CONFIG_PATH: {{ .Values.studio.configPath | quote }}
   OPENCLAW_WORKSPACE_DIR: {{ .Values.studio.workspaceDir | quote }}
   OPENCLAW_ROOT_DIR: {{ .Values.studio.rootDir | quote }}
-  BKN_BACKEND_URL: {{ .Values.studio.bknBackendUrl | quote }}
-  HYDRA_ADMIN_URL: {{ .Values.studio.hydraAdminUrl | quote }}
+  KWEAVER_BASE_URL: {{ .Values.studio.bknBackendUrl | quote }}
+  KWEAVER_HYDRA_ADMIN_URL: {{ .Values.studio.hydraAdminUrl | quote }}

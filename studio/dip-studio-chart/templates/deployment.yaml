@@ -81,16 +81,16 @@ spec:
                 configMapKeyRef:
                   name: {{ .Chart.Name }}-config
                   key: OPENCLAW_CONFIG_PATH
-            - name: BKN_BACKEND_URL
+            - name: KWEAVER_BASE_URL
               valueFrom:
                 configMapKeyRef:
                   name: {{ .Chart.Name }}-config
-                  key: BKN_BACKEND_URL
-            - name: HYDRA_ADMIN_URL
+                  key: KWEAVER_BASE_URL
+            - name: KWEAVER_HYDRA_ADMIN_URL
               valueFrom:
                 configMapKeyRef:
                   name: {{ .Chart.Name }}-config
-                  key: HYDRA_ADMIN_URL
+                  key: KWEAVER_HYDRA_ADMIN_URL
             - name: OPENCLAW_GATEWAY_TOKEN
               valueFrom:
                 secretKeyRef:
