@@ -58,7 +58,7 @@ releases:
     version: 0.4.0-main.20260401.1
   sailor-agent:
     chart: sailor-agent
-    version: 0.4.0-main.20260331.4
+    version: 0.4.0-main.20260402.3
   sailor-service:
     chart: sailor-service
     version: 0.4.0-main.20260331.7
