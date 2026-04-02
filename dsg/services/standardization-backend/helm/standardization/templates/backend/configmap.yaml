@@ -63,7 +63,7 @@ data:
         password: {{ .Values.depServices.rds.password | quote }}
         data-type: {{ .Values.depServices.rds.type }}
       kafka:
-        bootstrap-servers: {{ .Values.depServices.mq.Host}}:{{ .Values.depServices.mq.Port}}
+        bootstrap-servers: {{ .Values.depServices.mq.mqHost}}:{{ .Values.depServices.mq.mqPort}}
         producer:
           properties:
             sasl.jaas.config: org.apache.kafka.common.security.plain.PlainLoginModule required username="{{ .Values.depServices.mq.auth.username}}" password="{{ .Values.depServices.mq.auth.password}}";
