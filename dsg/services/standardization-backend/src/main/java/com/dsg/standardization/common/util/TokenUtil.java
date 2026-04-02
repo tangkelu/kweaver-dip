@@ -2,16 +2,14 @@ package com.dsg.standardization.common.util;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.dsg.standardization.common.constant.Constants;
-import com.dsg.standardization.common.helper.ARTraceHelper;
+
 import com.dsg.standardization.vo.*;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonElement;
+
 import com.google.gson.JsonPrimitive;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.api.trace.TraceState;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
@@ -322,21 +320,6 @@ public class TokenUtil {
     private static HttpResponseVo dopost(String url, HttpUriRequest httpUriRequest, String traceParent) {
 //        logger.info("=dopost=请求url==={}==",url);
         String builderName = httpUriRequest.getURI().toString();
-        Span span = ARTraceHelper.spanStart(builderName,
-                SpanKind.CLIENT,
-                ARTraceHelper.spanContext2Context(ARTraceHelper.W3CTraceContextPropagator.getSpanContextFromTraceParent(traceParent)));
-        span.setAttribute("http.method", httpUriRequest.getMethod());
-        span.setAttribute("http.route", builderName);
-        span.setAttribute("http.client_ip", ARTraceHelper.getPodName());
-        span.setAttribute("func.path", "");
-
-        ARTraceHelper.addMDC(span.getSpanContext());
-
-        httpUriRequest.addHeader(ARTraceHelper.Keys.KEY_TRACE_PARENT, ARTraceHelper.W3CTraceContextPropagator.createTraceParent(span));
-        TraceState traceState = span.getSpanContext().getTraceState();
-        if (!traceState.isEmpty()) {
-            httpUriRequest.addHeader(ARTraceHelper.Keys.KEY_TTRACE_STATE, ARTraceHelper.W3CTraceContextPropagator.createTraceParent(span));
-        }
 
         HttpResponse httpresponse = null;
         int code = -1;
@@ -349,13 +332,6 @@ public class TokenUtil {
             return new HttpResponseVo(code, result);
         } catch (Exception e) {
             logger.error(String.format("http请求失败，uri{%s},exception{%s}", new Object[]{url, e}));
-        } finally {
-            if (code == HttpStatus.SC_OK) {
-                ARTraceHelper.spanSuccessEnd(span);
-            } else {
-                ARTraceHelper.spanErrorEnd(span);
-            }
-            ARTraceHelper.resetMDC(ARTraceHelper.getSpanContextFromHttpRequestAttribute());
         }
         return null;
     }
