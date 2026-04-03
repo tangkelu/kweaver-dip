@@ -114,6 +114,8 @@ argument-hint: [自然语言指令或带 kn 上下文的任务描述]
 
 - token 默认尝试从 `kweaver-core` 获取/刷新（例如通过执行目标命令触发自动刷新或使用 `kweaver token` 打印 token）。
 - 若 token 获取连续失败 **>3 次**：停止自动获取，转人工模式，要求用户手动 `kweaver auth login <url>` 获取 token，或直接在对话中提供 token（仅 token，不要密码）。
+- token 一般不会过期；接口无结果不等于 token 过期，不要轻易下「token 过期」结论。
+- smart-search-tables技能的脚本中已经有token获取的逻辑，所以找数意图就不用主动获取token了
 
 ## 路由识别
 

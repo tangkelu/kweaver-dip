@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "base_url": "https://dip-poc.aishu.cn",
   "openclaw": {
-    "skillKey": "smart_find_table"
+    "skillKey": "smart_search_tables"
   },
   "description": "找表/找数编排：query_object_instance（元数据/表实例）→ department_duty_query（相关部门职责）→ 总结",
   "defaults": {
