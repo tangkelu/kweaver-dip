@@ -1,7 +1,3 @@
-<callout emoji="memo" background-color="light-orange" border-color="light-orange">
-In the previous step, you completed [Step 3 - Data Access](./Step%203%20-%20Data%20Access.md). You can now learn how to create a Business Knowledge Network.
-</callout>
-
 # Step 4: Create Your First Business Knowledge Network
 
 In the DIP workspace, you can create a **Business Knowledge Network (BKN)** to model business objects, relationships, and behaviors in a structured way, thereby supporting the understanding and execution capabilities of Decision Agents and Digital Workers.

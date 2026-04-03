@@ -8,3 +8,5 @@ This knowledge base node does not contain body content. The following child page
 - [Step 4 - Create Your First Business Knowledge Network](./Step%204%20-%20Create%20Your%20First%20Business%20Knowledge%20Network.md)
 - [Step 5 - Build a Decision Agent](./Step%205%20-%20Build%20a%20Decision%20Agent.md)
 - [Step 6 - Create a Digital Worker](./Step%206%20-%20Create%20a%20Digital%20Worker.md)
+- [General Business Knowledge Network](./General%20Business%20Knowledge%20Network.md)
+- [bkn-creator Skill Overview](./bkn-creator%20Skill%20Overview.md)
