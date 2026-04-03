@@ -784,6 +784,18 @@ install_dip() {
     done < <(_dip_release_names)
 
     log_info "KWeaver DIP services installation completed."
+    
+    # Install Etrino services (vega-hdfs, vega-calculate, vega-metadata)
+    log_info "Installing Etrino services..."
+    local etrino_script="${SCRIPT_DIR}/scripts/services/etrino.sh"
+    if [[ -f "${etrino_script}" ]]; then
+        NAMESPACE="${namespace}" CONFIG_FILE="${CONFIG_YAML_PATH}" bash "${etrino_script}" || {
+            log_warn "Etrino installation encountered issues, but continuing..."
+        }
+    else
+        log_warn "Etrino installation script not found at ${etrino_script}, skipping..."
+    fi
+    
     _dip_show_access_hints
 }
 
