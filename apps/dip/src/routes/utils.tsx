@@ -1,7 +1,9 @@
+import { getGuideStatus } from '@/apis/dip-studio/guide'
+import type { GuideStatusResponse } from '@/apis/dip-studio/guide'
 import { usePreferenceStore } from '@/stores'
 import { BASE_PATH } from '@/utils/config'
 import { routeConfigs } from './routes'
-import type { RouteConfig, RouteModule, RouteSidebarMode } from './types'
+import type { EnabledModule, RouteConfig, RouteModule, RouteSidebarMode } from './types'
 
 /** 缺省为 hidden，与未配置时的侧栏行为一致 */
 export const getRouteSidebarMode = (route: RouteConfig): RouteSidebarMode =>
@@ -236,4 +238,41 @@ export const resolveDefaultMicroAppPath = async (): Promise<string> => {
   }
 
   return '/application/error'
+}
+
+/** 登录后 / 访问根路径时的默认跳转目标，与 DefaultIndexRedirect 逻辑一致 */
+export type DefaultAuthRedirectResult = {
+  path: string
+  state?: { guideStatus: GuideStatusResponse; breadcrumbMode: 'init-only' }
+}
+
+export async function resolveDefaultAuthRedirect(
+  isAdmin: boolean,
+  modules: EnabledModule[],
+): Promise<DefaultAuthRedirectResult> {
+  const hasStudio = modules.includes('studio')
+  const hasStore = modules.includes('store')
+  try {
+    if (isAdmin && hasStudio) {
+      const guideStatus = await getGuideStatus()
+      if (guideStatus.ready) {
+        return { path: '/studio/digital-human' }
+      }
+      return {
+        path: '/studio/initial-configuration',
+        state: { guideStatus, breadcrumbMode: 'init-only' },
+      }
+    }
+    if (hasStore && !hasStudio) {
+      const targetPath = await resolveDefaultMicroAppPath()
+      return { path: targetPath }
+    }
+    return { path: '/home' }
+  } catch {
+    if (hasStore && !hasStudio) {
+      const targetPath = await resolveDefaultMicroAppPath()
+      return { path: targetPath }
+    }
+    return { path: isAdmin ? '/studio/digital-human' : '/home' }
+  }
 }

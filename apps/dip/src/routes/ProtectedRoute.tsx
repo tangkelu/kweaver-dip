@@ -24,6 +24,8 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   // 用于跟踪上次的 token，当 token 变化时重置 hasTriedFetchRef，允许重新请求
   // 注意：虽然 useEffect 依赖 token，但 ref 不会自动重置，需要手动检测变化
   const lastTokenRef = useRef<string | null>(null)
+  /** 当前 token 是否已触发过 pinned 列表拉取（避免路由切换重复请求） */
+  const pinnedFetchedForTokenRef = useRef<string | null>(null)
 
   // 通过环境变量控制是否跳过登录认证
   // 在 .env.local 中设置 PUBLIC_SKIP_AUTH=true 即可跳过登录认证
@@ -130,24 +132,26 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, isLoginPage, fetchUserInfo, skipAuth])
 
-  // 用户已登录且通过路由守卫时，确保刷新后拉取一次 pinned 列表（带内部去重）
-  // 增加 focus 监听，确保在多标签页场景下（如在 AI Store 标签页操作后回到首页）能及时同步状态
+  // 用户已登录且具备用户信息时，每个登录会话（token）内只拉取一次 pinned 列表；路由切换、窗口聚焦不再触发
   useEffect(() => {
-    const refresh = () => {
-      if (!skipAuth && token && userInfo && modules.includes('store')) {
-        fetchPinnedMicroApps()
-      }
+    if (skipAuth) {
+      return
     }
-
-    // 初次加载
-    refresh()
-
-    // 监听窗口聚焦
-    window.addEventListener('focus', refresh)
-    return () => {
-      window.removeEventListener('focus', refresh)
+    if (!token) {
+      pinnedFetchedForTokenRef.current = null
+      return
     }
-  }, [skipAuth, token, userInfo, fetchPinnedMicroApps, location.pathname, modules])
+    if (!userInfo) {
+      return
+    }
+    if (pinnedFetchedForTokenRef.current === token) {
+      return
+    }
+    pinnedFetchedForTokenRef.current = token
+    if (modules.includes('store')) {
+      void fetchPinnedMicroApps()
+    }
+  }, [skipAuth, token, userInfo, fetchPinnedMicroApps])
 
   // 如果跳过认证，直接返回子组件
   if (skipAuth) {

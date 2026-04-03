@@ -9,6 +9,7 @@ import { Button, Modal, message, Spin, Upload } from 'antd'
 import clsx from 'clsx'
 import { useEffect, useRef, useState } from 'react'
 import { installSkill } from '@/apis'
+import type { InstallSkillResult } from '@/apis/dip-studio/skills'
 import UploadFileIcon from '@/assets/images/uploadFile.svg?react'
 import uploadModalStyles from '@/components/AppUploadModal/index.module.less'
 import type { FileInfo } from '@/components/AppUploadModal/types'
@@ -48,16 +49,19 @@ function getInstallSkillErrorMessage(error: unknown): string {
 export interface UploadSkillProps extends Pick<ModalProps, 'open' | 'onCancel'> {
   /** 导入成功后的回调（例如刷新技能列表） */
   onSuccess?: () => void
+  /** 成功后查看技能详情 */
+  onDetail?: (data: InstallSkillResult) => void
 }
 
 /** 导入技能包弹窗（交互与 AppUploadModal 一致，仅请求为 installSkill） */
-const UploadSkill = ({ open, onCancel, onSuccess }: UploadSkillProps) => {
+const UploadSkill = ({ open, onCancel, onSuccess, onDetail }: UploadSkillProps) => {
   const [modal, contextHolder] = Modal.useModal()
   const [messageApi, messageContextHolder] = message.useMessage()
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>(UploadStatus.INITIAL)
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
   const uploadRequestRef = useRef<{ abort: () => void } | null>(null)
+  const uploadResultRef = useRef<InstallSkillResult | null>(null)
   const uploadStatusRef = useRef<UploadStatus>(UploadStatus.INITIAL)
 
   useEffect(() => {
@@ -72,6 +76,7 @@ const UploadSkill = ({ open, onCancel, onSuccess }: UploadSkillProps) => {
       uploadRequestRef.current.abort()
       uploadRequestRef.current = null
     }
+    uploadResultRef.current = null
   }
 
   useEffect(() => {
@@ -133,7 +138,7 @@ const UploadSkill = ({ open, onCancel, onSuccess }: UploadSkillProps) => {
       const requestPromise = installSkill({ file })
       uploadRequestRef.current = requestPromise as unknown as { abort: () => void }
 
-      await requestPromise
+      const result = await requestPromise
 
       if (!uploadRequestRef.current) {
         return
@@ -141,6 +146,7 @@ const UploadSkill = ({ open, onCancel, onSuccess }: UploadSkillProps) => {
 
       uploadRequestRef.current = null
       setUploadStatus(UploadStatus.SUCCESS)
+      uploadResultRef.current = result
     } catch (error: unknown) {
       if (!uploadRequestRef.current) {
         return
@@ -322,6 +328,16 @@ const UploadSkill = ({ open, onCancel, onSuccess }: UploadSkillProps) => {
         <div className="mt-2 text-sm text-[--dip-text-color-45]">
           您的技能已导入成功，可前往技能列表查看
         </div>
+        {onDetail && (
+          <Button
+            color="primary"
+            variant="outlined"
+            onClick={() => uploadResultRef.current && onDetail?.(uploadResultRef.current)}
+            className="mt-4"
+          >
+            查看技能
+          </Button>
+        )}
       </div>
     )
   }

@@ -1,8 +1,8 @@
 import { Spin } from 'antd'
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getGuideStatus } from '@/apis/dip-studio/guide'
 import GradientContainer from '@/components/GradientContainer'
+import { resolveDefaultAuthRedirect } from '@/routes/utils'
 import { useUserInfoStore } from '@/stores'
 
 const LoginSuccess = () => {
@@ -27,50 +27,15 @@ const LoginSuccess = () => {
               return
             }
 
-            const { userInfo: currentUserInfo, isAdmin } = useUserInfoStore.getState()
+            const { userInfo: currentUserInfo, isAdmin, modules } = useUserInfoStore.getState()
             if (currentUserInfo) {
-              // 用户信息加载成功，根据权限跳转
-              // 注意：如果有 asredirect 参数，后端会直接重定向到该地址，不会到 login-success 页面
-              // 所以这里只需要处理没有 asredirect 的情况（跳转到首页）
-              // TODO: 角色信息需要从其他地方获取，暂时使用空数组
-              // const roleIds = new Set<string>([])
-              // const firstRoute = getFirstVisibleSidebarRoute(roleIds)
-              // const to = firstRoute?.path ? `/${firstRoute.path}` : '/'
-              // hasNavigatedRef.current = true
-              // navigate(to, { replace: true })
-
-              // TODO: 暂时不使用默认微应用路由
-              // 通过公共方法解析默认微应用路由（基于固定应用 key）
-              // resolveDefaultMicroAppPath().then((targetPath) => {
-              //   if (hasNavigatedRef.current) {
-              //     return
-              //   }
-              //   hasNavigatedRef.current = true
-              //   navigate(targetPath, { replace: true })
-              // })
-              if (!isAdmin) {
-                navigate('/home', { replace: true })
-                return
-              }
-
               void (async () => {
-                try {
-                  const guideStatus = await getGuideStatus()
-                  if (hasNavigatedRef.current) return
-                  if (guideStatus.ready) {
-                    navigate('/studio/digital-human', { replace: true })
-                    return
-                  }
-
-                  navigate('/studio/initial-configuration', {
-                    replace: true,
-                    state: { guideStatus, breadcrumbMode: 'init-only' },
-                  })
-                } catch {
-                  // 初始化状态接口失败时，避免阻塞管理员进入系统
-                  if (hasNavigatedRef.current) return
-                  navigate('/studio/digital-human', { replace: true })
+                const result = await resolveDefaultAuthRedirect(isAdmin, modules)
+                if (hasNavigatedRef.current) {
+                  return
                 }
+                hasNavigatedRef.current = true
+                navigate(result.path, { replace: true, state: result.state })
               })()
             } else {
               // 请求完成但没有用户信息，说明获取失败

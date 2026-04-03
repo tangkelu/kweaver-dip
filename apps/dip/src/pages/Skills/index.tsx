@@ -68,9 +68,9 @@ const SkillsManagement = () => {
     switch (key) {
       case SkillManagementActionEnum.Delete:
         modal.confirm({
-          title: '确认删除',
+          title: '删除技能',
           icon: <ExclamationCircleFilled />,
-          content: '删除技能后，相关配置和数据将被清除，数字员工将无法使用此技能。是否继续?',
+          content: '删除后，技能的相关配置和数据将被清除，且无法被数字员工再次调用，请谨慎操作。',
           okText: '确定',
           okType: 'primary',
           okButtonProps: { danger: true },
@@ -157,8 +157,8 @@ const SkillsManagement = () => {
         skills={skills}
         menuItems={(skill) =>
           skill.type === 'openclaw-managed'
-            ? undefined
-            : getSkillManagementMenuItems((key) => handleMenuClick(key, skill))
+            ? getSkillManagementMenuItems((key) => handleMenuClick(key, skill))
+            : undefined
         }
         onCardClick={(skill) => {
           navigate(`/studio/skills/${encodeURIComponent(skill.name)}`)
@@ -175,9 +175,7 @@ const SkillsManagement = () => {
       <AddSkillDrawer
         open={addSkillDrawerOpen}
         payload={addSkillDrawerPayload}
-        getContainer={() =>
-          document.getElementById('skills-management-container') as HTMLElement
-        }
+        getContainer={() => document.getElementById('skills-management-container') as HTMLElement}
         onClose={() => {
           setAddSkillDrawerOpen(false)
           setAddSkillDrawerPayload(undefined)
@@ -188,6 +186,7 @@ const SkillsManagement = () => {
         open={uploadModalOpen}
         onCancel={() => setUploadModalOpen(false)}
         onSuccess={() => void handleRefresh()}
+        onDetail={(data) => navigate(`/studio/skills/${encodeURIComponent(data?.name)}`)}
       />
       {messageContextHolder}
       {modalContextHolder}

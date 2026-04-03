@@ -3,7 +3,7 @@ export const minCardWidth = 288
 // 卡片的最大宽度
 export const maxCardWidth = 348
 // 卡片的高度
-export const cardHeight = 148
+export const cardHeight = 156
 // 卡片的间距
 export const gap = 16
 // 正常卡片的高度（包含间距）

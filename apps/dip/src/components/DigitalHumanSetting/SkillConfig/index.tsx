@@ -85,7 +85,7 @@ const SkillConfig = ({ readonly }: SkillConfigProps) => {
         width: 80,
         render: (_: unknown, record: DigitalHumanSkill) => (
           <Flex align="center">
-            <Tooltip title="删除">
+            <Tooltip title={record.built_in ? '数字员工执行时所需的基本技能，不可移除' : '移除'}>
               <Button
                 type="text"
                 disabled={record.built_in}
@@ -114,7 +114,12 @@ const SkillConfig = ({ readonly }: SkillConfigProps) => {
         </div>
         {skills.length > 0 && !readonly && (
           <div className="flex items-end gap-x-3">
-            <Button type="primary" icon={<IconFont type="icon-add" />} onClick={handleAddSkill}>
+            <Button
+              color="primary"
+              icon={<IconFont type="icon-add" />}
+              variant="outlined"
+              onClick={handleAddSkill}
+            >
               技能
             </Button>
           </div>
@@ -133,7 +138,12 @@ const SkillConfig = ({ readonly }: SkillConfigProps) => {
           emptyText: (
             <Empty type="empty" title="暂无技能">
               {readonly ? undefined : (
-                <Button icon={<IconFont type="icon-add" />} type="primary" onClick={handleAddSkill}>
+                <Button
+                  icon={<IconFont type="icon-add" />}
+                  color="primary"
+                  variant="outlined"
+                  onClick={handleAddSkill}
+                >
                   技能
                 </Button>
               )}

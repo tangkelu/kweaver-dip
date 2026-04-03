@@ -1,12 +1,11 @@
 import { lazy, useEffect, useRef } from 'react'
 import type { RouteObject } from 'react-router-dom'
 import { createBrowserRouter, useNavigate } from 'react-router-dom'
-import { getGuideStatus } from '@/apis/dip-studio/guide'
 import { useUserInfoStore } from '@/stores'
 import { BASE_PATH } from '@/utils/config'
 import { ProtectedRoute } from './ProtectedRoute'
 import { routeConfigs } from './routes'
-import { resolveDefaultMicroAppPath } from './utils'
+import { resolveDefaultAuthRedirect } from './utils'
 
 const Login = lazy(() => import('../pages/Login'))
 const LoginSuccess = lazy(() => import('../pages/Login/LoginSuccess'))
@@ -35,41 +34,9 @@ const DefaultIndexRedirect = () => {
     }
 
     void (async () => {
-      const hasStudio = modules.includes('studio')
-      const hasStore = modules.includes('store')
-      try {
-        if (isAdmin && hasStudio) {
-          const guideStatus = await getGuideStatus()
-          hasNavigatedRef.current = true
-          if (guideStatus.ready) {
-            navigate('/studio/digital-human', { replace: true })
-            return
-          }
-
-          navigate('/studio/initial-configuration', {
-            replace: true,
-            state: { guideStatus, breadcrumbMode: 'init-only' },
-          })
-          return
-        }
-
-        hasNavigatedRef.current = true
-        if (hasStore && !hasStudio) {
-          const targetPath = await resolveDefaultMicroAppPath()
-          navigate(targetPath, { replace: true })
-          return
-        }
-        navigate('/home', { replace: true })
-      } catch {
-        // 若初始化状态接口失败，避免阻塞管理员进入系统
-        hasNavigatedRef.current = true
-        if (hasStore && !hasStudio) {
-          const targetPath = await resolveDefaultMicroAppPath()
-          navigate(targetPath, { replace: true })
-          return
-        }
-        navigate(isAdmin ? '/studio/digital-human' : '/home', { replace: true })
-      }
+      const result = await resolveDefaultAuthRedirect(isAdmin, modules)
+      hasNavigatedRef.current = true
+      navigate(result.path, { replace: true, state: result.state })
     })()
   }, [navigate, isAdmin, modules])
 

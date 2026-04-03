@@ -6,6 +6,7 @@ import { getSkillTree } from '@/apis'
 import Empty from '@/components/Empty'
 import IconFont from '@/components/IconFont'
 import ScrollBarContainer from '@/components/ScrollBarContainer'
+import { mockFetchSkillTree, SKILL_DETAIL_USE_MOCK } from './mockSkillDetail'
 import { SkillTabStateShell } from './SkillTabStateShell'
 import type { SkillDetailFileItem } from './types'
 
@@ -45,7 +46,9 @@ const SkillFilesTab = ({ skillName, onFileClick, selectedPath }: SkillFilesTabPr
       setLoading(true)
       setError(null)
       try {
-        const treeRes = await getSkillTree(skillName)
+        const treeRes = SKILL_DETAIL_USE_MOCK
+          ? await mockFetchSkillTree(skillName)
+          : await getSkillTree(skillName)
         if (cancelled) return
         setFiles(flattenSkillFiles(treeRes.entries ?? []))
       } catch {
@@ -87,13 +90,13 @@ const SkillFilesTab = ({ skillName, onFileClick, selectedPath }: SkillFilesTabPr
   }
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <ScrollBarContainer className="flex min-h-0 flex-col py-5">
+      <div className="flex min-h-0 flex-col">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-[--dip-border-color] bg-[--dip-white]">
           <div className="flex h-10 shrink-0 items-center justify-between gap-4 border-b border-[--dip-border-color] bg-[#F5F5F4] px-6 text-[--dip-text-color-65]">
             <span>文件名称</span>
             {/* <span className="w-36">路径</span> */}
           </div>
-          <div className="min-h-0 min-w-0 flex-1 overflow-auto">
+          <ScrollBarContainer className="min-h-0 min-w-0 flex-1 overflow-auto">
             <ul className="m-0 box-border flex min-h-[48px] list-none flex-col justify-center divide-y divide-[var(--dip-line-color)] p-0">
               {files.map((f) => (
                 <li key={f.path}>
@@ -124,9 +127,9 @@ const SkillFilesTab = ({ skillName, onFileClick, selectedPath }: SkillFilesTabPr
                 </li>
               ))}
             </ul>
-          </div>
+          </ScrollBarContainer>
         </div>
-      </ScrollBarContainer>
+      </div>
     </div>
   )
 }

@@ -1,18 +1,29 @@
-import { Spin } from 'antd'
 import { memo, useEffect, useState } from 'react'
 import { getSkillFileContent } from '@/apis'
 import Empty from '@/components/Empty'
-import ScrollBarContainer from '@/components/ScrollBarContainer'
+import {
+  ArchivePreviewPanel,
+  type ArchivePreviewState,
+} from '@/components/WorkPlanDetail/Outcome/Preview'
+import { mockFetchSkillFileContent, SKILL_DETAIL_USE_MOCK } from './mockSkillDetail'
 import { SkillTabStateShell } from './SkillTabStateShell'
 
 export interface SkillMdTabProps {
   skillName: string
 }
 
+const SKILL_PREVIEW_TITLE = 'SKILL.md'
+const SKILL_PREVIEW_SUBPATH = 'SKILL.md'
+
 const SkillMdTab = ({ skillName }: SkillMdTabProps) => {
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [content, setContent] = useState<string | null>(null)
+  const [preview, setPreview] = useState<ArchivePreviewState>({
+    title: SKILL_PREVIEW_TITLE,
+    subpath: SKILL_PREVIEW_SUBPATH,
+    body: '',
+    loading: true,
+    viewer: 'markdown',
+    error: null,
+  })
   const [truncated, setTruncated] = useState(false)
 
   useEffect(() => {
@@ -20,21 +31,39 @@ const SkillMdTab = ({ skillName }: SkillMdTabProps) => {
 
     let cancelled = false
 
+    const base: ArchivePreviewState = {
+      title: SKILL_PREVIEW_TITLE,
+      subpath: SKILL_PREVIEW_SUBPATH,
+      body: '',
+      loading: true,
+      viewer: 'markdown',
+      error: null,
+    }
+    setPreview(base)
+    setTruncated(false)
+
     const load = async () => {
-      setLoading(true)
-      setError(null)
       try {
-        const res = await getSkillFileContent(skillName)
+        const res = SKILL_DETAIL_USE_MOCK
+          ? await mockFetchSkillFileContent(skillName, { path: 'SKILL.md' })
+          : await getSkillFileContent(skillName)
         if (cancelled) return
-        setContent(res.content)
+        setPreview({
+          ...base,
+          body: res.content ?? '',
+          loading: false,
+          error: null,
+        })
         setTruncated(res.truncated)
       } catch {
         if (cancelled) return
-        setError('SKILL.md 加载失败')
-        setContent(null)
+        setPreview({
+          ...base,
+          body: '',
+          loading: false,
+          error: 'SKILL.md 加载失败',
+        })
         setTruncated(false)
-      } finally {
-        if (!cancelled) setLoading(false)
       }
     }
 
@@ -45,36 +74,25 @@ const SkillMdTab = ({ skillName }: SkillMdTabProps) => {
     }
   }, [skillName])
 
-  if (loading) {
+  if (!skillName.trim()) {
     return (
       <SkillTabStateShell>
-        <Spin />
+        <Empty type="empty" title="暂无技能" />
       </SkillTabStateShell>
     )
   }
-  if (error) {
-    return (
-      <SkillTabStateShell>
-        <Empty type="failed" title={error} />
-      </SkillTabStateShell>
-    )
-  }
-  if (content === null || content === '') {
-    return (
-      <SkillTabStateShell>
-        <Empty type="empty" title="暂无 SKILL.md 内容" />
-      </SkillTabStateShell>
-    )
-  }
+
   return (
-    <ScrollBarContainer className="min-h-0 flex-1 rounded-lg border border-[--dip-border-color] bg-[#FAFBFC] p-4">
-      <pre className="m-0 whitespace-pre-wrap break-words font-mono text-sm leading-6 text-[--dip-text-color]">
-        {content}
-        {truncated && (
-          <span className="mt-2 block text-xs text-[--dip-text-color-45]">（内容已截断）</span>
-        )}
-      </pre>
-    </ScrollBarContainer>
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#FAFAF9]">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <ArchivePreviewPanel preview={preview} />
+      </div>
+      {truncated ? (
+        <p className="m-0 shrink-0 border-t border-[--dip-border-color] bg-[#FAFBFC] px-4 py-2 text-xs leading-5 text-[--dip-text-color-45]">
+          （内容已截断）
+        </p>
+      ) : null}
+    </div>
   )
 }
 

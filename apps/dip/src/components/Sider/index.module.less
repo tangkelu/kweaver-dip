@@ -55,7 +55,7 @@
 
       &:hover {
         .pin-icon {
-          display: flex;
+          display: inline-flex;
         }
       }
     }
@@ -244,6 +244,31 @@
  */
 :global {
   .dip-sider-submenu-popup {
+    width: 230px;
+
+    .dip-menu-item {
+      display: inline-flex !important;
+      align-items: center;
+      height: 40px;
+      line-height: 40px;
+      padding-inline: 10px !important;
+      position: relative;
+      overflow: visible;
+
+      &:hover {
+        .pin-icon {
+          display: inline-flex;
+        }
+      }
+    }
+
+    .dip-menu-title-content {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .dip-menu-item:not(.dip-menu-item-selected):hover {
       background-color: var(--dip-hover-bg-color) !important;
     }

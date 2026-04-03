@@ -75,7 +75,7 @@ const ChannelConfig = ({ readonly }: ChannelConfigProps) => {
         width: 80,
         render: () => (
           <Flex align="center">
-            <Tooltip title="删除">
+            <Tooltip title="移除">
               <Button
                 type="text"
                 onClick={() => deleteChannel()}
@@ -100,7 +100,12 @@ const ChannelConfig = ({ readonly }: ChannelConfigProps) => {
         </div>
         {channel && !readonly && (
           <div className="flex items-end gap-x-3">
-            <Button type="primary" icon={<IconFont type="icon-add" />} onClick={handleAddChannel}>
+            <Button
+              color="primary"
+              icon={<IconFont type="icon-add" />}
+              variant="outlined"
+              onClick={handleAddChannel}
+            >
               通道
             </Button>
           </div>
@@ -121,7 +126,8 @@ const ChannelConfig = ({ readonly }: ChannelConfigProps) => {
               {readonly ? undefined : (
                 <Button
                   icon={<IconFont type="icon-add" />}
-                  type="primary"
+                  color="primary"
+                  variant="outlined"
                   onClick={handleAddChannel}
                 >
                   通道

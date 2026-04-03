@@ -56,8 +56,8 @@ const AdminSider = ({ collapsed, onCollapse, layout = 'entry' }: AdminSiderProps
 
       {/* 菜单内容 */}
       <div className="flex-1 flex flex-col dip-hideScrollbar">
-        <div className="flex-1">
-          {hasStudio ? (
+        {hasStudio ? (
+          <div className="flex-1">
             <StudioMenuSection
               collapsed={collapsed}
               selectedKey={selectedKey}
@@ -65,15 +65,19 @@ const AdminSider = ({ collapsed, onCollapse, layout = 'entry' }: AdminSiderProps
               navigate={navigate}
               allowedKeys={['digital-human', 'skills']}
             />
-          ) : null}
-        </div>
+          </div>
+        ) : null}
         {hasStore ? (
-          <StoreMenuSection
-            collapsed={collapsed}
-            selectedKey={selectedKey}
-            roleIds={new Set<string>([])}
-            navigate={navigate}
-          />
+          <div
+            className={clsx(hasStudio ? 'mt-auto shrink-0' : 'flex-1 flex flex-col justify-start')}
+          >
+            <StoreMenuSection
+              collapsed={collapsed}
+              selectedKey={selectedKey}
+              roleIds={new Set<string>([])}
+              navigate={navigate}
+            />
+          </div>
         ) : null}
         <ExternalLinksSection collapsed={collapsed} roleIds={new Set<string>([])} />
       </div>

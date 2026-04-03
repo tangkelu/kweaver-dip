@@ -26,7 +26,7 @@ const SkillCard: React.FC<SkillCardProps> = ({ skill, menuItems, onCardClick }) 
       styles={{
         root: {
           height: cardHeight,
-          border: '1px solid #E2E8F0',
+          border: '1px solid #E3E6EE',
           boxShadow: hovered ? '0px 2px 9px 0.5px #0000000F' : '',
           transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
           transition: 'transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease',
@@ -83,7 +83,7 @@ const SkillCard: React.FC<SkillCardProps> = ({ skill, menuItems, onCardClick }) 
                 e.stopPropagation()
               }}
               className={clsx(
-                'flex h-6 w-6 items-center justify-center rounded-md text-[var(--dip-text-color-45)] transition-colors hover:bg-[--dip-hover-bg-color] hover:text-[var(--dip-text-color-85)]',
+                'flex h-6 w-6 items-center justify-center rounded-md text-[var(--dip-text-color-65)] transition-colors hover:bg-[--dip-hover-bg-color] hover:text-[var(--dip-text-color-85)]',
                 menuOpen && 'bg-[--dip-hover-bg-color] text-[var(--dip-text-color-85)]',
               )}
             >

@@ -66,7 +66,7 @@ const KnowledgeConfig = ({ readonly }: KnowledgeConfigProps) => {
         width: 80,
         render: (_: unknown, record: BknEntry) => (
           <Flex align="center">
-            <Tooltip title="删除">
+            <Tooltip title="移除">
               <Button
                 type="text"
                 onClick={(e) => {
@@ -95,9 +95,10 @@ const KnowledgeConfig = ({ readonly }: KnowledgeConfigProps) => {
         {bkn.length > 0 && !readonly && (
           <div className="flex items-end gap-x-3">
             <Button
-              type="primary"
+              color="primary"
               icon={<IconFont type="icon-add" />}
               onClick={handleSelectKnowledge}
+              variant="outlined"
             >
               知识
             </Button>
@@ -119,7 +120,8 @@ const KnowledgeConfig = ({ readonly }: KnowledgeConfigProps) => {
               {readonly ? undefined : (
                 <Button
                   icon={<IconFont type="icon-add" />}
-                  type="primary"
+                  color="primary"
+                  variant="outlined"
                   onClick={handleSelectKnowledge}
                 >
                   知识

@@ -4,6 +4,11 @@ import { useNavigate, useParams } from 'react-router-dom'
 import type { DigitalHumanSkill } from '@/apis'
 import { downloadSkillFile, getEnabledSkills, getSkillFileContent } from '@/apis'
 import IconFont from '@/components/IconFont'
+import {
+  mockFetchEnabledSkills,
+  mockFetchSkillFileContent,
+  SKILL_DETAIL_USE_MOCK,
+} from '@/components/SkillDetail/mockSkillDetail'
 import SkillFilesTab from '@/components/SkillDetail/SkillFilesTab'
 import SkillMdTab from '@/components/SkillDetail/SkillMdTab'
 import type { SkillDetailTabKey } from '@/components/SkillDetail/types'
@@ -104,7 +109,9 @@ const SkillsDetailPage = () => {
       setPageLoading(true)
       let list: DigitalHumanSkill[] = []
       try {
-        list = await getEnabledSkills()
+        list = SKILL_DETAIL_USE_MOCK
+          ? await mockFetchEnabledSkills(decodedName)
+          : await getEnabledSkills()
       } catch {
         list = []
       }
@@ -143,7 +150,9 @@ const SkillsDetailPage = () => {
 
       void (async () => {
         try {
-          const res = await getSkillFileContent(decodedName, { path })
+          const res = SKILL_DETAIL_USE_MOCK
+            ? await mockFetchSkillFileContent(decodedName, { path })
+            : await getSkillFileContent(decodedName, { path })
           const body = res.content + (res.truncated ? '\n\n（预览已截断，服务端可能限制长度）' : '')
           setFilePreview((p) =>
             p
@@ -226,7 +235,7 @@ const SkillsDetailPage = () => {
     >
       {messageContextHolder}
       <div className="grid h-12 flex-shrink-0 grid-cols-3 items-center gap-2 border-b border-[--dip-border-color] pl-3 pr-6">
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
             onClick={handleBack}
@@ -268,14 +277,14 @@ const SkillsDetailPage = () => {
         <div className="min-w-0" />
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 pb-6 pt-4">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {activeTab === 'skill-md' && (
           <div className="flex min-h-0 flex-1 flex-col">
             <SkillMdTab skillName={decodedName} />
           </div>
         )}
         {activeTab === 'files' && (
-          <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col px-6 pb-6 pt-4">
             <SkillFilesTab
               skillName={decodedName}
               onFileClick={handleFileClick}

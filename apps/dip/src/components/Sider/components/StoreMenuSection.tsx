@@ -95,8 +95,8 @@ export const StoreMenuSection = ({
         children.push({
           key: `micro-app-${app.key}`,
           label: (
-            <div className="w-full h-full flex justify-between items-center">
-              <span className="truncate">{app.name}</span>
+            <div className="flex justify-between items-center">
+              <span className="truncate flex-1">{app.name}</span>
               <Popover content="取消固定">
                 <div className="w-6 h-6 ml-2 items-center justify-center rounded hidden flex-shrink-0 rounded text-[var(--dip-warning-color)] pin-icon hover:bg-[rgba(0,0,0,0.04)]">
                   <PinIcon
