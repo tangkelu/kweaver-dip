@@ -262,7 +262,7 @@ type (
 @server (
 	prefix: /api/data-semantic/v1
 	group:  data_semantic
-	middleware: JWTAuth
+	middleware: HydraAuth
 )
 service api {
 	@doc "查询库表理解状态"

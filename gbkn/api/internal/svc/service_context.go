@@ -36,7 +36,7 @@ type ServiceContext struct {
 	rateLimiters   sync.Map                       // formViewId -> *rateLimitEntry (限流器缓存)
 
 	// 认证中间件
-	JWTAuth rest.Middleware // JWT 验证中间件 (供 goctl 生成的 routes.go 使用)
+	HydraAuth rest.Middleware // Hydra 验证中间件 (供 goctl 生成的 routes.go 使用)
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -63,8 +63,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	agentRetrievalClient := agentretrieval.NewClient(c.AgentRetrieval.URL, agentRetrievalTimeout)
 
 	// 创建 JWT 认证中间件 (使用 goctl 生成的中间件结构体)
-	jwtAuthMiddleware := middleware.NewJWTAuthMiddleware(hydraClient, userMgmClient)
-	jwtAuth := jwtAuthMiddleware.Handle
+	hydraAuthMiddleware := middleware.NewHydraAuthMiddleware(hydraClient, userMgmClient)
+	hydraAuth := hydraAuthMiddleware.Handle
 
 	return &ServiceContext{
 		Config:         c,
@@ -74,7 +74,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Hydra:          hydraClient,
 		UserMgm:        userMgmClient,
 		AgentRetrieval: agentRetrievalClient,
-		JWTAuth:        jwtAuth,
+		HydraAuth:      hydraAuth,
 	}
 }
 

@@ -14,19 +14,19 @@ import (
 	errcode "github.com/kweaver-dip/gbkn/api/internal/errorx"
 )
 
-type JWTAuthMiddleware struct {
+type HydraAuthMiddleware struct {
 	hydraClient   *hydra.Client
 	userMgmClient *usermgm.Client
 }
 
-func NewJWTAuthMiddleware(hydraClient *hydra.Client, userMgmClient *usermgm.Client) *JWTAuthMiddleware {
-	return &JWTAuthMiddleware{
+func NewHydraAuthMiddleware(hydraClient *hydra.Client, userMgmClient *usermgm.Client) *HydraAuthMiddleware {
+	return &HydraAuthMiddleware{
 		hydraClient:   hydraClient,
 		userMgmClient: userMgmClient,
 	}
 }
 
-func (m *JWTAuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
+func (m *HydraAuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		newCtx := r.Context()
 
@@ -66,7 +66,7 @@ func (m *JWTAuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 }
 
 // handleUserToken 处理用户 Token
-func (m *JWTAuthMiddleware) handleUserToken(ctx context.Context, info *hydra.TokenIntrospectInfo, tokenID string) (context.Context, error) {
+func (m *HydraAuthMiddleware) handleUserToken(ctx context.Context, info *hydra.TokenIntrospectInfo, tokenID string) (context.Context, error) {
 	name, _, depInfos, err := m.userMgmClient.GetUserNameByUserID(ctx, info.VisitorID)
 	if err != nil {
 		return ctx, errcode.Desc(errcode.GetUserInfoFailure)
