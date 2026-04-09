@@ -1,6 +1,6 @@
 import { Spin } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useLocation, useParams } from 'react-router-dom'
 import { getApplicationsBasicInfo } from '@/apis'
 import Empty from '@/components/Empty'
 import { getFullPath } from '@/utils/config'
@@ -8,9 +8,28 @@ import { setMicroAppGlobalState } from '@/utils/micro-app/globalState'
 import MicroAppComponent from '../../components/MicroAppComponent'
 import { useMicroAppStore } from '../../stores/microAppStore'
 
+const resolveAppKeyFromPathname = (pathname: string): string => {
+  const match = pathname.match(/\/application\/([^/]+)/)
+  if (!match?.[1]) {
+    return ''
+  }
+  try {
+    return decodeURIComponent(match[1]).trim()
+  } catch {
+    return match[1].trim()
+  }
+}
+
 const MicroAppContainer = () => {
   const { appKey } = useParams<{ appKey: string }>()
-  const appKeyParam = useMemo(() => (appKey ?? '').trim(), [appKey])
+  const { pathname } = useLocation()
+  const appKeyParam = useMemo(() => {
+    const keyFromParams = (appKey ?? '').trim()
+    if (keyFromParams) {
+      return keyFromParams
+    }
+    return resolveAppKeyFromPathname(pathname)
+  }, [appKey, pathname])
   const currentMicroApp = useMicroAppStore((state) => state.currentMicroApp)
   const setCurrentMicroApp = useMicroAppStore((state) => state.setCurrentMicroApp)
   const setHomeRoute = useMicroAppStore((state) => state.setHomeRoute)
@@ -36,9 +55,14 @@ const MicroAppContainer = () => {
         if (!appData) {
           setError('获取应用配置失败')
         } else {
+          const currentAppKey = appData.key
+          if (!currentAppKey) {
+            setError('获取应用配置失败')
+            return
+          }
           setCurrentMicroApp({
             ...appData,
-            routeBasename: getFullPath(`/application/${encodeURIComponent(appData.key)}`),
+            routeBasename: getFullPath(`/application/${encodeURIComponent(currentAppKey)}`),
           })
           setHomeRoute(homeRoute)
         }

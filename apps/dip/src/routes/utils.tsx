@@ -1,5 +1,5 @@
-import { getGuideStatus } from '@/apis/dip-studio/guide'
 import type { GuideStatusResponse } from '@/apis/dip-studio/guide'
+import { getGuideStatus } from '@/apis/dip-studio/guide'
 import { usePreferenceStore } from '@/stores'
 import { BASE_PATH } from '@/utils/config'
 import { routeConfigs } from './routes'
