@@ -2,7 +2,7 @@ import { Card, Dropdown, type MenuProps } from 'antd'
 import clsx from 'clsx'
 import { useState } from 'react'
 import type { DigitalHumanSkill } from '@/apis'
-import { DEFAULT_SKILL_ICON_COLORS, getMatchedColorByName } from '@/utils/colorUtils'
+import { DEFAULT_SKILL_ICON_COLORS, getMatchedColorByName } from '@/utils/handle-function'
 import IconFont from '../IconFont'
 import { cardHeight } from './utils'
 

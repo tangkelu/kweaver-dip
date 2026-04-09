@@ -2,18 +2,14 @@ import type { ModalProps } from 'antd'
 import { Button, Modal, Spin } from 'antd'
 import clsx from 'clsx'
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
-import {
-  type DigitalHumanSkill,
-  type GetEnabledSkillsParams,
-  getEnabledSkills,
-} from '@/apis'
+import { type DigitalHumanSkill, type GetEnabledSkillsParams, getEnabledSkills } from '@/apis'
 import type { AiPromptSubmitPayload } from '@/components/DipChatKit/components/AiPromptInput/types'
 import Empty from '@/components/Empty'
 import IconFont from '@/components/IconFont'
 import ScrollBarContainer from '@/components/ScrollBarContainer'
 import SearchInput from '@/components/SearchInput'
 import { useListService } from '@/hooks/useListService'
-import { DEFAULT_SKILL_ICON_COLORS, getMatchedColorByName } from '@/utils/colorUtils'
+import { DEFAULT_SKILL_ICON_COLORS, getMatchedColorByName } from '@/utils/handle-function'
 import UploadSkill from './UploadSkill'
 
 export interface SelectSkillModalProps extends Omit<ModalProps, 'onCancel' | 'onOk'> {

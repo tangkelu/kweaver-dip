@@ -1,6 +1,7 @@
 import background from '@/assets/images/brand/background.png'
 import background2 from '@/assets/images/brand/background2.png'
 import logo from '@/assets/images/brand/logo.svg'
+import { getFullPath } from '@/utils/config'
 
 import type { OemBasicConfig, OemResourceConfig } from './index.d'
 import {
@@ -85,7 +86,7 @@ export const defaultOemBasicConfig: OemBasicConfig = {
   // 主题
   theme: '#126ee3',
   // 个性化ico
-  'favicon.ico': '/favicon.ico',
+  'favicon.ico': getFullPath('/favicon.ico'),
 }
 
 /**

@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useOEMConfigStore } from '@/stores/oemConfigStore'
 import { themeColors } from '@/styles/themeColors'
-import { hexToRgb } from '@/utils/colorUtils'
+import { hexToRgb } from '@/utils/handle-function/ColorUtils'
 
 /**
  * 处理与 OEM 品牌相关的全局效果：

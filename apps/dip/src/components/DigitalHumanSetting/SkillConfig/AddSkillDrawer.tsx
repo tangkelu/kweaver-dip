@@ -1,12 +1,11 @@
 import { Drawer, type DrawerProps } from 'antd'
 import DipChatKit from '@/components/DipChatKit'
-import type { AiPromptSubmitPayload } from '@/components/DipChatKit/components/AiPromptInput/types'
 import IconFont from '@/components/IconFont'
 
 export interface AddSkillDrawerProps {
   open: boolean
   onClose: () => void
-  payload?: AiPromptSubmitPayload
+  payload?: any
   /** 抽屉挂载节点；不传时使用数字员工设置页容器 `#digital-human-setting-container` */
   getContainer?: DrawerProps['getContainer']
 }

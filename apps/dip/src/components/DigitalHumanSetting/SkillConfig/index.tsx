@@ -5,11 +5,11 @@ import type { AiPromptSubmitPayload } from '@/components/DipChatKit/components/A
 import Empty from '@/components/Empty'
 import IconFont from '@/components/IconFont'
 import ScrollBarContainer from '@/components/ScrollBarContainer'
-import { DEFAULT_SKILL_ICON_COLORS, getMatchedColorByName } from '@/utils/colorUtils'
+import { DEFAULT_SKILL_ICON_COLORS, getMatchedColorByName } from '@/utils/handle-function'
 import { useDigitalHumanStore } from '../digitalHumanStore'
 import AddSkillDrawer from './AddSkillDrawer.tsx'
 import styles from './index.module.less'
-import SelectSkillModal from './SelectSkillModal.tsx.tsx'
+import SelectSkillModal from './SelectSkillModal'
 
 interface SkillConfigProps {
   readonly?: boolean

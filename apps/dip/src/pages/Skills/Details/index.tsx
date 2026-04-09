@@ -21,7 +21,7 @@ import {
   getArchiveTextPreviewViewer,
 } from '@/components/WorkPlanDetail/Outcome/utils'
 import { useBreadcrumbDetailStore } from '@/stores'
-import { DEFAULT_SKILL_ICON_COLORS, getMatchedColorByName } from '@/utils/colorUtils'
+import { DEFAULT_SKILL_ICON_COLORS, getMatchedColorByName } from '@/utils/handle-function'
 import styles from './index.module.less'
 
 function decodeSkillNameParam(raw: string | undefined): string {
