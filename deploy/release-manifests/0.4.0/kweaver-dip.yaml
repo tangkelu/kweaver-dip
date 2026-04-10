@@ -76,4 +76,4 @@ releases:
     version: 0.4.0
   dip-studio:
     chart: dip-studio
-    version: 0.4.0
+    version: 0.4.0-3
