@@ -1,0 +1,268 @@
+USE adp;
+-- 记忆历史表
+
+create table if not exists t_business_domain (
+    id BIGINT NOT NULL IDENTITY(1, 1),
+    created_at DATETIME(6) not null,
+    updated_at DATETIME(6) not null,
+    deleted_at DATETIME(6) default null,
+    f_bd_id VARCHAR(50 char) not null,
+    f_bd_name VARCHAR(50 char) not null,
+    f_bd_description VARCHAR(1000 char) null,
+    f_bd_creator VARCHAR(50 char) not null,
+    f_bd_icon VARCHAR(1000 char) null,
+    f_bd_status INT not null default 1,
+    f_bd_resource_count INT not null default 0,
+    f_bd_member_count INT not null default 0,
+    CLUSTER PRIMARY KEY (id),
+    UNIQUE KEY uk_bd_id (f_bd_id),
+    UNIQUE KEY uk_bd_name (f_bd_name)
+);
+
+create table if not exists t_bd_resource_r (
+    id BIGINT NOT NULL IDENTITY(1, 1),
+    created_at DATETIME(6) not null,
+    updated_at DATETIME(6) not null,
+    deleted_at DATETIME(6) default null,
+    f_bd_id VARCHAR(50 char) not null,
+    f_resource_id VARCHAR(50 char) not null,
+    f_resource_type VARCHAR(50 char) not null,
+    f_create_by VARCHAR(50 char) not null,
+    CLUSTER PRIMARY KEY (id),
+    UNIQUE KEY uk_resource (f_resource_id, f_resource_type)
+);
+
+create table if not exists t_bd_product_r (
+    id BIGINT NOT NULL IDENTITY(1, 1),
+    created_at DATETIME(6) not null,
+    updated_at DATETIME(6) not null,
+    deleted_at DATETIME(6) default null,
+    f_bd_id VARCHAR(50 char) not null,
+    f_product_id VARCHAR(50 char) not null,
+    f_create_by VARCHAR(50 char) not null,
+    CLUSTER PRIMARY KEY (id),
+    UNIQUE KEY uk_bd_product (f_bd_id, f_create_by)
+);
+
+create table if not exists t_llm_model
+(
+    f_model_id     VARCHAR(50 char)             not null,
+    f_model_series VARCHAR(50 char)             not null,
+    f_model_type   VARCHAR(50 char)             not null,
+    f_model_name   VARCHAR(100 char)            not null,
+    f_model        VARCHAR(50 char)             not null,
+    f_model_config VARCHAR(1000 char)           not null,
+    f_create_by    VARCHAR(50 char)             not null,
+    f_create_time  DATETIME(6)                  null,
+    f_update_by    VARCHAR(50 char)             null,
+    f_update_time  DATETIME(6)                  null,
+    f_max_model_len        INT                  null,
+    f_model_parameters     INT                  null,
+    f_quota        INT default 0                not null,
+    f_default      INT default 0                null,
+    CLUSTER PRIMARY KEY (f_model_id)
+);
+
+
+
+create table if not exists t_small_model
+(
+    f_model_id VARCHAR(50 char) not null comment '主键，使用雪花id',
+    f_model_name VARCHAR(50 char) not null comment '小模型名称',
+    f_model_type VARCHAR(50 char) not null comment '小模型类型',
+    f_model_config VARCHAR(1000 char) not null comment '小模型配置json',
+    f_create_time DATETIME(6) not null comment '创建时间',
+    f_update_time DATETIME(6) not null comment '编辑时间',
+    f_create_by    VARCHAR(50 char)             not null,
+    f_update_by    VARCHAR(50 char)             null,
+    f_adapter      INT default 0                null,
+    f_adapter_code TEXT                         null,
+    f_batch_size   INT                          null,
+    f_max_tokens   INT                          null,
+    f_embedding_dim INT                          null,
+    CLUSTER PRIMARY KEY (f_model_id)
+);
+
+create table if not exists t_prompt_item_list
+(
+    f_id                  VARCHAR(50 char)          not null,
+    f_prompt_item_id      VARCHAR(50 char)          not null,
+    f_prompt_item_name    VARCHAR(50 char)          not null,
+    f_prompt_item_type_id VARCHAR(50 char)          null,
+    f_prompt_item_type    VARCHAR(50 char)          null,
+    f_create_by           VARCHAR(50 char)          not null,
+    f_create_time         DATETIME(6)               null,
+    f_update_by           VARCHAR(50 char)          null,
+    f_update_time         DATETIME(6)               null,
+    f_item_is_delete      INT default 0             not null,
+    f_type_is_delete      INT default 0             not null,
+    f_built_in            INT default 0             not null,
+    CLUSTER PRIMARY KEY (f_id)
+);
+
+
+create table if not exists t_prompt_list
+(
+    f_prompt_id           VARCHAR(50 char)          not null,
+    f_prompt_item_id      VARCHAR(50 char)          not null,
+    f_prompt_item_type_id VARCHAR(50 char)          not null,
+    f_prompt_service_id   VARCHAR(50 char)          not null,
+    f_prompt_type         VARCHAR(50 char)          not null,
+    f_prompt_name         VARCHAR(50 char)          not null,
+    f_prompt_desc         VARCHAR(255 char)         null,
+    f_messages            TEXT                      null,
+    f_variables           VARCHAR(1000 char)        null,
+    f_icon                VARCHAR(50 char)          not null,
+    f_model_id            VARCHAR(50 char)          not null,
+    f_model_para          VARCHAR(150 char)         not null,
+    f_opening_remarks     VARCHAR(150 char)         null,
+    f_is_deploy           INT default 0             not null,
+    f_prompt_deploy_url   VARCHAR(150 char)         null,
+    f_prompt_deploy_api   VARCHAR(150 char)         null,
+    f_create_by           VARCHAR(50 char)          not null,
+    f_create_time         DATETIME(6)               null,
+    f_update_by           VARCHAR(50 char)          null,
+    f_update_time         DATETIME(6)               null,
+    f_is_delete           INT default 0             not null,
+    f_built_in            INT default 0             not null,
+    CLUSTER PRIMARY KEY (f_prompt_id),
+    UNIQUE KEY uk_f_prompt_service_id (f_prompt_service_id)
+);
+
+create table if not exists t_prompt_template_list
+(
+    f_prompt_id       VARCHAR(50 char)          not null,
+    f_prompt_type     VARCHAR(50 char)          not null,
+    f_prompt_name     VARCHAR(50 char)          not null,
+    f_prompt_desc     VARCHAR(255 char)         null,
+    f_messages        TEXT                      null,
+    f_variables       VARCHAR(1000 char)        null,
+    f_icon            VARCHAR(50 char)          not null,
+    f_opening_remarks VARCHAR(150 char)         null,
+    f_input           VARCHAR(1000 char)        null,
+    f_create_by       VARCHAR(50 char)          not null,
+    f_create_time     DATETIME(6)               null,
+    f_update_by       VARCHAR(50 char)          null,
+    f_update_time     DATETIME(6)               null,
+    f_is_delete       INT default 0             not null,
+    CLUSTER PRIMARY KEY (f_prompt_id)
+);
+
+CREATE TABLE if not exists t_model_monitor (
+    f_id                  VARCHAR(50 char)          not null,
+    f_create_time         DATETIME                  not null,
+    f_model_name         VARCHAR(50 char)          not null,
+    f_model_id           VARCHAR(50 char)          not null,
+    f_generation_tokens_total BIGINT not null,
+    f_prompt_tokens_total BIGINT not null,
+    f_average_first_token_time DECIMAL(10, 2) not null,
+    f_generation_token_speed  DECIMAL(10, 2) not null,
+    f_total_token_speed  DECIMAL(10, 2) not null,
+    CLUSTER PRIMARY KEY (f_id)
+);
+
+create table if not exists t_model_quota_config
+(
+    f_id VARCHAR(50 char) not null comment '主键，使用雪花id',
+    f_model_id VARCHAR(50 char) not null comment '模型id',
+    f_billing_type INT not null comment '0 统一计费 ， 1 input output 单独计费',
+    f_input_tokens FLOAT not null comment 'input tokens配额',
+    f_output_tokens FLOAT not null comment 'output tokens配额',
+    f_referprice_in FLOAT not null comment 'input tokens参考单价',
+    f_referprice_out FLOAT not null comment 'output tokens参考单价',
+    f_currency_type BIGINT not null comment '货币类型 0:RMB/人民币 1:$/美元',
+    f_create_time DATETIME(6) not null comment '创建时间',
+    f_update_time DATETIME(6) not null comment '编辑时间',
+    f_num_type VARCHAR(50 char) not null comment '1-千  2-万 3-百万 4-千万',
+    f_price_type VARCHAR(50 char) not null default '["thousand", "thousand"]' comment '列表，计费单价显示单位, thousand-/千tokens million-/百万tokens',
+    CLUSTER PRIMARY KEY (f_id)
+);
+
+create table if not exists t_user_quota_config
+(
+    f_id VARCHAR(50 char) not null comment '主键，使用雪花id',
+    f_model_conf VARCHAR(50 char) not null comment '模型配额配置id（基于哪个模型配额）',
+    f_user_id VARCHAR(50 char) not null comment '用户id',
+    f_input_tokens FLOAT not null comment 'input tokens配额',
+    f_output_tokens FLOAT not null comment 'output tokens配额',
+    f_create_time DATETIME(6) not null comment '创建时间',
+    f_update_time DATETIME(6) not null comment '编辑时间',
+    f_num_type VARCHAR(50 char) not null comment '1-千  2-万 3-百万 4-千万',
+    CLUSTER PRIMARY KEY (f_id)
+);
+
+create table if not exists t_model_op_detail
+(
+    f_id VARCHAR(50 char) not null comment '主键，使用雪花id',
+    f_model_id VARCHAR(50 char) not null comment '模型id',
+    f_user_id VARCHAR(50 char) not null comment '用户id',
+    f_input_tokens BIGINT not null comment 'input tokens消费 ',
+    f_output_tokens BIGINT not null comment 'output tokens消费',
+    f_referprice_in FLOAT not null comment 'input tokens参考单价',
+    f_referprice_out FLOAT not null comment 'output tokens参考单价',
+    f_total_price DECIMAL(38,10) not null comment '消费总金额',
+    f_create_time DATETIME(6) not null comment '创建时间',
+    f_currency_type BIGINT not null comment '货币类型 0:RMB/人民币 1:$/美元',
+    f_price_type VARCHAR(50 char) not null default '["thousand", "thousand"]' comment '列表，计费单价显示单位, thousand-/千tokens million-/百万tokens',
+    f_total_count INT default 0 not null comment '总调用次数',
+    f_failed_count INT default 0 not null comment '调用失败次数',
+    f_average_total_time FLOAT default 0.0 not null comment '平均总响应时间',
+    f_average_first_time FLOAT default 0.0 not null comment '平均首字时间',
+    CLUSTER PRIMARY KEY (f_id)
+);
+
+insert into t_prompt_item_list(f_create_by, f_create_time, f_id, f_item_is_delete, f_prompt_item_id, f_prompt_item_name,
+                    f_prompt_item_type, f_prompt_item_type_id, f_type_is_delete, f_update_by, f_update_time, f_built_in)
+                select 'admin', current_timestamp, '1500000000000000001', 0, '1510000000000000001', '内置提示词',
+                    'chat', '1520000000000000001', 0, 'admin', current_timestamp, 1
+                where not exists(select f_id from t_prompt_item_list where f_id = '1500000000000000001');
+
+
+insert into t_prompt_list(f_create_by, f_create_time, f_icon, f_is_delete, f_is_deploy, f_messages, f_model_id,
+                    f_model_para, f_opening_remarks, f_prompt_deploy_api, f_prompt_deploy_url, f_prompt_desc,
+                    f_prompt_id, f_prompt_item_id, f_prompt_item_type_id, f_prompt_name, f_prompt_service_id,
+                    f_prompt_type, f_update_by, f_update_time, f_variables, f_built_in)
+                select 'admin', current_timestamp, 5, 0, 0, '你可以重新组织和输出混乱复杂的会议记录，并根据当前状态、遇到的问题和提出的解决方案撰写会议纪要。你只负责会议记录方面的问题，不回答其他。
+', '', '{}', '', null, null, '帮你重新组织和输出混乱复杂的会议纪要',
+                    '1100000000000000030', '1510000000000000001', '1520000000000000001', '会议纪要', '1200000000000000030',
+                    'chat', 'admin', current_timestamp,
+                    '[]', 1
+                where not exists(select f_prompt_id from t_prompt_list where f_prompt_id = '1100000000000000030');
+
+
+create table if not exists t_storage_config
+(
+    f_storage_id        VARCHAR(50 char)       not null comment 'Storage ID (Snowflake ID)',
+    f_storage_name      VARCHAR(128 char)      not null comment 'Storage name',
+    f_vendor_type       VARCHAR(32 char)       not null comment 'Vendor type: OSS/OBS/ECEPH',
+    f_endpoint          VARCHAR(256 char)      not null comment 'Service endpoint URL',
+    f_bucket_name       VARCHAR(128 char)      not null comment 'Bucket name',
+    f_access_key_id     VARCHAR(256 char)      not null comment 'AccessKeyID (encrypted)',
+    f_access_key        VARCHAR(512 char)      not null comment 'AccessKeySecret (encrypted)',
+    f_region            VARCHAR(64 char)       default '' null comment 'Region (required for OSS/OBS, optional for ECEPH)',
+    f_is_default        INT                   default 0 null comment 'Is default storage',
+    f_is_enabled        INT                   default 1 null comment 'Is enabled',
+    f_internal_endpoint VARCHAR(256 char)      default '' null comment 'Internal access endpoint',
+    f_site_id           VARCHAR(64 char)       default '' null comment 'Site ID for multi-tenant isolation',
+    f_created_at        DATETIME(6)           null comment 'Creation time',
+    f_updated_at        DATETIME(6)           null comment 'Update time',
+    CLUSTER PRIMARY KEY (f_storage_id)
+);
+
+create table if not exists t_multipart_upload_task
+(
+    f_id          VARCHAR(50 char)       not null comment 'Task ID (Snowflake ID)',
+    f_storage_id  VARCHAR(50 char)       not null comment 'Associated storage ID',
+    f_object_key  VARCHAR(512 char)      not null comment 'Object key',
+    f_upload_id   VARCHAR(256 char)      not null comment 'Upload ID from vendor',
+    f_total_size  BIGINT                 not null comment 'Total file size',
+    f_part_size   INT                    not null comment 'Part size in bytes',
+    f_total_parts INT                    not null comment 'Total number of parts',
+    f_status      SMALLINT               default 0 null comment 'Status: 0=in progress, 1=completed, 2=cancelled',
+    f_created_at  DATETIME(6)           null comment 'Creation time',
+    f_expires_at  DATETIME(6)           not null comment 'Expiration time',
+    CLUSTER PRIMARY KEY (f_id),
+    INDEX idx_storage_id (f_storage_id),
+    INDEX idx_status (f_status),
+    INDEX idx_expires_at (f_expires_at)
+);

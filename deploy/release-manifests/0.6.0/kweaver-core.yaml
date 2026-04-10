@@ -1,29 +1,15 @@
 apiVersion: deploy.kweaver.ai/v1alpha1
 kind: VersionSet
 product: kweaver-core
-version: 0.5.0
+version: 0.6.0
 source:
   helmRepoName: kweaver
   helmRepoUrl: https://kweaver-ai.github.io/helm-repo/
-dependencies:
-- product: isf
-  version: 0.5.0
-  manifest: ./isf.yaml
-  optional: true
-  defaultEnabled: true
 releases:
-  deploy-web:
-    chart: deploy-web
-    version: 0.3.0
-  studio-web:
-    chart: studio-web
-    version: 0.3.0
-  business-system-frontend:
-    chart: business-system-frontend
-    version: 0.3.0
-  business-system-service:
-    chart: business-system-service
-    version: 0.3.0-1d43acc
+  kweaver-core-data-migrator:
+    chart: kweaver-core-data-migrator
+    version: 0.6.0-main.20260409.6.69e08c2
+    stage: pre
   mf-model-manager-nginx:
     chart: mf-model-manager-nginx
     version: 0.3.0
@@ -41,9 +27,6 @@ releases:
     version: 0.5.0
   vega-backend:
     chart: vega-backend
-    version: 0.5.0
-  vega-web:
-    chart: vega-web
     version: 0.5.0
   data-connection:
     chart: data-connection
@@ -66,9 +49,6 @@ releases:
   agent-operator-integration:
     chart: agent-operator-integration
     version: 0.5.0
-  operator-web:
-    chart: operator-web
-    version: 0.4.0
   agent-retrieval:
     chart: agent-retrieval
     version: 0.5.0
@@ -78,12 +58,6 @@ releases:
   agent-backend:
     chart: agent-backend
     version: 0.5.1
-  agent-web:
-    chart: agent-web
-    version: 0.5.0
-  flow-web:
-    chart: flow-web
-    version: 0.5.0
   dataflow:
     chart: dataflow
     version: 0.5.0

@@ -14,7 +14,7 @@
 
 DIP Studio 需要安装并运行 OpenClaw：
 
-1. 先部署 [OpenClaw](https://openclaw.ai)。支持的版本是 `v2026.3.11`。你也可以参考 [kweaver-ai/dip-studio/studio/README.md](https://github.com/kweaver-ai/dip-studio/blob/main/studio/README.md) 中的准备说明。
+1. 先部署 [OpenClaw](https://openclaw.ai)。支持的版本是 `v2026.3.11`。你也可以参考 [studio/README.md](../studio/README.md) 中的准备说明。
 2. 启动 OpenClaw Gateway。
 3. 从 `openclaw.json` 复制 `gateway.auth.token`，然后运行 `openclaw gateway status` 并记录网关绑定地址和端口。
 4. 确保运行 `deploy.sh` 的机器可以访问 OpenClaw 配置文件和工作空间目录。如果要预配置，请在 `deploy/conf/config.yaml` 或你的自定义配置文件中设置 `dipStudio.openClaw.configHostPath` 和 `dipStudio.openClaw.workspaceHostPath`。
@@ -408,4 +408,4 @@ kubectl logs -n <namespace> <pod-name>
 
 ## 📄 License
 
-[Apache License 2.0](../LICENSE.txt)
+[Apache License 2.0](../LICENSE)
