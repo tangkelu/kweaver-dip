@@ -22,12 +22,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: HealthCheckHandler(serverCtx),
 			},
 		},
-		rest.WithPrefix("/api/data-semantic/v1"),
+		rest.WithPrefix("/api/gbkn/v1"),
 	)
 
 	server.AddRoutes(
 		rest.WithMiddlewares(
-			[]rest.Middleware{serverCtx.JWTAuth},
+			[]rest.Middleware{serverCtx.HydraAuth},
 			[]rest.Route{
 				{
 					// 查询业务对象识别结果
