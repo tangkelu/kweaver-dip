@@ -1,4 +1,4 @@
-USE adp;
+USE kweaver;
 -- 记忆历史表
 
 create table if not exists t_business_domain (
