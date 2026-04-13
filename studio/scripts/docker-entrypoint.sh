@@ -2,6 +2,14 @@
 
 set -eu
 
-(openclaw gateway --bind lan || echo "[docker-entrypoint] failed to launch OpenClaw Gateway, continuing with Studio startup" >&2) &
+node dist/server.js &
+SERVER_PID=$!
 
-exec node dist/server.js
+cleanup() {
+  kill "$SERVER_PID" 2>/dev/null || true
+  wait "$SERVER_PID" 2>/dev/null || true
+}
+
+trap cleanup EXIT INT TERM
+
+openclaw gateway

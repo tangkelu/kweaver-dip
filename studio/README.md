@@ -110,18 +110,41 @@ docker buildx build \
   .                        
 ```
 
-2. 启动容器。其中 3000 端口是 Studio 服务端口，18789 端口是 OpenClaw 默认端口。
+2. 启动容器。
+
+- 3000 端口是 Studio 服务端口，18789 端口是 OpenClaw 默认端口。
+- `/data/.openclaw/` 用于挂载 OpenClaw 主目录到容器内（请根据实际情况选择本地路径）
+- `/data/.env` 用于挂载 Studio 环境变量配置到容器内（请根据实际情况选择本地路径）
 
 ```bash
-docker run -d -p 3000:3000 -p 18789:18789 dip-studio:0.4.0
+docker run \
+  -d \
+  --restart unless-stopped \
+  -v /data/.openclaw:/root/.openclaw \
+  -v /data/.env:/app/.env \
+  -p 3000:3000 \
+  -p 18789:18789 \
+  dip-studio:0.4.0
 ```
 
 3. 复制 `container_id`
 
-4. 进入容器初始化 OpenClaw
+4. 进入容器
 
 ```bash
 docker exec -it <container_id> /bin/bash
+```
+
+5. 初始化 OpenClaw。`openclaw.json` 会持久化到挂在到容器内的 OpenClaw 主目录
+
+```bash
+openclaw onboard
+```
+
+6. 安装 extensions 
+
+```bash
+openclaw plugins install /app/extensions/dip
 ```
 
 ## Studio Web
