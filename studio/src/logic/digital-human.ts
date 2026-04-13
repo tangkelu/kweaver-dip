@@ -92,10 +92,10 @@ export interface DigitalHumanLogicOptions {
   agentSkillsLogic: AgentSkillsLogic;
 
   /**
-   * Root directory used to create agent workspaces.
+   * OpenClaw root directory used to derive agent workspaces.
    * Defaults to `~/.openclaw` when omitted.
    */
-  openClawWorkspaceDir?: string;
+  openClawRootDir?: string;
 
 }
 
@@ -105,7 +105,7 @@ export interface DigitalHumanLogicOptions {
 export class DefaultDigitalHumanLogic implements DigitalHumanLogic {
   private readonly openClawAgentsAdapter: OpenClawAgentsAdapter;
   private readonly agentSkillsLogic: AgentSkillsLogic;
-  private readonly openClawWorkspaceDir?: string;
+  private readonly openClawRootDir?: string;
 
   /**
    * Creates the digital human logic.
@@ -115,7 +115,7 @@ export class DefaultDigitalHumanLogic implements DigitalHumanLogic {
   public constructor(options: DigitalHumanLogicOptions) {
     this.openClawAgentsAdapter = options.openClawAgentsAdapter;
     this.agentSkillsLogic = options.agentSkillsLogic;
-    this.openClawWorkspaceDir = options.openClawWorkspaceDir;
+    this.openClawRootDir = options.openClawRootDir;
   }
 
   /**
@@ -210,7 +210,7 @@ export class DefaultDigitalHumanLogic implements DigitalHumanLogic {
     const id = request.id?.trim() || randomUUID();
     const template = buildTemplate(request);
 
-    const workspace = resolveDefaultWorkspace(id, this.openClawWorkspaceDir);
+    const workspace = resolveDefaultWorkspace(id, this.openClawRootDir);
 
     await this.openClawAgentsAdapter.createAgent({
       name: id,
@@ -415,14 +415,15 @@ export class DefaultDigitalHumanLogic implements DigitalHumanLogic {
  * Uses the digital human id as the workspace subdirectory name.
  *
  * @param uuid The digital human identifier.
+ * @param openClawRootDir The OpenClaw root directory.
  * @returns The absolute path to the agent-specific workspace.
  */
 export function resolveDefaultWorkspace(
   uuid: string,
-  openClawWorkspaceDir?: string
+  openClawRootDir?: string
 ): string {
-  const baseDir = openClawWorkspaceDir?.trim() || join(homedir(), ".openclaw");
-  return join(baseDir, uuid);
+  const rootDir = openClawRootDir?.trim() || join(homedir(), ".openclaw");
+  return join(rootDir, "workspace", uuid);
 }
 
 /**
@@ -448,15 +449,11 @@ function toNotFoundIfAgentMissing(error: unknown, id: string): HttpError {
 /**
  * Resolves the path to the OpenClaw config file.
  *
- * Priority: OPENCLAW_CONFIG_PATH > OPENCLAW_ROOT_DIR > ~/.openclaw/openclaw.json.
+ * Priority: OPENCLAW_ROOT_DIR > ~/.openclaw/openclaw.json.
  *
  * @returns The absolute path to the OpenClaw configuration file.
  */
 function resolveOpenClawConfigPath(): string {
-  const explicit = process.env.OPENCLAW_CONFIG_PATH?.trim();
-  if (explicit) {
-    return explicit;
-  }
   const stateDir = process.env.OPENCLAW_ROOT_DIR?.trim();
   if (stateDir) {
     return join(stateDir, "openclaw.json");

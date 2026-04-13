@@ -1,8 +1,12 @@
 {
   "digitalHuman": {
+    "common": {
+      "columnName": "名称",
+      "columnFunctionDesc": "功能描述",
+      "columnAction": "操作",
+      "remove": "移除"
+    },
     "management": {
-      "pageTitle": "数字员工",
-      "pageSubtitle": "管理数字员工市场，创建或删除数字员工",
       "searchPlaceholder": "搜索数字员工",
       "refresh": "刷新",
       "createShort": "新建",
@@ -23,15 +27,131 @@
       "validateNameRequired": "请输入数字员工名称",
       "validateNameMismatch": "输入的数字员工名称不匹配",
       "deleteSuccess": "删除成功",
-      "deleteFailed": "删除失败，请稍后重试"
+      "deleteFailed": "删除失败，请稍后重试",
+      "listSectionAll": "全部"
     },
     "detail": {
-      "tabPlan": "执行计划",
+      "tabPlan": "工作计划",
       "tabSession": "会话",
-      "tabConfig": "配置详情",
-      "tabPlanPlaceholder": "执行计划内容将在此展示（可按员工维度接入工作计划能力）。",
-      "tabSessionPlaceholder": "会话内容将在此展示（可按员工维度接入历史会话等）。",
-      "fallbackTitle": "数字员工详情"
+      "tabConfig": "员工配置",
+      "updatedAtPrefix": "更新："
+    },
+    "setting": {
+      "menuBasic": "基本设定",
+      "menuSkill": "技能配置",
+      "menuKnowledge": "知识配置",
+      "menuChannel": "通道接入",
+      "createTitle": "新建数字员工",
+      "edit": "编辑",
+      "cancel": "取消",
+      "publish": "发布",
+      "nameRequired": "请输入名称",
+      "publishSuccess": "发布成功",
+      "createSuccess": "创建成功",
+      "publishFailed": "发布失败"
+    },
+    "card": {
+      "noBio": "[暂无简介]",
+      "skillsCount": "{count} 个技能",
+      "knowledgeCount": "{count} 个知识网络",
+      "channelCount": "{count} 个通道"
+    },
+    "errors": {
+      "loadDetailFailed": "获取数字员工详情失败"
+    },
+    "basic": {
+      "infoSectionTitle": "基本信息",
+      "fieldName": "名称",
+      "fieldBio": "简介",
+      "fieldSoul": "角色设定",
+      "editIntro": "定义数字员工的名称、简介和核心职责描述。",
+      "namePlaceholder": "请输入数字员工名称",
+      "bioPlaceholder": "请输入数字员工简介",
+      "soulLabel": "角色设定"
+    },
+    "skill": {
+      "sectionDesc": "选择该数字员工需要具备的技能，也可通过自然语言创建新技能。",
+      "colSkillName": "技能名称",
+      "tagBuiltin": "内置",
+      "tagCustom": "自定义",
+      "tagOfficial": "官方",
+      "tooltipBuiltinSkill": "数字员工执行时所需的基本技能，不可移除",
+      "emptyNoSkills": "暂无技能",
+      "addSkillButton": "技能"
+    },
+    "skillModal": {
+      "title": "添加技能",
+      "selectedCount": "已选 {selected}/{max}",
+      "sessionCreate": "会话创建",
+      "importCreate": "导入创建",
+      "searchPlaceholder": "搜索技能",
+      "loadFailed": "加载失败",
+      "emptyNoSkills": "暂无技能",
+      "toggleDeselectTitle": "点击取消选择",
+      "added": "已添加",
+      "add": "添加"
+    },
+    "skillUpload": {
+      "errorGeneric": "上传失败，请重试",
+      "formatInvalid": "仅支持 .zip / .skill 格式的技能包",
+      "sizeExceeded": "技能包大小不能超过 {maxMb}MB",
+      "importDoneNoCancel": "导入已完成，无法取消",
+      "confirmCancelTitle": "确认取消导入",
+      "confirmCancelContent": "正在上传中，取消后将中断上传。是否继续？",
+      "validating": "正在验证技能包...",
+      "dragHint": "点击或将文件拖拽到这里上传",
+      "formatAndSizeHint": "支持 .zip / .skill 格式的技能包，大小不超过 {maxMb}MB",
+      "statusVerifying": "验证中",
+      "statusWaitImport": "等待导入",
+      "statusImportFailed": "导入失败",
+      "importButton": "导入技能",
+      "successTitle": "技能导入成功",
+      "successDesc": "您的技能已导入成功，可前往技能列表查看",
+      "viewSkill": "查看技能",
+      "modalTitle": "导入技能"
+    },
+    "knowledge": {
+      "sectionDesc": "选择该数字员工需要关联的业务知识网络（BKN）。数字员工将基于这些知识网络回答问题和执行任务。",
+      "emptyNoKnowledge": "暂无知识",
+      "addButton": "知识"
+    },
+    "knowledgeModal": {
+      "title": "添加知识",
+      "loadFailed": "加载失败",
+      "emptyNoKnowledge": "暂无知识",
+      "updatedPrefix": "更新：",
+      "tabAllNetworks": "全部业务知识网络"
+    },
+    "channel": {
+      "sectionDesc": "配置数字员工可接入的通信通道，如钉钉、飞书等。",
+      "columnChannelDesc": "通道描述",
+      "descDingtalk": "用于在钉钉客户端接收消息，处理事务",
+      "descFeishu": "用于在飞书客户端接收消息，处理事务",
+      "typeDingtalk": "钉钉",
+      "typeFeishu": "飞书",
+      "emptyNoChannel": "暂无通道",
+      "addButton": "通道"
+    },
+    "channelModal": {
+      "feishuBot": "飞书机器人",
+      "dingtalkBot": "钉钉机器人",
+      "feishuConfigTitle": "飞书机器人配置",
+      "dingtalkConfigTitle": "钉钉机器人配置",
+      "configFallbackTitle": "通道配置",
+      "configSubtitle": "请为该通道配置独立参数",
+      "labelApiKey": "API Key",
+      "labelApiSecret": "API Secret",
+      "ruleAppId": "请输入app_id",
+      "ruleAppSecret": "请输入app_secret",
+      "placeholderDingtalkAppKey": "请输入钉钉应用 App Key",
+      "placeholderFeishuAppKey": "请输入飞书应用 App Key",
+      "placeholderAppSecret": "请输入该应用 App Secret",
+      "testConnectionOk": "连接测试通过",
+      "configFailed": "配置失败，请稍后重试",
+      "reset": "重置"
+    },
+    "addSkillDrawer": {
+      "newSkillTitle": "新建技能"
     }
   }
 }

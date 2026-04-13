@@ -41,6 +41,18 @@ vi.mock('@/components/IconFont', () => ({
 
 const mockedGetEnabledSkills = vi.mocked(getEnabledSkills)
 
+const txt = {
+  title: 'digitalHuman.skillModal.title',
+  added: 'digitalHuman.skillModal.added',
+  add: 'digitalHuman.skillModal.add',
+  emptyList: 'digitalHuman.skillModal.emptyNoSkills',
+  noResult: 'global.noResult',
+  sessionCreate: 'digitalHuman.skillModal.sessionCreate',
+  importCreate: 'digitalHuman.skillModal.importCreate',
+  tagOfficial: '@digitalHuman.skill.tagOfficial',
+  tagCustom: '@digitalHuman.skill.tagCustom',
+}
+
 describe('DigitalHumanSetting/SkillConfig/SelectSkillModal', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -74,7 +86,7 @@ describe('DigitalHumanSetting/SkillConfig/SelectSkillModal', () => {
       />,
     )
 
-    expect(screen.getByText('添加技能')).toBeInTheDocument()
+    expect(screen.getByText(txt.title)).toBeInTheDocument()
     expect(await screen.findByText('产品问答')).toBeInTheDocument()
     expect(screen.getByText('技术支持')).toBeInTheDocument()
     expect(screen.getByText('回答产品相关问题')).toBeInTheDocument()
@@ -94,12 +106,11 @@ describe('DigitalHumanSetting/SkillConfig/SelectSkillModal', () => {
     )
 
     await screen.findByText('产品问答')
-    // 只获取技能行中的按钮，排除底部按钮
     const skillButtons = screen
       .getAllByRole('button')
-      .filter((btn) => btn.textContent === '已添加' || btn.textContent === '添加')
-    expect(skillButtons[0]).toHaveTextContent('已添加')
-    expect(skillButtons[1]).toHaveTextContent('添加')
+      .filter((btn) => btn.textContent === txt.added || btn.textContent === txt.add)
+    expect(skillButtons[0]).toHaveTextContent(txt.added)
+    expect(skillButtons[1]).toHaveTextContent(txt.add)
   })
 
   it('可以切换选择技能', async () => {
@@ -116,11 +127,10 @@ describe('DigitalHumanSetting/SkillConfig/SelectSkillModal', () => {
     )
 
     await screen.findByText('产品问答')
-    // 获取技能行中的按钮，只保留那些确实在技能列表中的按钮
     const allButtons = screen.getAllByRole('button')
-    const productAddBtn = allButtons.find((btn) => btn.textContent === '添加')
+    const productAddBtn = allButtons.find((btn) => btn.textContent === txt.add)
     if (productAddBtn === undefined) {
-      throw new Error('expected 添加 button')
+      throw new Error('expected add button')
     }
     fireEvent.click(productAddBtn)
 
@@ -128,8 +138,7 @@ describe('DigitalHumanSetting/SkillConfig/SelectSkillModal', () => {
       expect(mockOnOk).toHaveBeenCalledWith([mockSkills[0]])
     })
 
-    // 再次点击取消选择
-    const productAddedBtn = screen.getByText('已添加')
+    const productAddedBtn = screen.getByText(txt.added)
     fireEvent.click(productAddedBtn)
 
     await waitFor(() => {
@@ -138,7 +147,6 @@ describe('DigitalHumanSetting/SkillConfig/SelectSkillModal', () => {
   })
 
   it('搜索技能过滤列表', async () => {
-    // Mock API to return filtered results based on search keyword
     mockedGetEnabledSkills.mockImplementation(async (params?: GetEnabledSkillsParams) => {
       const keyword = params?.name?.trim()
       if (!keyword) return mockSkills
@@ -159,7 +167,6 @@ describe('DigitalHumanSetting/SkillConfig/SelectSkillModal', () => {
     const searchInput = screen.getByTestId('search-input')
     fireEvent.change(searchInput, { target: { value: '产品' } })
 
-    // Wait for API call and re-render
     await waitFor(
       () => {
         expect(screen.getByText('产品问答')).toBeInTheDocument()
@@ -198,7 +205,7 @@ describe('DigitalHumanSetting/SkillConfig/SelectSkillModal', () => {
       />,
     )
 
-    expect(await screen.findByText('暂无技能')).toBeInTheDocument()
+    expect(await screen.findByText(txt.emptyList)).toBeInTheDocument()
   })
 
   it('搜索无结果显示搜索空状态', async () => {
@@ -214,12 +221,12 @@ describe('DigitalHumanSetting/SkillConfig/SelectSkillModal', () => {
       />,
     )
 
-    await screen.findByText('暂无技能')
+    await screen.findByText(txt.emptyList)
     const searchInput = screen.getByTestId('search-input')
     fireEvent.change(searchInput, { target: { value: '不存在' } })
 
     await waitFor(() => {
-      expect(screen.getByText('抱歉，没有找到相关内容')).toBeInTheDocument()
+      expect(screen.getByText(txt.noResult)).toBeInTheDocument()
     })
   })
 
@@ -237,7 +244,7 @@ describe('DigitalHumanSetting/SkillConfig/SelectSkillModal', () => {
     )
 
     await screen.findByText('产品问答')
-    fireEvent.click(screen.getByText('会话创建'))
+    fireEvent.click(screen.getByText(txt.sessionCreate))
 
     expect(mockOnSubmit).toHaveBeenCalled()
   })
@@ -256,7 +263,7 @@ describe('DigitalHumanSetting/SkillConfig/SelectSkillModal', () => {
     )
 
     await screen.findByText('产品问答')
-    fireEvent.click(screen.getByText('导入创建'))
+    fireEvent.click(screen.getByText(txt.importCreate))
 
     expect(screen.getByTestId('upload-skill')).toBeInTheDocument()
   })
@@ -275,9 +282,7 @@ describe('DigitalHumanSetting/SkillConfig/SelectSkillModal', () => {
     )
 
     await screen.findByText('产品问答')
-    // Modal close button
     const buttons = screen.getAllByRole('button')
-    // First button is close, then session create, import create, then the two action buttons
     const closeBtn = buttons[0]
     fireEvent.click(closeBtn)
 
@@ -312,7 +317,7 @@ describe('DigitalHumanSetting/SkillConfig/SelectSkillModal', () => {
     )
 
     await screen.findByText('产品问答')
-    expect(screen.getByText('@官方')).toBeInTheDocument()
-    expect(screen.getByText('@自定义')).toBeInTheDocument()
+    expect(screen.getByText(txt.tagOfficial)).toBeInTheDocument()
+    expect(screen.getByText(txt.tagCustom)).toBeInTheDocument()
   })
 })

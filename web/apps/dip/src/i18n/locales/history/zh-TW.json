@@ -1,0 +1,23 @@
+{
+  "history": {
+    "common": {
+      "all": "全部",
+      "searchPlaceholder": "搜尋歷史對話",
+      "deleteConfirmTitle": "確認刪除",
+      "deleteConfirmContent": "刪除後將無法恢復，是否繼續？",
+      "noData": "暫無資料",
+      "loadFailed": "載入失敗",
+      "retry": "重試",
+      "searchNoResult": "抱歉，沒有找到相關內容",
+      "dash": "—"
+    },
+    "list": {
+      "fromDigitalHuman": "來自數位員工：{name}",
+      "updateTime": "更新時間",
+      "deleteSessionAria": "刪除歷史會話",
+      "today": "今天 {time}",
+      "tomorrow": "明天 {time}",
+      "yesterday": "昨天 {time}"
+    }
+  }
+}

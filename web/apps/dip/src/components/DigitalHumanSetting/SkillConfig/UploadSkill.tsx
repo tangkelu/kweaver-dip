@@ -8,6 +8,7 @@ import type { ModalProps, UploadProps } from 'antd'
 import { Button, Modal, message, Spin, Upload } from 'antd'
 import clsx from 'clsx'
 import { useEffect, useRef, useState } from 'react'
+import intl from 'react-intl-universal'
 import { installSkill } from '@/apis'
 import type { InstallSkillResult } from '@/apis/dip-studio/skills'
 import UploadFileIcon from '@/assets/images/uploadFile.svg?react'
@@ -24,18 +25,11 @@ const { Dragger } = Upload
 const MAX_FILE_SIZE_MB = 24
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
-function validateSkillFileFormat(file: File): boolean {
-  const n = file.name.toLowerCase()
-  return n.endsWith('.zip') || n.endsWith('.skill')
-}
-
-function validateSkillFileSize(file: File): boolean {
-  return file.size <= MAX_FILE_SIZE_BYTES
-}
-
+/** 解析 installSkill 错误为可展示文案 */
 function getInstallSkillErrorMessage(error: unknown): string {
-  if (error == null) return '上传失败，请重试'
-  if (typeof error === 'string') return error || '上传失败，请重试'
+  const fallback = intl.get('digitalHuman.skillUpload.errorGeneric')
+  if (error == null) return fallback
+  if (typeof error === 'string') return error || fallback
   if (typeof error === 'object') {
     const o = error as { description?: unknown; message?: unknown }
     const desc = o.description != null ? String(o.description).trim() : ''
@@ -43,7 +37,16 @@ function getInstallSkillErrorMessage(error: unknown): string {
     const msg = o.message != null ? String(o.message).trim() : ''
     if (msg) return msg
   }
-  return '上传失败，请重试'
+  return fallback
+}
+
+function validateSkillFileFormat(file: File): boolean {
+  const n = file.name.toLowerCase()
+  return n.endsWith('.zip') || n.endsWith('.skill')
+}
+
+function validateSkillFileSize(file: File): boolean {
+  return file.size <= MAX_FILE_SIZE_BYTES
 }
 
 export interface UploadSkillProps extends Pick<ModalProps, 'open' | 'onCancel'> {
@@ -85,6 +88,7 @@ const UploadSkill = ({ open, onCancel, onSuccess, onDetail }: UploadSkillProps) 
     }
   }, [open])
 
+  /** 选择本地文件：校验格式与大小，真正上传在点击「导入技能」后触发 */
   const handleFileChange: UploadProps['onChange'] = (info) => {
     const { file } = info
     const { status } = file
@@ -106,12 +110,12 @@ const UploadSkill = ({ open, onCancel, onSuccess, onDetail }: UploadSkillProps) 
     }
 
     if (!validateSkillFileFormat(fileObj)) {
-      messageApi.error('仅支持 .zip / .skill 格式的技能包')
+      messageApi.error(intl.get('digitalHuman.skillUpload.formatInvalid'))
       return
     }
 
     if (!validateSkillFileSize(fileObj)) {
-      messageApi.error(`技能包大小不能超过 ${MAX_FILE_SIZE_MB}MB`)
+      messageApi.error(intl.get('digitalHuman.skillUpload.sizeExceeded', { maxMb: MAX_FILE_SIZE_MB }))
       return
     }
 
@@ -120,6 +124,7 @@ const UploadSkill = ({ open, onCancel, onSuccess, onDetail }: UploadSkillProps) 
     setErrorMessage('')
   }
 
+  /** 调用 installSkill 上传并校验技能包 */
   const handleUpload = async () => {
     if (!fileInfo) {
       return
@@ -164,9 +169,10 @@ const UploadSkill = ({ open, onCancel, onSuccess, onDetail }: UploadSkillProps) 
     }
   }
 
+  /** 中止请求并关闭弹窗（导入成功后不允许取消） */
   const handleCancelUpload = () => {
     if (uploadStatusRef.current === UploadStatus.SUCCESS) {
-      messageApi.warning('导入已完成，无法取消')
+      messageApi.warning(intl.get('digitalHuman.skillUpload.importDoneNoCancel'))
       return
     }
 
@@ -179,15 +185,19 @@ const UploadSkill = ({ open, onCancel, onSuccess, onDetail }: UploadSkillProps) 
     onCancel?.(undefined as never)
   }
 
+  /**
+   * 关闭弹窗：上传中需二次确认；成功态先触发 onSuccess 再关；
+   * 其它状态直接走 onCancel。
+   */
   const handleCancel = (e?: unknown) => {
     if (uploadStatus === UploadStatus.UPLOADING) {
       modal.confirm({
-        title: '确认取消导入',
-        content: '正在上传中，取消后将中断上传。是否继续？',
-        okText: '确定',
+        title: intl.get('digitalHuman.skillUpload.confirmCancelTitle'),
+        content: intl.get('digitalHuman.skillUpload.confirmCancelContent'),
+        okText: intl.get('global.ok'),
         okType: 'primary',
         okButtonProps: { danger: true },
-        cancelText: '取消',
+        cancelText: intl.get('global.cancel'),
         onOk: handleCancelUpload,
         footer: (_, { OkBtn, CancelBtn }) => (
           <>
@@ -222,16 +232,16 @@ const UploadSkill = ({ open, onCancel, onSuccess, onDetail }: UploadSkillProps) 
         {isUploading ? (
           <div className="flex flex-col items-center justify-center" style={{ height: '100%' }}>
             <Spin />
-            <p className="mt-4 text-sm text-[#1677FF]">正在验证技能包...</p>
+            <p className="mt-4 text-sm text-[#1677FF]">{intl.get('digitalHuman.skillUpload.validating')}</p>
           </div>
         ) : (
           <>
             <p className="ant-upload-drag-icon">
               <UploadFileIcon style={{ width: 48, height: 48 }} />
             </p>
-            <p className="ant-upload-text">点击或将文件拖拽到这里上传</p>
+            <p className="ant-upload-text">{intl.get('digitalHuman.skillUpload.dragHint')}</p>
             <p className="ant-upload-hint">
-              支持 .zip / .skill 格式的技能包，大小不超过 {MAX_FILE_SIZE_MB}MB
+              {intl.get('digitalHuman.skillUpload.formatAndSizeHint', { maxMb: MAX_FILE_SIZE_MB })}
             </p>
           </>
         )}
@@ -262,18 +272,18 @@ const UploadSkill = ({ open, onCancel, onSuccess, onDetail }: UploadSkillProps) 
           <div className="flex-shrink-0">
             {isUploading && (
               <span className="px-2 py-0.5 text-xs border border-[--dip-border-color-base] rounded">
-                验证中
+                {intl.get('digitalHuman.skillUpload.statusVerifying')}
               </span>
             )}
             {uploadStatus === UploadStatus.READY && (
               <span className="px-2 py-0.5 text-xs border border-[--dip-border-color-base] rounded">
-                等待导入
+                {intl.get('digitalHuman.skillUpload.statusWaitImport')}
               </span>
             )}
             {isFailed && (
               <div className="flex items-center gap-1 px-2 py-0.5 text-xs text-[--dip-error-color] bg-[rgba(255,77,79,0.1)] border border-[#FFCCC7] rounded">
                 <CloseCircleOutlined className="text-[--dip-error-color]" />
-                导入失败
+                {intl.get('digitalHuman.skillUpload.statusImportFailed')}
               </div>
             )}
           </div>
@@ -310,7 +320,7 @@ const UploadSkill = ({ open, onCancel, onSuccess, onDetail }: UploadSkillProps) 
           onClick={() => void handleUpload()}
           style={{ opacity: isUploading ? 0.25 : 1 }}
         >
-          导入技能
+          {intl.get('digitalHuman.skillUpload.importButton')}
         </Button>
       </div>
     )
@@ -324,9 +334,9 @@ const UploadSkill = ({ open, onCancel, onSuccess, onDetail }: UploadSkillProps) 
     return (
       <div className="py-12 flex flex-col items-center justify-center">
         <CheckCircleFilled className="text-7xl text-[--dip-success-color]" />
-        <div className="mt-8 text-2xl font-medium">技能导入成功</div>
+        <div className="mt-8 text-2xl font-medium">{intl.get('digitalHuman.skillUpload.successTitle')}</div>
         <div className="mt-2 text-sm text-[--dip-text-color-45]">
-          您的技能已导入成功，可前往技能列表查看
+          {intl.get('digitalHuman.skillUpload.successDesc')}
         </div>
         {onDetail && (
           <Button
@@ -335,7 +345,7 @@ const UploadSkill = ({ open, onCancel, onSuccess, onDetail }: UploadSkillProps) 
             onClick={() => uploadResultRef.current && onDetail?.(uploadResultRef.current)}
             className="mt-4"
           >
-            查看技能
+            {intl.get('digitalHuman.skillUpload.viewSkill')}
           </Button>
         )}
       </div>
@@ -344,7 +354,7 @@ const UploadSkill = ({ open, onCancel, onSuccess, onDetail }: UploadSkillProps) 
 
   return (
     <Modal
-      title="导入技能"
+      title={intl.get('digitalHuman.skillUpload.modalTitle')}
       open={open}
       onCancel={handleCancel}
       closable
@@ -365,7 +375,7 @@ const UploadSkill = ({ open, onCancel, onSuccess, onDetail }: UploadSkillProps) 
           overflow: 'hidden',
         },
       }}
-      okText="确定"
+      okText={intl.get('global.ok')}
       onOk={
         uploadStatus === UploadStatus.SUCCESS
           ? () => {
@@ -374,7 +384,7 @@ const UploadSkill = ({ open, onCancel, onSuccess, onDetail }: UploadSkillProps) 
             }
           : undefined
       }
-      cancelText="取消"
+      cancelText={intl.get('global.cancel')}
       cancelButtonProps={{
         onClick: () => handleCancel(),
       }}

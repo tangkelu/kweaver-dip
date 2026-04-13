@@ -40,6 +40,12 @@ export interface OpenClawAgentSkillsHttpResult {
   body: Uint8Array;
 }
 
+interface OpenClawUpstreamErrorPayload {
+  code?: string;
+  message?: string;
+  error?: string;
+}
+
 /**
  * Defines the capability needed to query and update agent skills.
  */
@@ -660,13 +666,15 @@ export function normalizeOpenClawAgentSkillsError(error: unknown): HttpError {
 export async function createOpenClawSkillInstallStatusError(
   response: Response
 ): Promise<HttpError> {
-  const text = (await response.text()).trim();
-  const detail = text.length > 0 ? `: ${text}` : "";
-
-  return new HttpError(
-    502,
-    `OpenClaw /v1/config/agents/skills/install returned HTTP ${response.status}${detail}`
+  const parsed = await parseOpenClawUpstreamError(response);
+  const mapped = mapOpenClawSkillInstallErrorCode(response.status, parsed.code);
+  const message = parsed.message ?? buildOpenClawStatusMessage(
+    "/v1/config/agents/skills/install",
+    response.status,
+    parsed.raw
   );
+
+  return new HttpError(mapped.statusCode, message, mapped.code);
 }
 
 /**
@@ -683,9 +691,146 @@ export function normalizeOpenClawSkillInstallError(error: unknown): HttpError {
   const description =
     error instanceof Error ? error.message : "Unknown upstream error";
 
+  if (error instanceof Error && isTimeoutError(error)) {
+    return new HttpError(504, "OpenClaw skill install request timed out", "DipStudio.UpstreamTimeout");
+  }
+
+  if (error instanceof Error && isUnavailableError(error)) {
+    return new HttpError(
+      502,
+      `Failed to communicate with OpenClaw /v1/config/agents/skills/install: ${description}`,
+      "DipStudio.UpstreamUnavailable"
+    );
+  }
+
   return new HttpError(
     502,
-    `Failed to communicate with OpenClaw /v1/config/agents/skills/install: ${description}`
+    `Failed to communicate with OpenClaw /v1/config/agents/skills/install: ${description}`,
+    "DipStudio.UpstreamServiceError"
+  );
+}
+
+/**
+ * Parses a JSON or text upstream error response.
+ *
+ * @param response Upstream fetch response.
+ * @returns Parsed code/message plus raw text for fallback diagnostics.
+ */
+async function parseOpenClawUpstreamError(
+  response: Response
+): Promise<{ code?: string; message?: string; raw: string }> {
+  const raw = (await response.text()).trim();
+  if (raw.length === 0) {
+    return { raw };
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as OpenClawUpstreamErrorPayload;
+    const code = typeof parsed.code === "string" && parsed.code.trim().length > 0
+      ? parsed.code.trim()
+      : undefined;
+    const messageSource = typeof parsed.error === "string" && parsed.error.trim().length > 0
+      ? parsed.error
+      : parsed.message;
+    const message = typeof messageSource === "string" && messageSource.trim().length > 0
+      ? messageSource.trim()
+      : undefined;
+    return { code, message, raw };
+  } catch {
+    return { raw };
+  }
+}
+
+/**
+ * Builds a fallback upstream status message.
+ *
+ * @param path Upstream request path.
+ * @param status HTTP status code returned by upstream.
+ * @param raw Raw upstream response body.
+ * @returns A readable fallback error message.
+ */
+function buildOpenClawStatusMessage(
+  path: string,
+  status: number,
+  raw: string
+): string {
+  const detail = raw.length > 0 ? `: ${raw}` : "";
+  return `OpenClaw ${path} returned HTTP ${status}${detail}`;
+}
+
+/**
+ * Maps upstream skill install errors to public Studio errors.
+ *
+ * @param statusCode Upstream HTTP status code.
+ * @param upstreamCode Optional upstream business code.
+ * @returns The public status and code pair.
+ */
+function mapOpenClawSkillInstallErrorCode(
+  statusCode: number,
+  upstreamCode?: string
+): { statusCode: number; code: string } {
+  switch (statusCode) {
+    case 400:
+      switch (upstreamCode) {
+        case "BAD_LAYOUT":
+          return { statusCode: 400, code: "DipStudio.SkillBadLayout" };
+        case "MISSING_SKILL_MD":
+          return { statusCode: 400, code: "DipStudio.SkillMissingSkillMd" };
+        case "INVALID_ZIP":
+          return { statusCode: 400, code: "DipStudio.SkillInvalidPackage" };
+        case "INVALID_NAME":
+          return { statusCode: 400, code: "DipStudio.SkillInvalidName" };
+        case "BAD_FRONT_MATTER":
+          return { statusCode: 400, code: "DipStudio.SkillBadFrontMatter" };
+        default:
+          return { statusCode: 400, code: "DipStudio.InvalidParameter" };
+      }
+    case 401:
+      return { statusCode: 401, code: "DipStudio.UpstreamUnauthorized" };
+    case 403:
+      return { statusCode: 403, code: "DipStudio.UpstreamForbidden" };
+    case 409:
+      if (upstreamCode === "CONFLICT" || upstreamCode === undefined) {
+        return { statusCode: 409, code: "DipStudio.SkillAlreadyExists" };
+      }
+      return { statusCode: 409, code: "DipStudio.Conflict" };
+    case 413:
+      return { statusCode: 413, code: "DipStudio.SkillPackageTooLarge" };
+    case 504:
+      return { statusCode: 504, code: "DipStudio.UpstreamTimeout" };
+    default:
+      if (statusCode >= 500) {
+        return { statusCode: 502, code: "DipStudio.UpstreamServiceError" };
+      }
+      return { statusCode, code: `DipStudio.Http${statusCode}` };
+  }
+}
+
+/**
+ * Detects timeout-like fetch errors.
+ *
+ * @param error Thrown fetch error.
+ * @returns Whether the error indicates a timeout.
+ */
+function isTimeoutError(error: Error): boolean {
+  const message = error.message.toLowerCase();
+  return error.name === "AbortError" || message.includes("timeout") || message.includes("timed out");
+}
+
+/**
+ * Detects network reachability failures for upstream HTTP calls.
+ *
+ * @param error Thrown fetch error.
+ * @returns Whether the error indicates the upstream is unavailable.
+ */
+function isUnavailableError(error: Error): boolean {
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("fetch failed") ||
+    message.includes("econnrefused") ||
+    message.includes("enotfound") ||
+    message.includes("network") ||
+    message.includes("socket")
   );
 }
 

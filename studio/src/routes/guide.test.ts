@@ -163,6 +163,52 @@ describe("createGuideRouter", () => {
     });
   });
 
+  it("returns the detected OpenClaw and KWeaver config", async () => {
+    const getOpenClawConfig = vi.fn().mockResolvedValue({
+      protocol: "ws",
+      host: "127.0.0.1",
+      port: 19001,
+      token: "token-1",
+      kweaver_base_url: "https://kweaver.example.com",
+      kweaver_token: "kw-token"
+    });
+    const router = createGuideRouter({
+      getStatus: vi.fn(),
+      getOpenClawConfig,
+      initialize: vi.fn()
+    }) as {
+      stack: Array<{
+        route?: {
+          path: string;
+          stack: Array<{
+            handle: (
+              request: Request,
+              response: Response,
+              next: NextFunction
+            ) => Promise<void>;
+          }>;
+        };
+      }>;
+    };
+    const layer = findRouteLayer(router, "/api/dip-studio/v1/guide/openclaw-config", "get");
+    const response = createResponseDouble();
+    const next = vi.fn<NextFunction>();
+
+    await layer?.route?.stack[0]?.handle({} as Request, response, next);
+
+    expect(getOpenClawConfig).toHaveBeenCalledOnce();
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.json).toHaveBeenCalledWith({
+      protocol: "ws",
+      host: "127.0.0.1",
+      port: 19001,
+      token: "token-1",
+      kweaver_base_url: "https://kweaver.example.com",
+      kweaver_token: "kw-token"
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
   it("forwards logic errors from initialize requests", async () => {
     const initialize = vi.fn().mockRejectedValue(new HttpError(500, "boom"));
     const router = createGuideRouter({

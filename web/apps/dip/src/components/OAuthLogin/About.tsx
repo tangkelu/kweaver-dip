@@ -1,4 +1,5 @@
 import { Modal } from 'antd'
+import intl from 'react-intl-universal'
 import { useOEMConfigStore } from '@/stores/oemConfigStore'
 
 function About() {
@@ -26,7 +27,7 @@ function About() {
             className="hover:text-[--dip-link-color]"
             onClick={() => {
               modal.info({
-                title: <div className="text-base font-medium">关于</div>,
+                title: <div className="text-base font-medium">{intl.get('oauthLogin.about.title')}</div>,
                 width: 420,
                 icon: null,
                 footer: null,
@@ -36,14 +37,16 @@ function About() {
                     <div className="mb-4 flex items-center">
                       <img src={logo} alt="AnyShare" className="h-8" />
                     </div>
-                    <div>当前版本：{customVersion}</div>
-                    <div>版权所有 © 2011-2026 上海爱数信息技术股份有限公司</div>
+                    <div>
+                      {intl.get('oauthLogin.about.currentVersion', { version: customVersion })}
+                    </div>
+                    <div>{intl.get('oauthLogin.about.copyright')}</div>
                   </div>
                 ),
               })
             }}
           >
-            版本信息
+            {intl.get('oauthLogin.about.versionInfo')}
           </button>
         )}
         {customVersion && recordNumber && (

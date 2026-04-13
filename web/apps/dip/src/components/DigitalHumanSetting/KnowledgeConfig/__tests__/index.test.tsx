@@ -6,6 +6,10 @@ import KnowledgeConfig from '../index'
 const mockUpdateBkn = vi.fn()
 const mockDeleteBkn = vi.fn()
 
+vi.mock('@/stores/languageStore', () => ({
+  useLanguageStore: () => ({ language: 'zh-CN' }),
+}))
+
 vi.mock('../../digitalHumanStore', () => ({
   useDigitalHumanStore: vi.fn(),
 }))
@@ -31,6 +35,8 @@ vi.mock('@/components/IconFont', () => ({
 
 const mockedUseDigitalHumanStore = vi.mocked(useDigitalHumanStore)
 
+const addKnowledgeBtnName = 'digitalHuman.knowledge.addButton'
+
 describe('DigitalHumanSetting/KnowledgeConfig', () => {
   it('应该正确渲染空状态，显示添加知识按钮', () => {
     mockedUseDigitalHumanStore.mockReturnValue({
@@ -41,14 +47,10 @@ describe('DigitalHumanSetting/KnowledgeConfig', () => {
 
     render(<KnowledgeConfig />)
 
-    expect(screen.getByText('知识配置')).toBeInTheDocument()
-    expect(
-      screen.getByText(
-        '选择该数字员工需要关联的业务知识网络（BKN）。数字员工将基于这些知识网络回答问题和执行任务。',
-      ),
-    ).toBeInTheDocument()
-    expect(screen.getByText('暂无知识')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /知识/ })).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.setting.menuKnowledge')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.knowledge.sectionDesc')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.knowledge.emptyNoKnowledge')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: addKnowledgeBtnName })).toBeInTheDocument()
   })
 
   it('只读模式空状态不显示添加按钮', () => {
@@ -60,8 +62,8 @@ describe('DigitalHumanSetting/KnowledgeConfig', () => {
 
     render(<KnowledgeConfig readonly />)
 
-    expect(screen.getByText('暂无知识')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /知识/ })).not.toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.knowledge.emptyNoKnowledge')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: addKnowledgeBtnName })).not.toBeInTheDocument()
   })
 
   it('已有知识时应该正确渲染表格', () => {
@@ -77,7 +79,7 @@ describe('DigitalHumanSetting/KnowledgeConfig', () => {
     expect(screen.getByText('bkn-id-1')).toBeInTheDocument()
     const buttons = screen.getAllByRole('button')
     expect(buttons.length).toBeGreaterThanOrEqual(2)
-    expect(screen.getByRole('button', { name: /知识/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: addKnowledgeBtnName })).toBeInTheDocument()
   })
 
   it('只读模式不显示操作列', () => {
@@ -90,8 +92,8 @@ describe('DigitalHumanSetting/KnowledgeConfig', () => {
     render(<KnowledgeConfig readonly />)
 
     expect(screen.getAllByText('业务知识A').length).toBeGreaterThanOrEqual(1)
-    expect(screen.queryByText('操作')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /知识/ })).not.toBeInTheDocument()
+    expect(screen.queryByText('digitalHuman.common.columnAction')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: addKnowledgeBtnName })).not.toBeInTheDocument()
   })
 
   it('点击添加知识按钮应该打开弹窗', () => {
@@ -102,7 +104,7 @@ describe('DigitalHumanSetting/KnowledgeConfig', () => {
     })
 
     render(<KnowledgeConfig />)
-    fireEvent.click(screen.getByRole('button', { name: /知识/ }))
+    fireEvent.click(screen.getByRole('button', { name: addKnowledgeBtnName }))
 
     expect(screen.getByTestId('select-knowledge-modal')).toBeInTheDocument()
   })
@@ -115,7 +117,7 @@ describe('DigitalHumanSetting/KnowledgeConfig', () => {
     })
 
     render(<KnowledgeConfig />)
-    fireEvent.click(screen.getByRole('button', { name: /知识/ }))
+    fireEvent.click(screen.getByRole('button', { name: addKnowledgeBtnName }))
 
     expect(screen.getByTestId('select-knowledge-modal')).toBeInTheDocument()
   })

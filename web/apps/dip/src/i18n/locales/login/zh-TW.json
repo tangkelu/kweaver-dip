@@ -1,0 +1,22 @@
+{
+  "login": {
+    "failed": {
+      "subtitle": "您目前使用的帳號未綁定任何角色，無法登入",
+      "backToLogin": "返回登入頁面"
+    }
+  },
+  "oauthLogin": {
+    "iframeTitle": "登入",
+    "about": {
+      "title": "關於",
+      "versionInfo": "版本資訊",
+      "currentVersion": "目前版本：{version}",
+      "copyright": "版權所有 © 2011-2026 上海愛數資訊技術股份有限公司"
+    },
+    "footer": {
+      "agreePrefix": "登入即表示同意",
+      "userAgreement": "使用者協議",
+      "privacyPolicy": "隱私政策"
+    }
+  }
+}

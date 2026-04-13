@@ -62,6 +62,17 @@ vi.mock('@/components/AppUploadModal/utils', () => ({
 
 const mockedInstallSkill = vi.mocked(installSkill)
 
+const T = {
+  modalTitle: 'digitalHuman.skillUpload.modalTitle',
+  dragHint: 'digitalHuman.skillUpload.dragHint',
+  formatHint: 'digitalHuman.skillUpload.formatAndSizeHint',
+  waitImport: 'digitalHuman.skillUpload.statusWaitImport',
+  importBtn: 'digitalHuman.skillUpload.importButton',
+  successTitle: 'digitalHuman.skillUpload.successTitle',
+  validating: 'digitalHuman.skillUpload.validating',
+  confirmCancelTitle: 'digitalHuman.skillUpload.confirmCancelTitle',
+}
+
 describe('DigitalHumanSetting/SkillConfig/UploadSkill', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -70,9 +81,9 @@ describe('DigitalHumanSetting/SkillConfig/UploadSkill', () => {
   it('应该正确渲染上传区域', () => {
     render(<UploadSkill open onCancel={mockOnCancel} onSuccess={mockOnSuccess} />)
 
-    expect(screen.getByRole('dialog')).toHaveTextContent('导入技能')
-    expect(screen.getByText('点击或将文件拖拽到这里上传')).toBeInTheDocument()
-    expect(screen.getByText('支持 .zip / .skill 格式的技能包，大小不超过 24MB')).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toHaveTextContent(T.modalTitle)
+    expect(screen.getByText(T.dragHint)).toBeInTheDocument()
+    expect(screen.getByText(T.formatHint)).toBeInTheDocument()
   })
 
   it('关闭弹窗重置状态', () => {
@@ -80,18 +91,16 @@ describe('DigitalHumanSetting/SkillConfig/UploadSkill', () => {
       <UploadSkill open onCancel={mockOnCancel} onSuccess={mockOnSuccess} />,
     )
 
-    expect(screen.getByText('点击或将文件拖拽到这里上传')).toBeInTheDocument()
+    expect(screen.getByText(T.dragHint)).toBeInTheDocument()
 
     rerender(<UploadSkill open={false} onCancel={mockOnCancel} onSuccess={mockOnSuccess} />)
 
-    // Modal 已经关闭，不应该内容
-    expect(screen.queryByText('点击或将文件拖拽到这里上传')).not.toBeInTheDocument()
+    expect(screen.queryByText(T.dragHint)).not.toBeInTheDocument()
   })
 
   it('选择正确格式文件显示文件信息', async () => {
     render(<UploadSkill open onCancel={mockOnCancel} onSuccess={mockOnSuccess} />)
 
-    // 模拟文件选择
     const file = new File(['test content'], 'test.zip', { type: 'application/zip' })
     const uploadInput = getFileInput()
 
@@ -99,8 +108,8 @@ describe('DigitalHumanSetting/SkillConfig/UploadSkill', () => {
 
     await waitFor(() => {
       expect(screen.getByText('test.zip')).toBeInTheDocument()
-      expect(screen.getByText('等待导入')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /导入技能/ })).toBeEnabled()
+      expect(screen.getByText(T.waitImport)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: T.importBtn })).toBeEnabled()
     })
   })
 
@@ -111,7 +120,6 @@ describe('DigitalHumanSetting/SkillConfig/UploadSkill', () => {
     const uploadInput = getFileInput()
     fireEvent.change(uploadInput, { target: { files: [file] } })
 
-    // message will be shown, but we can check fileInfo not added
     await waitFor(() => {
       expect(screen.queryByText('test.txt')).not.toBeInTheDocument()
     })
@@ -120,7 +128,6 @@ describe('DigitalHumanSetting/SkillConfig/UploadSkill', () => {
   it('拒绝超过大小限制的文件', async () => {
     render(<UploadSkill open onCancel={mockOnCancel} onSuccess={mockOnSuccess} />)
 
-    // 25MB file
     const largeFile = new File(['x'.repeat(25 * 1024 * 1024)], 'large.zip', {
       type: 'application/zip',
     })
@@ -141,15 +148,14 @@ describe('DigitalHumanSetting/SkillConfig/UploadSkill', () => {
 
     await waitFor(() => {
       expect(screen.getByText('test.zip')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /导入技能/ })).toBeEnabled()
+      expect(screen.getByRole('button', { name: T.importBtn })).toBeEnabled()
     })
 
-    // 直接改 input.files 为空不会触发 antd Upload 的 status: 'removed'；用包装 Dragger 注入的按钮模拟移除
     fireEvent.click(screen.getByTestId('upload-simulate-remove'))
 
     await waitFor(() => {
       expect(screen.queryByText('test.zip')).not.toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /导入技能/ })).toBeDisabled()
+      expect(screen.getByRole('button', { name: T.importBtn })).toBeDisabled()
     })
   })
 
@@ -166,11 +172,11 @@ describe('DigitalHumanSetting/SkillConfig/UploadSkill', () => {
       expect(screen.getByText('test.zip')).toBeInTheDocument()
     })
 
-    const uploadBtn = screen.getByRole('button', { name: /导入技能/ })
+    const uploadBtn = screen.getByRole('button', { name: T.importBtn })
     fireEvent.click(uploadBtn)
 
     await waitFor(() => {
-      expect(screen.getByText('技能导入成功')).toBeInTheDocument()
+      expect(screen.getByText(T.successTitle)).toBeInTheDocument()
     })
   })
 
@@ -187,7 +193,7 @@ describe('DigitalHumanSetting/SkillConfig/UploadSkill', () => {
       expect(screen.getByText('test.zip')).toBeInTheDocument()
     })
 
-    const uploadBtn = screen.getByRole('button', { name: /导入技能/ })
+    const uploadBtn = screen.getByRole('button', { name: T.importBtn })
     fireEvent.click(uploadBtn)
 
     await waitFor(() => {
@@ -214,25 +220,22 @@ describe('DigitalHumanSetting/SkillConfig/UploadSkill', () => {
       expect(screen.getByText('test.zip')).toBeInTheDocument()
     })
 
-    const uploadBtn = screen.getByRole('button', { name: /导入技能/ })
+    const uploadBtn = screen.getByRole('button', { name: T.importBtn })
     fireEvent.click(uploadBtn)
 
     await waitFor(() => {
-      expect(screen.getByText('正在验证技能包...')).toBeInTheDocument()
+      expect(screen.getByText(T.validating)).toBeInTheDocument()
     })
 
     const allButtons = screen.getAllByRole('button')
-    const cancelBtn = allButtons.find((btn) => {
-      const text = btn.textContent || ''
-      return text.includes('取') && text.includes('消')
-    })
+    const cancelBtn = allButtons.find((btn) => btn.textContent?.includes('global.cancel'))
     if (cancelBtn === undefined) {
       throw new Error('expected footer cancel button')
     }
     fireEvent.click(cancelBtn)
 
     await waitFor(() => {
-      expect(screen.getAllByText('确认取消导入').length).toBeGreaterThan(0)
+      expect(screen.getAllByText(T.confirmCancelTitle).length).toBeGreaterThan(0)
     })
 
     uploadDeferred.resolve?.(installOkResult)
@@ -251,15 +254,14 @@ describe('DigitalHumanSetting/SkillConfig/UploadSkill', () => {
       expect(screen.getByText('test.zip')).toBeInTheDocument()
     })
 
-    const uploadBtn = screen.getByRole('button', { name: /导入技能/ })
+    const uploadBtn = screen.getByRole('button', { name: T.importBtn })
     fireEvent.click(uploadBtn)
 
     await waitFor(() => {
-      expect(screen.getByText('技能导入成功')).toBeInTheDocument()
+      expect(screen.getByText(T.successTitle)).toBeInTheDocument()
     })
 
-    // Find ok button (antd adds space between characters: "确 定")
-    const okBtn = screen.getAllByRole('button').find((btn) => btn.textContent?.includes('定'))
+    const okBtn = screen.getAllByRole('button').find((btn) => btn.textContent?.includes('global.ok'))
     if (okBtn === undefined) {
       throw new Error('expected ok button')
     }

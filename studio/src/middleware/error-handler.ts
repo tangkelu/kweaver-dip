@@ -11,19 +11,25 @@ import { HttpError } from "../errors/http-error";
 export function resolveErrorCode(statusCode: number): string {
   switch (statusCode) {
     case 400:
-      return "INVALID_PARAMETER";
+      return "DipStudio.InvalidParameter";
     case 401:
-      return "UNAUTHORIZED";
+      return "DipStudio.Unauthorized";
     case 403:
-      return "FORBIDDEN";
+      return "DipStudio.Forbidden";
     case 404:
-      return "NOT_FOUND";
+      return "DipStudio.NotFound";
     case 409:
-      return "CONFLICT";
+      return "DipStudio.Conflict";
+    case 413:
+      return "DipStudio.PayloadTooLarge";
     case 500:
-      return "INTERNAL_SERVER_ERROR";
+      return "DipStudio.InternalServerError";
+    case 502:
+      return "DipStudio.UpstreamServiceError";
+    case 504:
+      return "DipStudio.UpstreamTimeout";
     default:
-      return `HTTP_${statusCode}`;
+      return `DipStudio.Http${statusCode}`;
   }
 }
 

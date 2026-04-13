@@ -4,7 +4,8 @@ import { useMemo } from 'react'
 import type { NavigateFunction } from 'react-router-dom'
 import { routeConfigs } from '@/routes/routes'
 import type { RouteConfig } from '@/routes/types'
-import { getRouteSidebarMode, isRouteVisibleForRoles } from '@/routes/utils'
+import { getRouteLabel, getRouteSidebarMode, isRouteVisibleForRoles } from '@/routes/utils'
+import { useLanguageStore } from '@/stores/languageStore'
 import { MaskIcon } from './GradientMaskIcon'
 
 interface StudioMenuSectionProps {
@@ -22,6 +23,7 @@ export const StudioMenuSection = ({
   roleIds = new Set<string>(),
   allowedKeys,
 }: StudioMenuSectionProps) => {
+  const { language } = useLanguageStore()
   const menuItems = useMemo<MenuProps['items']>(() => {
     const hasKey = (route: RouteConfig): route is RouteConfig & { key: string } =>
       Boolean(route.key)
@@ -40,7 +42,7 @@ export const StudioMenuSection = ({
     visibleSidebarRoutes.forEach((route) => {
       const item: Exclude<MenuProps['items'], undefined>[number] = {
         key: route.key,
-        label: route.label || route.key,
+        label: getRouteLabel(route),
         icon: route.iconUrl ? (
           <MaskIcon
             url={route.iconUrl}
@@ -86,7 +88,7 @@ export const StudioMenuSection = ({
     })
 
     return items
-  }, [allowedKeys, navigate, roleIds, selectedKey])
+  }, [allowedKeys, language, navigate, roleIds, selectedKey])
 
   return (
     <Menu

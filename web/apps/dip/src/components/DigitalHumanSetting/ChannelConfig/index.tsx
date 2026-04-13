@@ -1,25 +1,24 @@
 import { Button, Flex, Table, Tooltip } from 'antd'
 import { memo, useMemo, useState } from 'react'
+import intl from 'react-intl-universal'
 import type { ChannelConfig as DhChannelConfig } from '@/apis/dip-studio/digital-human'
 import DingDingIcon from '@/assets/icons/dingding.svg'
 import FeiShuIcon from '@/assets/icons/feishu.svg'
 import Empty from '@/components/Empty'
 import IconFont from '@/components/IconFont'
 import ScrollBarContainer from '@/components/ScrollBarContainer'
+import { useLanguageStore } from '@/stores/languageStore'
 import { useDigitalHumanStore } from '../digitalHumanStore'
 import AddChannelModal from './AddChannelModal'
 import styles from './index.module.less'
 
-const CHANNEL_TYPE_LABEL: Record<NonNullable<DhChannelConfig['type']>, string> = {
-  feishu: '飞书',
-  dingtalk: '钉钉',
-}
-
 interface ChannelConfigProps {
+  /** 只读（非管理员详情等） */
   readonly?: boolean
 }
 
 const ChannelConfig = ({ readonly }: ChannelConfigProps) => {
+  const { language } = useLanguageStore()
   const { channel, updateChannel, deleteChannel } = useDigitalHumanStore()
   const [addChannelModalOpen, setAddChannelModalOpen] = useState(false)
 
@@ -28,7 +27,7 @@ const ChannelConfig = ({ readonly }: ChannelConfigProps) => {
     setAddChannelModalOpen(true)
   }
 
-  /** 添加通道结果 */
+  /** 添加通道结果，写入 store（单通道） */
   const handleAddChannelResult = (result: DhChannelConfig) => {
     updateChannel(result)
   }
@@ -38,15 +37,26 @@ const ChannelConfig = ({ readonly }: ChannelConfigProps) => {
     return [channel]
   }, [channel])
 
+  // 通道表格列定义（名称列展示类型图标 + 本地化类型名；描述列为固定业务说明句）
   const channelColumns = useMemo(() => {
+    const typeLabel = (type: DhChannelConfig['type']) =>
+      type === 'dingtalk'
+        ? intl.get('digitalHuman.channel.typeDingtalk')
+        : intl.get('digitalHuman.channel.typeFeishu')
+
+    const channelDesc = (type: DhChannelConfig['type']) =>
+      type === 'dingtalk'
+        ? intl.get('digitalHuman.channel.descDingtalk')
+        : intl.get('digitalHuman.channel.descFeishu')
+
     const columns = [
       {
-        title: '名称',
+        title: intl.get('digitalHuman.common.columnName'),
         dataIndex: 'type',
         key: 'type',
         width: '40%',
         render: (type: DhChannelConfig['type']) => {
-          const label = CHANNEL_TYPE_LABEL[type ?? 'feishu']
+          const label = typeLabel(type ?? 'feishu')
           return (
             <div className="flex items-center gap-2 truncate">
               <img
@@ -62,20 +72,19 @@ const ChannelConfig = ({ readonly }: ChannelConfigProps) => {
         },
       },
       {
-        title: '通道描述',
+        title: intl.get('digitalHuman.channel.columnChannelDesc'),
         dataIndex: 'description',
         key: 'description',
         ellipsis: true,
-        render: (_: string, record: DhChannelConfig) =>
-          `用于在${record.type === 'dingtalk' ? '钉钉' : '飞书'}客户端接收消息，处理事务`,
+        render: (_: string, record: DhChannelConfig) => channelDesc(record.type),
       },
       {
-        title: '操作',
+        title: intl.get('digitalHuman.common.columnAction'),
         key: 'action',
         width: 80,
         render: () => (
           <Flex align="center">
-            <Tooltip title="移除">
+            <Tooltip title={intl.get('digitalHuman.common.remove')}>
               <Button
                 type="text"
                 onClick={() => deleteChannel()}
@@ -87,16 +96,16 @@ const ChannelConfig = ({ readonly }: ChannelConfigProps) => {
       },
     ]
     return readonly ? columns.slice(0, 2) : columns
-  }, [deleteChannel, readonly])
+  }, [deleteChannel, readonly, language])
 
   return (
     <ScrollBarContainer className="h-full flex flex-col p-6 relative flex-1">
       <div className="flex justify-between mb-4">
         <div className="flex flex-col gap-y-1">
-          <div className="font-medium text-[--dip-text-color]">通道接入</div>
-          <div className="text-[--dip-text-color-45]">
-            配置数字员工可接入的通信通道，如钉钉、飞书等。
+          <div className="font-medium text-[--dip-text-color]">
+            {intl.get('digitalHuman.setting.menuChannel')}
           </div>
+          <div className="text-[--dip-text-color-45]">{intl.get('digitalHuman.channel.sectionDesc')}</div>
         </div>
         {channel && !readonly && (
           <div className="flex items-end gap-x-3">
@@ -106,7 +115,7 @@ const ChannelConfig = ({ readonly }: ChannelConfigProps) => {
               variant="outlined"
               onClick={handleAddChannel}
             >
-              通道
+              {intl.get('digitalHuman.channel.addButton')}
             </Button>
           </div>
         )}
@@ -122,7 +131,7 @@ const ChannelConfig = ({ readonly }: ChannelConfigProps) => {
         scroll={{ y: 'max(246px, calc(100vh - 299px))' }}
         locale={{
           emptyText: (
-            <Empty type="empty" title="暂无通道">
+            <Empty type="empty" title={intl.get('digitalHuman.channel.emptyNoChannel')}>
               {readonly ? undefined : (
                 <Button
                   icon={<IconFont type="icon-add" />}
@@ -130,7 +139,7 @@ const ChannelConfig = ({ readonly }: ChannelConfigProps) => {
                   variant="outlined"
                   onClick={handleAddChannel}
                 >
-                  通道
+                  {intl.get('digitalHuman.channel.addButton')}
                 </Button>
               )}
             </Empty>

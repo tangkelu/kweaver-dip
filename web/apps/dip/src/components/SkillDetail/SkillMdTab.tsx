@@ -1,4 +1,5 @@
 import { memo, useEffect, useState } from 'react'
+import intl from 'react-intl-universal'
 import { getSkillFileContent } from '@/apis'
 import Empty from '@/components/Empty'
 import {
@@ -61,7 +62,7 @@ const SkillMdTab = ({ skillName }: SkillMdTabProps) => {
           ...base,
           body: '',
           loading: false,
-          error: 'SKILL.md 加载失败',
+          error: intl.get('skillDetail.skillMdLoadFailed'),
         })
         setTruncated(false)
       }
@@ -77,7 +78,7 @@ const SkillMdTab = ({ skillName }: SkillMdTabProps) => {
   if (!skillName.trim()) {
     return (
       <SkillTabStateShell>
-        <Empty type="empty" title="暂无技能" />
+        <Empty type="empty" title={intl.get('skillManagement.emptyTitle')} />
       </SkillTabStateShell>
     )
   }
@@ -89,7 +90,7 @@ const SkillMdTab = ({ skillName }: SkillMdTabProps) => {
       </div>
       {truncated ? (
         <p className="m-0 shrink-0 border-t border-[--dip-border-color] bg-[#FAFBFC] px-4 py-2 text-xs leading-5 text-[--dip-text-color-45]">
-          （内容已截断）
+          {intl.get('skillDetail.contentTruncatedHint')}
         </p>
       ) : null}
     </div>

@@ -1,12 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  buildAggregatedFileContentPart,
+  buildSanitizedMessageContentFromArray,
+  buildSanitizedMessageContentFromString,
+  collectMessageTextValues,
   buildFilteredSessionsListResult,
   buildSessionLookupParams,
   DefaultSessionsLogic,
+  extractMessageHiddenAttachments,
   findSessionByKey,
   hasMatchingSessionUserId,
   isHiddenSessionArchiveEntry,
+  normalizeAttachmentEntry,
   readSessionArchiveLookup,
   sanitizeSessionGetResultMessages,
   withDerivedTitles
@@ -120,7 +126,19 @@ describe("DefaultSessionsLogic", () => {
       messages: [
         {
           role: "user",
-          content: "hello"
+          content: [
+            {
+              type: "input_file",
+              source: {
+                type: "path",
+                path: "tmp/chat-1/a.txt"
+              }
+            },
+            {
+              type: "text",
+              text: "hello"
+            }
+          ]
         }
       ]
     });
@@ -130,7 +148,17 @@ describe("DefaultSessionsLogic", () => {
     const getChatMessages = vi.fn().mockResolvedValue({
       sessionKey: "key1",
       sessionId: "runtime-1",
-      messages: []
+      messages: [
+        {
+          role: "user",
+          content: "hello",
+          attachments: [
+            {
+              path: "tmp/chat-1/a.txt"
+            }
+          ]
+        }
+      ]
     });
     const logic = new DefaultSessionsLogic({
       listSessions: vi.fn(),
@@ -148,7 +176,24 @@ describe("DefaultSessionsLogic", () => {
     ).resolves.toEqual({
       sessionKey: "key1",
       sessionId: "runtime-1",
-      messages: []
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_file",
+              source: {
+                type: "path",
+                path: "tmp/chat-1/a.txt"
+              }
+            },
+            {
+              type: "text",
+              text: "hello"
+            }
+          ]
+        }
+      ]
     });
     expect(getChatMessages).toHaveBeenCalledWith({
       sessionKey: "key1",
@@ -403,7 +448,154 @@ describe("sessions logic helpers", () => {
       })
     ).toEqual({
       key: "k",
-      messages: [{ role: "user", content: "summary please" }]
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_file",
+              source: {
+                type: "path",
+                path: "tmp/chat-1/a.txt"
+              }
+            },
+            {
+              type: "text",
+              text: "summary please"
+            }
+          ]
+        }
+      ]
+    });
+  });
+
+  it("builds content parts from string plus attachments", () => {
+    expect(
+      buildSanitizedMessageContentFromString("hello", [
+        {
+          type: "input_file",
+          source: { type: "path", path: "tmp/chat-1/a.txt" }
+        }
+      ])
+    ).toEqual([
+      {
+        type: "input_file",
+        source: { type: "path", path: "tmp/chat-1/a.txt" }
+      },
+      {
+        type: "text",
+        text: "hello"
+      }
+    ]);
+  });
+
+  it("appends file parts to array content", () => {
+    expect(
+      buildSanitizedMessageContentFromArray(
+        [{ type: "text", text: "hello" }],
+        [
+          {
+            type: "input_file",
+            source: { type: "path", path: "tmp/chat-1/a.txt" }
+          }
+        ]
+      )
+    ).toEqual([
+      {
+        type: "input_file",
+        source: { type: "path", path: "tmp/chat-1/a.txt" }
+      },
+      { type: "text", text: "hello" }
+    ]);
+  });
+
+  it("merges multiple files into one aggregated file content part", () => {
+    expect(
+      buildAggregatedFileContentPart([
+        {
+          type: "input_file",
+          source: { type: "path", path: "tmp/chat-1/a.txt" }
+        },
+        {
+          type: "input_file",
+          source: { type: "path", path: "tmp/chat-1/b.md" }
+        }
+      ])
+    ).toEqual({
+      type: "input_files",
+      files: [
+        { type: "path", path: "tmp/chat-1/a.txt" },
+        { type: "path", path: "tmp/chat-1/b.md" }
+      ]
+    });
+  });
+
+  it("extracts hidden attachments from content parts", () => {
+    const hidden = [
+      "summary please",
+      "",
+      HIDDEN_ATTACHMENT_CONTEXT_START,
+      "ATTACHMENT_PATHS:",
+      "1. tmp/chat-1/a.txt",
+      "2. tmp/chat-1/b.md",
+      HIDDEN_ATTACHMENT_CONTEXT_END
+    ].join("\n");
+
+    expect(
+      extractMessageHiddenAttachments({
+        content: [{ type: "input_text", text: hidden }]
+      })
+    ).toEqual([
+      {
+        type: "input_file",
+        source: {
+          type: "path",
+          path: "tmp/chat-1/a.txt"
+        }
+      },
+      {
+        type: "input_file",
+        source: {
+          type: "path",
+          path: "tmp/chat-1/b.md"
+        }
+      }
+    ]);
+  });
+
+  it("reads text values from string and array message content", () => {
+    expect(collectMessageTextValues("hello")).toEqual(["hello"]);
+    expect(
+      collectMessageTextValues([
+        { type: "input_text", text: "hello" },
+        { type: "input_file", source: { type: "path", path: "tmp/chat-1/a.txt" } }
+      ])
+    ).toEqual(["hello"]);
+  });
+
+  it("normalizes one attachment entry with source.path or path", () => {
+    expect(
+      normalizeAttachmentEntry({
+        type: "input_file",
+        source: { type: "path", path: " tmp/chat-1/a.txt " }
+      })
+    ).toEqual({
+      type: "input_file",
+      source: {
+        type: "path",
+        path: "tmp/chat-1/a.txt"
+      }
+    });
+    expect(
+      normalizeAttachmentEntry({
+        path: "tmp/chat-1/b.md"
+      })
+    ).toEqual({
+      type: "input_file",
+      source: {
+        type: "path",
+        path: "tmp/chat-1/b.md"
+      }
     });
   });
 

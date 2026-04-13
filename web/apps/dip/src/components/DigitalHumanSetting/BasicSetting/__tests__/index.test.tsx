@@ -72,8 +72,8 @@ describe('DigitalHumanSetting/BasicSetting', () => {
 
     render(<BasicSetting />)
 
-    expect(screen.getByText('基本设定')).toBeInTheDocument()
-    expect(screen.getByText('定义数字员工的名称、简介和核心职责描述。')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.setting.menuBasic')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.basic.editIntro')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('请输入数字员工名称')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('请输入数字员工简介')).toBeInTheDocument()
     expect(screen.getByTestId('ad-prompt-input')).toBeInTheDocument()
@@ -96,12 +96,12 @@ describe('DigitalHumanSetting/BasicSetting', () => {
 
     render(<BasicSetting readonly />)
 
-    expect(screen.getByText('基本信息')).toBeInTheDocument()
-    expect(screen.getByText('名称')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.basic.infoSectionTitle')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.basic.fieldName')).toBeInTheDocument()
     expect(screen.getByText('测试数字员工')).toBeInTheDocument()
-    expect(screen.getByText('简介')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.basic.fieldBio')).toBeInTheDocument()
     expect(screen.getByText('这是一个测试数字员工的简介')).toBeInTheDocument()
-    expect(screen.getByText('角色设定')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.basic.fieldSoul')).toBeInTheDocument()
   })
 
   it('应该在只读模式下显示 "--" 当简介和角色设定为空时', () => {

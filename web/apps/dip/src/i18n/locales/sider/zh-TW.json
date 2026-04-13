@@ -1,0 +1,38 @@
+{
+  "sider": {
+    "chat": "會話",
+    "confirmDelete": "確認刪除",
+    "confirmDeleteCommon": "刪除後將無法恢復，是否繼續？",
+    "expand": "展開",
+    "collapse": "收起",
+    "logout": "退出登入",
+    "defaultUser": "使用者",
+    "aiStoreWenshu": "智慧問數",
+    "unpin": "取消固定",
+    "externalBusinessNetwork": "全域業務知識網路",
+    "externalSystemWorkbench": "系統工作台",
+    "systemSettings": "系統設定",
+    "workPlan": {
+      "sectionTitle": "工作計劃（{count}）",
+      "more": "更多",
+      "empty": "暫無計劃",
+      "deleteConfirmContent": "刪除計劃後，相關配置和資料將被清除，使用者將無法使用計劃。是否繼續？",
+      "deleteSuccess": "刪除成功",
+      "actionPause": "暫停",
+      "actionEnable": "啟用",
+      "actionDelete": "刪除",
+      "statusRunning": "[執行中]",
+      "statusOk": "[已完成]",
+      "statusError": "[失敗]",
+      "statusSkipped": "[已跳過]",
+      "statusDisabled": "[已暫停]",
+      "statusPending": "[待執行]"
+    },
+    "history": {
+      "sectionTitle": "歷史記錄（{count}）",
+      "more": "更多",
+      "empty": "暫無歷史記錄",
+      "deleteAria": "刪除歷史會話"
+    }
+  }
+}

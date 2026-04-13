@@ -1,9 +1,24 @@
+import intl from 'react-intl-universal'
 import type { GuideStatusResponse } from '@/apis/dip-studio/guide'
 import { getGuideStatus } from '@/apis/dip-studio/guide'
 import { usePreferenceStore } from '@/stores'
 import { BASE_PATH } from '@/utils/config'
 import { routeConfigs } from './routes'
 import type { EnabledModule, RouteConfig, RouteModule, RouteSidebarMode } from './types'
+
+/** 侧栏 / 面包屑展示用文案：`labelKey` 走 intl，否则回退 `label`（如业务菜单展开注入）或 `key` */
+export const getRouteLabel = (route: Pick<RouteConfig, 'label' | 'labelKey' | 'key'>): string => {
+  if (route.labelKey) {
+    return intl.get(route.labelKey)
+  }
+  if (route.label) {
+    return route.label
+  }
+  return route.key ?? ''
+}
+
+export const routeHasDisplayLabel = (route: Pick<RouteConfig, 'label' | 'labelKey'>): boolean =>
+  Boolean(route.labelKey || route.label)
 
 /** 缺省为 hidden，与未配置时的侧栏行为一致 */
 export const getRouteSidebarMode = (route: RouteConfig): RouteSidebarMode =>

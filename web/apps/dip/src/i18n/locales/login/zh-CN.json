@@ -1,0 +1,22 @@
+{
+  "login": {
+    "failed": {
+      "subtitle": "您当前使用的账号未绑定任何角色，无法登录",
+      "backToLogin": "返回登录页面"
+    }
+  },
+  "oauthLogin": {
+    "iframeTitle": "登录",
+    "about": {
+      "title": "关于",
+      "versionInfo": "版本信息",
+      "currentVersion": "当前版本：{version}",
+      "copyright": "版权所有 © 2011-2026 上海爱数信息技术股份有限公司"
+    },
+    "footer": {
+      "agreePrefix": "登录即表示同意",
+      "userAgreement": "用户协议",
+      "privacyPolicy": "隐私政策"
+    }
+  }
+}

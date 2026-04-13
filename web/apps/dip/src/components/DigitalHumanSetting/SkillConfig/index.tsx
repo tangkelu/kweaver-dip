@@ -1,10 +1,12 @@
 import { Button, Flex, Table, Tooltip } from 'antd'
 import { memo, useMemo, useState } from 'react'
+import intl from 'react-intl-universal'
 import type { DigitalHumanSkill } from '@/apis'
 import type { AiPromptSubmitPayload } from '@/components/DipChatKit/components/AiPromptInput/types.ts'
 import Empty from '@/components/Empty'
 import IconFont from '@/components/IconFont'
 import ScrollBarContainer from '@/components/ScrollBarContainer'
+import { useLanguageStore } from '@/stores/languageStore'
 import { DEFAULT_SKILL_ICON_COLORS, getMatchedColorByName } from '@/utils/handle-function'
 import { useDigitalHumanStore } from '../digitalHumanStore'
 import AddSkillDrawer from './AddSkillDrawer.tsx'
@@ -12,10 +14,12 @@ import styles from './index.module.less'
 import SelectSkillModal from './SelectSkillModal'
 
 interface SkillConfigProps {
+  /** 只读（非管理员详情等） */
   readonly?: boolean
 }
 
 const SkillConfig = ({ readonly }: SkillConfigProps) => {
+  const { language } = useLanguageStore()
   const { skills, deleteSkill, updateSkills, digitalHumanId } = useDigitalHumanStore()
   const [selectSkillModalOpen, setSelectSkillModalOpen] = useState(false)
   const [addSkillDrawerOpen, setAddSkillDrawerOpen] = useState(false)
@@ -23,6 +27,7 @@ const SkillConfig = ({ readonly }: SkillConfigProps) => {
   const [addSkillDrawerPayload, setAddSkillDrawerPayload] = useState<
     AiPromptSubmitPayload | undefined
   >(undefined)
+
   /** 添加技能 */
   const handleAddSkill = () => {
     setSelectSkillModalOpen(true)
@@ -45,9 +50,15 @@ const SkillConfig = ({ readonly }: SkillConfigProps) => {
 
   // 技能表格列定义
   const skillColumns = useMemo(() => {
+    const tagLabel = (record: DigitalHumanSkill) => {
+      if (record.built_in) return intl.get('digitalHuman.skill.tagBuiltin')
+      if (record.type === 'openclaw-managed') return intl.get('digitalHuman.skill.tagCustom')
+      return intl.get('digitalHuman.skill.tagOfficial')
+    }
+
     const columns = [
       {
-        title: '技能名称',
+        title: intl.get('digitalHuman.skill.colSkillName'),
         dataIndex: 'name',
         key: 'name',
         width: '28%',
@@ -65,27 +76,31 @@ const SkillConfig = ({ readonly }: SkillConfigProps) => {
               <span title={text} className="truncate">
                 {text || '--'}
               </span>
-              <span className="text-xs text-[#A0A0A9] font-normal flex-shrink-0">
-                @{record.built_in ? '内置' : record.type === 'openclaw-managed' ? '自定义' : '官方'}
-              </span>
+              <span className="text-xs text-[#A0A0A9] font-normal flex-shrink-0">@{tagLabel(record)}</span>
             </div>
           )
         },
       },
       {
-        title: '功能描述',
+        title: intl.get('digitalHuman.common.columnFunctionDesc'),
         dataIndex: 'description',
         key: 'description',
         ellipsis: true,
         render: (text: string) => text || '--',
       },
       {
-        title: '操作',
+        title: intl.get('digitalHuman.common.columnAction'),
         key: 'action',
         width: 80,
         render: (_: unknown, record: DigitalHumanSkill) => (
           <Flex align="center">
-            <Tooltip title={record.built_in ? '数字员工执行时所需的基本技能，不可移除' : '移除'}>
+            <Tooltip
+              title={
+                record.built_in
+                  ? intl.get('digitalHuman.skill.tooltipBuiltinSkill')
+                  : intl.get('digitalHuman.common.remove')
+              }
+            >
               <Button
                 type="text"
                 disabled={record.built_in}
@@ -101,16 +116,16 @@ const SkillConfig = ({ readonly }: SkillConfigProps) => {
       },
     ]
     return readonly ? columns.slice(0, 2) : columns
-  }, [readonly])
+  }, [readonly, language])
 
   return (
     <ScrollBarContainer className="h-full flex flex-col p-6">
       <div className="flex justify-between mb-4">
         <div className="flex flex-col gap-y-1">
-          <div className="font-medium text-[--dip-text-color]">技能配置</div>
-          <div className="text-[--dip-text-color-45]">
-            选择该数字员工需要具备的技能，也可通过自然语言创建新技能。
+          <div className="font-medium text-[--dip-text-color]">
+            {intl.get('digitalHuman.setting.menuSkill')}
           </div>
+          <div className="text-[--dip-text-color-45]">{intl.get('digitalHuman.skill.sectionDesc')}</div>
         </div>
         {skills.length > 0 && !readonly && (
           <div className="flex items-end gap-x-3">
@@ -120,7 +135,7 @@ const SkillConfig = ({ readonly }: SkillConfigProps) => {
               variant="outlined"
               onClick={handleAddSkill}
             >
-              技能
+              {intl.get('digitalHuman.skill.addSkillButton')}
             </Button>
           </div>
         )}
@@ -136,7 +151,7 @@ const SkillConfig = ({ readonly }: SkillConfigProps) => {
         scroll={{ y: 'max(246px, calc(100vh - 299px))' }}
         locale={{
           emptyText: (
-            <Empty type="empty" title="暂无技能">
+            <Empty type="empty" title={intl.get('digitalHuman.skill.emptyNoSkills')}>
               {readonly ? undefined : (
                 <Button
                   icon={<IconFont type="icon-add" />}
@@ -144,13 +159,14 @@ const SkillConfig = ({ readonly }: SkillConfigProps) => {
                   variant="outlined"
                   onClick={handleAddSkill}
                 >
-                  技能
+                  {intl.get('digitalHuman.skill.addSkillButton')}
                 </Button>
               )}
             </Empty>
           ),
         }}
       />
+      {/* 选择技能弹窗 */}
       <SelectSkillModal
         open={selectSkillModalOpen}
         digitalHumanId={digitalHumanId}
@@ -166,6 +182,7 @@ const SkillConfig = ({ readonly }: SkillConfigProps) => {
         onCancel={() => setSelectSkillModalOpen(false)}
         defaultSelectedSkills={skills}
       />
+      {/* 新建技能（会话）抽屉 */}
       <AddSkillDrawer
         open={addSkillDrawerOpen}
         payload={addSkillDrawerPayload ?? undefined}

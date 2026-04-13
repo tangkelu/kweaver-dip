@@ -7,6 +7,12 @@ import type {
 import { parseSession } from "../utils/session";
 import { stripHiddenAttachmentContextBlock } from "../utils/hidden-attachment-context";
 import type {
+  ChatAgentAttachment,
+  ChatAgentInputFileContentPart,
+  ChatAgentInputFilesContentPart,
+  ChatAgentInputTextContentPart
+} from "../types/chat-agent";
+import type {
   OpenClawChatHistoryParams,
   OpenClawChatHistoryResult,
   OpenClawSessionDeleteParams,
@@ -22,6 +28,7 @@ import type {
   OpenClawSessionsPreviewParams,
   OpenClawSessionsPreviewResult
 } from "../types/sessions";
+import { extractHiddenAttachmentPaths } from "../utils/hidden-attachment-context";
 
 /**
  * Application logic used to fetch sessions and message previews.
@@ -413,35 +420,287 @@ export function sanitizeSessionGetResultMessages(
 export function sanitizeSessionMessage(
   message: OpenClawSessionMessage
 ): OpenClawSessionMessage {
+  const { attachments: _attachments, ...restMessage } = message;
+  const hiddenAttachments = extractMessageHiddenAttachments(message);
+  const explicitAttachments = normalizeMessageAttachments(message.attachments);
+  const attachments = dedupeAttachments([
+    ...explicitAttachments,
+    ...hiddenAttachments
+  ]);
+
   if (typeof message.content === "string") {
     return {
-      ...message,
-      content: stripHiddenAttachmentContextBlock(message.content)
+      ...restMessage,
+      content: buildSanitizedMessageContentFromString(message.content, attachments)
     };
   }
 
   if (!Array.isArray(message.content)) {
-    return message;
+    return restMessage;
   }
 
   return {
-    ...message,
-    content: message.content.map((part: unknown) => {
-      if (typeof part !== "object" || part === null) {
-        return part;
-      }
-
-      const record = part as Record<string, unknown>;
-      if (typeof record.text !== "string") {
-        return part;
-      }
-
-      return {
-        ...record,
-        text: stripHiddenAttachmentContextBlock(record.text)
-      };
-    })
+    ...restMessage,
+    content: buildSanitizedMessageContentFromArray(message.content, attachments)
   };
+}
+
+/**
+ * Extracts attachment paths embedded in hidden context from one message.
+ *
+ * @param message Raw session message.
+ * @returns Attachment entries reconstructed from hidden context.
+ */
+export function extractMessageHiddenAttachments(
+  message: OpenClawSessionMessage
+): ChatAgentAttachment[] {
+  const textValues = collectMessageTextValues(message.content);
+  const paths = textValues.flatMap((text) => extractHiddenAttachmentPaths(text));
+
+  return dedupeAttachments(
+    paths.map((path) => ({
+      type: "input_file",
+      source: {
+        type: "path",
+        path
+      }
+    }))
+  );
+}
+
+/**
+ * Builds normalized message content from one string payload plus attachments.
+ *
+ * @param content Raw string content.
+ * @param attachments Normalized attachments.
+ * @returns String content when no attachment exists, otherwise content parts.
+ */
+export function buildSanitizedMessageContentFromString(
+  content: string,
+  attachments: ChatAgentAttachment[]
+): unknown {
+  const text = stripHiddenAttachmentContextBlock(content);
+
+  if (attachments.length === 0) {
+    return text;
+  }
+
+  return buildMessageContentParts(
+    text === ""
+      ? []
+      : [
+          {
+            type: "text",
+            text
+          }
+        ],
+    attachments
+  );
+}
+
+/**
+ * Builds normalized message content from one array payload plus attachments.
+ *
+ * @param content Raw array content.
+ * @param attachments Normalized attachments.
+ * @returns Content parts with sanitized text and appended file parts.
+ */
+export function buildSanitizedMessageContentFromArray(
+  content: unknown[],
+  attachments: ChatAgentAttachment[]
+): unknown[] {
+  const sanitizedParts = content.map((part: unknown) => sanitizeMessageContentPart(part));
+
+  if (attachments.length === 0) {
+    return sanitizedParts;
+  }
+
+  return buildMessageContentParts(sanitizedParts, attachments);
+}
+
+/**
+ * Prepends one aggregated file part to an existing content part list.
+ *
+ * @param contentParts Existing content parts.
+ * @param attachments Normalized attachments.
+ * @returns Content parts with one leading aggregated file part.
+ */
+export function buildMessageContentParts(
+  contentParts: unknown[],
+  attachments: ChatAgentAttachment[]
+): unknown[] {
+  return [
+    buildAggregatedFileContentPart(attachments),
+    ...contentParts
+  ];
+}
+
+/**
+ * Builds one aggregated file content part from normalized attachments.
+ *
+ * @param attachments Normalized attachments.
+ * @returns One multi-file content part.
+ */
+export function buildAggregatedFileContentPart(
+  attachments: ChatAgentAttachment[]
+): ChatAgentInputFileContentPart | ChatAgentInputFilesContentPart {
+  if (attachments.length === 1) {
+    return {
+      type: "input_file",
+      source: attachments[0].source
+    };
+  }
+
+  return {
+    type: "input_files",
+    files: attachments.map((attachment) => attachment.source)
+  };
+}
+
+/**
+ * Sanitizes one message content part by stripping hidden attachment hints from text.
+ *
+ * @param part Raw content part.
+ * @returns Sanitized content part.
+ */
+export function sanitizeMessageContentPart(
+  part: unknown
+): unknown {
+  if (typeof part !== "object" || part === null) {
+    return part;
+  }
+
+  const record = part as Record<string, unknown>;
+  if (typeof record.text !== "string") {
+    return part;
+  }
+
+  return {
+    ...record,
+    text: stripHiddenAttachmentContextBlock(record.text)
+  };
+}
+
+/**
+ * Collects all text payloads from one session message content field.
+ *
+ * @param content Raw message content.
+ * @returns All text values that may contain hidden attachment blocks.
+ */
+export function collectMessageTextValues(content: unknown): string[] {
+  if (typeof content === "string") {
+    return [content];
+  }
+
+  if (!Array.isArray(content)) {
+    return [];
+  }
+
+  return content.flatMap((part: unknown) => {
+    if (typeof part !== "object" || part === null) {
+      return [];
+    }
+
+    const record = part as Record<string, unknown>;
+
+    return typeof record.text === "string" ? [record.text] : [];
+  });
+}
+
+/**
+ * Normalizes one upstream attachments array to chat-agent attachment shape.
+ *
+ * @param attachments Raw message attachments field.
+ * @returns Normalized attachment list.
+ */
+export function normalizeMessageAttachments(
+  attachments: unknown
+): ChatAgentAttachment[] {
+  if (!Array.isArray(attachments)) {
+    return [];
+  }
+
+  return attachments.flatMap((entry: unknown) => {
+    const normalized = normalizeAttachmentEntry(entry);
+
+    return normalized === undefined ? [] : [normalized];
+  });
+}
+
+/**
+ * Normalizes one attachment-like object to chat-agent attachment shape.
+ *
+ * @param entry Raw attachment value from upstream.
+ * @returns Normalized attachment when a valid path can be read.
+ */
+export function normalizeAttachmentEntry(
+  entry: unknown
+): ChatAgentAttachment | undefined {
+  if (typeof entry !== "object" || entry === null) {
+    return undefined;
+  }
+
+  const record = entry as Record<string, unknown>;
+  const source =
+    typeof record.source === "object" && record.source !== null
+      ? (record.source as Record<string, unknown>)
+      : undefined;
+  const sourcePath = readAttachmentPath(
+    source?.type === "path" ? source.path : undefined
+  );
+  const directPath = readAttachmentPath(record.path);
+  const filePath = readAttachmentPath(record.filePath);
+  const attachmentPath = sourcePath ?? directPath ?? filePath;
+
+  if (attachmentPath === undefined) {
+    return undefined;
+  }
+
+  return {
+    type: "input_file",
+    source: {
+      type: "path",
+      path: attachmentPath
+    }
+  };
+}
+
+/**
+ * Reads one non-empty attachment path string.
+ *
+ * @param value Raw candidate value.
+ * @returns Trimmed path string when present.
+ */
+export function readAttachmentPath(value: unknown): string | undefined {
+  if (typeof value !== "string" || value.trim() === "") {
+    return undefined;
+  }
+
+  return value.trim();
+}
+
+/**
+ * Removes duplicate attachments while preserving their original order.
+ *
+ * @param attachments Raw attachments list.
+ * @returns Deduplicated attachments list.
+ */
+export function dedupeAttachments(
+  attachments: ChatAgentAttachment[]
+): ChatAgentAttachment[] {
+  const seen = new Set<string>();
+
+  return attachments.filter((attachment) => {
+    const key = attachment.source.path;
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+
+    return true;
+  });
 }
 
 /**

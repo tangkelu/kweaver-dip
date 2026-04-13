@@ -1,15 +1,11 @@
 import { memo, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import type { SessionSummary } from '@/apis/dip-studio/sessions'
 import { getSessionDetail } from '@/apis/dip-studio/sessions'
 import DipChatKit from '@/components/DipChatKit'
+import { getSessionTitle } from '@/components/HistoryList/utils'
 import useSyncHistorySessions from '@/hooks/useSyncHistorySessions'
 import { useBreadcrumbDetailStore } from '@/stores'
 import { useUserHistoryStore } from '@/stores/userHistoryStore'
-
-function getSessionDisplayTitle(session: SessionSummary): string {
-  return session.derivedTitle?.trim() || session.key || ''
-}
 
 const HistoryConversation = () => {
   useSyncHistorySessions()
@@ -29,7 +25,7 @@ const HistoryConversation = () => {
     if (fromList) {
       setDetailBreadcrumb({
         routeKey: 'history-item',
-        title: getSessionDisplayTitle(fromList),
+        title: getSessionTitle(fromList) || fromList.key,
       })
       return () => setDetailBreadcrumb(null)
     }
@@ -40,7 +36,7 @@ const HistoryConversation = () => {
         if (!cancelled) {
           setDetailBreadcrumb({
             routeKey: 'history-item',
-            title: getSessionDisplayTitle(detail),
+            title: getSessionTitle(detail) || detail.key,
           })
         }
       } catch {

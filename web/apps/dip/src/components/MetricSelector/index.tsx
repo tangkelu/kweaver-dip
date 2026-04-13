@@ -17,6 +17,7 @@ interface MetricSelectorProps {
   onConfirm: (metrics: Array<MetricModelType>) => void
 }
 
+/** 暂时用不上这个组件，后续如果需要可以再启用 */
 const MetricSelector = ({ initialSelectedMetrics, onCancel, onConfirm }: MetricSelectorProps) => {
   const [metricSelectorStore, setMetricSelectorStore] = useState<MetricSelectorState>({
     allMetricGroup: {

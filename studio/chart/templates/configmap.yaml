@@ -6,7 +6,5 @@ metadata:
 data:
   NODE_ENV: {{ .Values.studio.nodeEnv | quote }}
   OPENCLAW_ROOT_DIR: {{ .Values.studio.OpenClawRootDir | quote }}
-  OPENCLAW_WORKSPACE_DIR: {{ printf "%s/workspace" .Values.studio.OpenClawRootDir | quote }}
-  OPENCLAW_CONFIG_PATH: {{ printf "%s/openclaw.json" .Values.studio.OpenClawRootDir | quote }}
   KWEAVER_BASE_URL: {{ .Values.studio.KWeaverBaseURL | quote }}
   KWEAVER_HYDRA_ADMIN_URL: {{ .Values.studio.KWeaverHydraAdminURL | quote }}

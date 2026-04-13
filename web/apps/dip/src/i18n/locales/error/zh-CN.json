@@ -11,6 +11,9 @@
     "508": "服务器过载，请求处理失败。您可以稍后重试。如果长时间仍无反应，您可以联系管理员。",
     "networkError": "无法连接网络",
     "serverError": "无法连接服务器",
-    "timeoutError": "您的请求已超时"
+    "timeoutError": "您的请求已超时",
+    "pageNotFound": "哎呀！页面不在了...",
+    "noAccess": "哎呀！你没有权限访问这个页面...",
+    "serverUnavailable": "服务器出错了，请稍后再试..."
   }
 }

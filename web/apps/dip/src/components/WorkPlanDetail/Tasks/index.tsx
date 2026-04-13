@@ -2,6 +2,7 @@ import { CheckCircleFilled } from '@ant-design/icons'
 import { Spin } from 'antd'
 import { throttle } from 'lodash'
 import { memo, useEffect, useMemo, useState } from 'react'
+import intl from 'react-intl-universal'
 import { getPlanContent } from '@/apis/dip-studio/plan'
 import Empty from '@/components/Empty'
 import ScrollBarContainer from '@/components/ScrollBarContainer'
@@ -14,7 +15,7 @@ import { useTaskRuns } from './useTaskRuns'
 
 const BANNER_DISMISS_KEY = 'dip-work-plan-tasks-plan-banner-dismissed'
 const PLAN_PREVIEW_SUBPATH = 'plan.md'
-const PLAN_PREVIEW_TITLE = '计划对齐.md'
+const PLAN_PREVIEW_TITLE = intl.get('workPlan.detail.planDocTitle')
 
 function TasksPanelInner({
   planId,
@@ -70,7 +71,7 @@ function TasksPanelInner({
     if (!planIdTrimmed) {
       setPlanPreview({
         ...basePreview,
-        body: '暂无计划文档',
+        body: intl.get('workPlan.detail.noPlanDoc'),
         error: null,
       })
       return
@@ -97,7 +98,8 @@ function TasksPanelInner({
               body: '',
             })
           } else {
-            const errorMessage = error?.description || error?.message || '计划文档加载失败'
+            const errorMessage =
+              error?.description || error?.message || intl.get('workPlan.detail.planDocLoadFailed')
             setPlanPreview({
               ...basePreview,
               body: '',
@@ -117,7 +119,7 @@ function TasksPanelInner({
   if (!planId?.trim()) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center px-6">
-        <Empty title="暂无计划" />
+        <Empty title={intl.get('workPlan.detail.noPlan')} />
       </div>
     )
   }
@@ -135,7 +137,7 @@ function TasksPanelInner({
                     aria-hidden
                   />
                   <p className="m-0 min-w-0 flex-1 text-sm leading-[1.57] text-[--dip-text-color]">
-                    这里是我们一起对齐的计划文档，我已经根据我们最近的对话完成了最新校准，您可到【指令】页面随时调整。
+                    {intl.get('workPlan.detail.bannerTip')}
                   </p>
                   {/* <button
                   type="button"
@@ -169,17 +171,17 @@ function TasksPanelInner({
                 </div>
               ) : loadError && entries.length === 0 ? (
                 <div className="inset-0 flex items-center justify-center py-12">
-                  <Empty type="failed" title="加载失败" />
+                  <Empty type="failed" title={intl.get('workPlan.common.loadFailed')} />
                 </div>
               ) : (
                 <>
                   <h2 className="m-0 text-base font-bold leading-normal text-[--dip-text-color]">
-                    执行记录 · {total}
+                    {intl.get('workPlan.detail.executionRecords', { count: total })}
                   </h2>
 
                   {entries.length === 0 ? (
                     <div className="inset-0 flex justify-center py-12">
-                      <Empty title="暂无数据" />
+                      <Empty title={intl.get('workPlan.common.noData')} />
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2 pb-2">

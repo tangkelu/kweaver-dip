@@ -26,6 +26,8 @@ export interface SessionSummary {
   contextTokens: number
   /** includeDerivedTitles=true 时返回 */
   derivedTitle?: string
+  /** 显示名称 */
+  displayName?: string
 }
 
 /** 会话列表响应（SessionsListResponse） */

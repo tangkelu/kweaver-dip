@@ -18,7 +18,6 @@ import type {
 } from './types'
 
 const BASE = '/api/dip-studio/v1'
-const DEFAULT_STREAM_TIMEOUT = 600_000
 
 function cleanParams<T extends Record<string, unknown>>(obj?: T): T | undefined {
   if (!obj) return undefined
@@ -415,11 +414,8 @@ export async function* createDigitalHumanResponseSSE(
   body: DipChatKitResponseRequestBody,
   options: DipChatKitResponseSSEOptions,
 ): AsyncGenerator<DipChatKitResponseStreamChunk, void, unknown> {
-  const { sessionKey, signal, timeout = DEFAULT_STREAM_TIMEOUT } = options
+  const { sessionKey, signal } = options
   const abortController = new AbortController()
-  const timeoutId = window.setTimeout(() => {
-    abortController.abort()
-  }, timeout)
 
   const forwardAbort = () => {
     abortController.abort()
@@ -499,7 +495,6 @@ export async function* createDigitalHumanResponseSSE(
       reader.releaseLock()
     }
   } finally {
-    window.clearTimeout(timeoutId)
     signal?.removeEventListener('abort', forwardAbort)
   }
 }

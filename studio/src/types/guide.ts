@@ -12,7 +12,6 @@ export type GuideInitializationRequirement =
   | "gatewayHost"
   | "gatewayPort"
   | "gatewayToken"
-  | "workspaceDir"
   | "privateKey"
   | "publicKey";
 
@@ -59,6 +58,16 @@ export interface OpenClawDetectedConfig {
    * Gateway auth token loaded from injected environment variables.
    */
   token: string;
+
+  /**
+   * Optional KWeaver service base URL loaded from injected environment variables.
+   */
+  kweaver_base_url?: string;
+
+  /**
+   * Optional KWeaver access token loaded from injected environment variables.
+   */
+  kweaver_token?: string;
 }
 
 /**

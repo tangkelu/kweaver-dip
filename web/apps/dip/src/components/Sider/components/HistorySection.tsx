@@ -1,7 +1,9 @@
 import { DownOutlined, UpOutlined } from '@ant-design/icons'
 import clsx from 'classnames'
 import { useState } from 'react'
+import intl from 'react-intl-universal'
 import type { SessionSummary } from '@/apis/dip-studio/sessions'
+import { getSessionTitle } from '@/components/HistoryList/utils'
 import IconFont from '@/components/IconFont'
 import { formatTotalDisplay } from '../utils'
 
@@ -13,10 +15,6 @@ interface HistorySectionProps {
   onMore: () => void
   onOpenHistoryDetail: (sessionKey: string) => void
   onDeleteHistory?: (session: SessionSummary) => void
-}
-
-function getSessionTitle(session: any): string {
-  return session.derivedTitle?.trim() || session.key || ''
 }
 
 export const HistorySection = ({
@@ -38,7 +36,7 @@ export const HistorySection = ({
           className="text-xs leading-[20px] text-[--dip-text-color-45] bg-transparent border-0 p-0 cursor-pointer flex flex-1 items-center"
           onClick={() => setIsCollapsed((prev) => !prev)}
         >
-          历史记录（{formatTotalDisplay(total)}）
+          {intl.get('sider.history.sectionTitle', { count: formatTotalDisplay(total) })}
           {isCollapsed ? <UpOutlined className="text-xs" /> : <DownOutlined className="text-xs" />}
         </button>
         {hasMore ? (
@@ -50,14 +48,16 @@ export const HistorySection = ({
               onMore()
             }}
           >
-            更多
+            {intl.get('sider.history.more')}
           </button>
         ) : null}
       </div>
       {isCollapsed ? null : (
         <div className="flex flex-col gap-0.5">
           {sessions.length === 0 ? (
-            <div className="text-xs text-[--dip-text-color-45] px-2 py-2">暂无历史记录</div>
+            <div className="text-xs text-[--dip-text-color-45] px-2 py-2">
+              {intl.get('sider.history.empty')}
+            </div>
           ) : (
             sessions.map((session) => {
               const title = getSessionTitle(session)
@@ -93,7 +93,7 @@ export const HistorySection = ({
                       event.stopPropagation()
                       onDeleteHistory?.(session)
                     }}
-                    aria-label="删除历史会话"
+                    aria-label={intl.get('sider.history.deleteAria')}
                   >
                     <IconFont type="icon-trash" />
                   </button>

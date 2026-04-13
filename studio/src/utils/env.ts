@@ -1,3 +1,6 @@
+import { homedir } from "node:os";
+import { join } from "node:path";
+
 import { config as loadDotEnvConfig } from "dotenv";
 
 let hasLoadedDotEnv = false;
@@ -83,7 +86,7 @@ export function getEnv(): {
     openClawGatewayHttpUrl: resolveGatewayHttpUrl(gatewayUrl),
     openClawGatewayToken: readOptionalString(process.env.OPENCLAW_GATEWAY_TOKEN),
     openClawGatewayTimeoutMs: resolveTimeoutMs(process.env.OPENCLAW_GATEWAY_TIMEOUT_MS),
-    openClawWorkspaceDir: resolveWorkspaceDir(process.env.OPENCLAW_WORKSPACE_DIR)
+    openClawWorkspaceDir: resolveWorkspaceDir(process.env.OPENCLAW_ROOT_DIR)
   };
 }
 
@@ -284,13 +287,13 @@ export function readOptionalString(value: string | undefined): string | undefine
 }
 
 /**
- * Resolves the DIP Studio workspace root directory for legacy paths and env helpers.
+ * Resolves the OpenClaw workspace root directory from the OpenClaw root directory.
  *
- * @param value The raw environment variable value.
+ * @param value The raw OpenClaw root directory value.
  * @returns The configured workspace root directory.
  */
 export function resolveWorkspaceDir(value: string | undefined): string {
-  return readOptionalString(value) ?? "workspace";
+  return join(readOptionalString(value) ?? join(homedir(), ".openclaw"), "workspace");
 }
 
 /**

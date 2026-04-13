@@ -1,4 +1,5 @@
 import type { MenuProps } from 'antd'
+import intl from 'react-intl-universal'
 import IconFont from '@/components/IconFont'
 import { SkillManagementActionEnum } from './types'
 
@@ -9,7 +10,7 @@ export const getSkillManagementMenuItems = (
     {
       key: SkillManagementActionEnum.Delete,
       icon: <IconFont type="icon-trash" />,
-      label: '删除',
+      label: intl.get('skillManagement.delete'),
       danger: true,
       onClick: (e) => {
         e.domEvent.stopPropagation()

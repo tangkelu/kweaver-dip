@@ -1,6 +1,7 @@
 import { ExclamationCircleFilled } from '@ant-design/icons'
 import { Button, Modal, message, Spin, Tooltip } from 'antd'
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import intl from 'react-intl-universal'
 import { useNavigate } from 'react-router-dom'
 import type { DigitalHumanSkill, GetEnabledSkillsParams } from '@/apis'
 import { getEnabledSkills, uninstallSkill } from '@/apis'
@@ -68,13 +69,13 @@ const SkillsManagement = () => {
     switch (key) {
       case SkillManagementActionEnum.Delete:
         modal.confirm({
-          title: '删除技能',
+          title: intl.get('skillManagement.deleteTitle'),
           icon: <ExclamationCircleFilled />,
-          content: '删除后，技能的相关配置和数据将被清除，且无法被数字员工再次调用，请谨慎操作。',
-          okText: '确定',
+          content: intl.get('skillManagement.deleteContent'),
+          okText: intl.get('skillManagement.confirm'),
           okType: 'primary',
           okButtonProps: { danger: true },
-          cancelText: '取消',
+          cancelText: intl.get('skillManagement.cancel'),
           footer: (_, { OkBtn, CancelBtn }) => (
             <>
               <OkBtn />
@@ -84,7 +85,7 @@ const SkillsManagement = () => {
           onOk: async () => {
             try {
               await uninstallSkill(skill.name)
-              messageApi.success('删除成功')
+              messageApi.success(intl.get('skillManagement.deleteSuccess'))
               handleRefresh()
             } catch (err: any) {
               if (err?.description) {
@@ -105,9 +106,9 @@ const SkillsManagement = () => {
 
     if (error) {
       return (
-        <Empty type="failed" title="技能列表加载失败">
+        <Empty type="failed" title={intl.get('skillManagement.loadFailed')}>
           <Button type="primary" onClick={handleRefresh}>
-            重试
+            {intl.get('skillManagement.retry')}
           </Button>
         </Empty>
       )
@@ -115,17 +116,20 @@ const SkillsManagement = () => {
 
     if (skills.length === 0) {
       if (searchValue) {
-        return <Empty type="search" desc="抱歉，没有找到相关内容" />
+        return <Empty type="search" desc={intl.get('skillManagement.searchEmpty')} />
       }
       return (
-        <Empty title="暂无技能" subDesc="当前没有可用技能，可点击下方按钮导入或会话创建技能。">
+        <Empty
+          title={intl.get('skillManagement.emptyTitle')}
+          subDesc={intl.get('skillManagement.emptySubDesc')}
+        >
           <div className="flex items-center gap-x-2 mt-2">
             <Button
               type="primary"
               icon={<IconFont type="icon-add" />}
               onClick={() => setUploadModalOpen(true)}
             >
-              导入创建
+              {intl.get('skillManagement.importCreate')}
             </Button>
             <Button
               type="primary"
@@ -135,7 +139,7 @@ const SkillsManagement = () => {
                 setAddSkillDrawerOpen(true)
               }}
             >
-              会话创建
+              {intl.get('skillManagement.chatCreate')}
             </Button>
           </div>
         </Empty>
@@ -191,11 +195,18 @@ const SkillsManagement = () => {
       {messageContextHolder}
       {modalContextHolder}
       <div className="flex justify-between items-center mb-4 flex-shrink-0 z-20">
-        <span className="font-bold text-lg text-[--dip-text-color]">全部技能</span>
+        <span className="font-bold text-lg text-[--dip-text-color]">
+          {intl.get('skillManagement.allSkills')}
+        </span>
         {(hasLoadedData || searchValue) && (
           <div className="flex items-center gap-x-3">
-            <SearchInput onSearch={handleSearch} placeholder="搜索技能" />
-            <Button onClick={() => setUploadModalOpen(true)}>导入创建</Button>
+            <SearchInput
+              onSearch={handleSearch}
+              placeholder={intl.get('skillManagement.searchPlaceholder')}
+            />
+            <Button onClick={() => setUploadModalOpen(true)}>
+              {intl.get('skillManagement.importCreate')}
+            </Button>
             <Button
               type="primary"
               icon={
@@ -208,9 +219,9 @@ const SkillsManagement = () => {
                 setAddSkillDrawerOpen(true)
               }}
             >
-              会话创建
+              {intl.get('skillManagement.chatCreate')}
             </Button>
-            <Tooltip title="刷新">
+            <Tooltip title={intl.get('skillManagement.refresh')}>
               <Button type="text" icon={<IconFont type="icon-refresh" />} onClick={handleRefresh} />
             </Tooltip>
           </div>

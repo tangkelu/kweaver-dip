@@ -1,14 +1,16 @@
 import type { MenuProps } from 'antd'
 import { Menu, Popover } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
+import intl from 'react-intl-universal'
 import type { NavigateFunction } from 'react-router-dom'
 import PinIcon from '@/assets/icons/icon_pin.svg?react'
 import aiStoreUrl from '@/assets/images/sider/aiStore.svg'
 import AppIcon from '@/components/AppIcon'
 import { routeConfigs } from '@/routes/routes'
 import type { RouteConfig } from '@/routes/types'
-import { getRouteSidebarMode, isRouteVisibleForRoles } from '@/routes/utils'
+import { getRouteLabel, getRouteSidebarMode, isRouteVisibleForRoles } from '@/routes/utils'
 import { usePreferenceStore } from '@/stores'
+import { useLanguageStore } from '@/stores/languageStore'
 import { MaskIcon } from './GradientMaskIcon'
 
 const AI_STORE_SUBMENU_KEY = 'ai-store'
@@ -26,6 +28,7 @@ export const StoreMenuSection = ({
   navigate,
   roleIds = new Set<string>(),
 }: StoreMenuSectionProps) => {
+  const { language } = useLanguageStore()
   const { pinnedMicroApps, wenshuAppInfo, unpinMicroApp } = usePreferenceStore()
   const [openKeys, setOpenKeys] = useState<string[]>([AI_STORE_SUBMENU_KEY])
   const isAiStoreOpen = openKeys.includes(AI_STORE_SUBMENU_KEY)
@@ -97,7 +100,7 @@ export const StoreMenuSection = ({
           label: (
             <div className="flex justify-between items-center">
               <span className="truncate flex-1">{app.name}</span>
-              <Popover content="取消固定">
+              <Popover content={intl.get('sider.unpin')}>
                 <div className="w-6 h-6 ml-2 items-center justify-center rounded hidden flex-shrink-0 rounded text-[var(--dip-warning-color)] pin-icon hover:bg-[rgba(0,0,0,0.04)]">
                   <PinIcon
                     className="w-4 h-4"
@@ -120,7 +123,7 @@ export const StoreMenuSection = ({
     visibleSidebarRoutes.forEach((route) => {
       children.push({
         key: route.key,
-        label: route.label || route.key,
+        label: getRouteLabel(route),
         icon: route.iconUrl ? (
           <MaskIcon
             url={route.iconUrl}
@@ -168,6 +171,7 @@ export const StoreMenuSection = ({
   }, [
     isAiStoreOpen,
     isSelectionUnderAiStore,
+    language,
     navigate,
     pinnedMicroApps,
     selectedKey,

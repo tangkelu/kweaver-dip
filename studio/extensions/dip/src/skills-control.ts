@@ -22,9 +22,11 @@ import {
   readSkillFilePreview,
   resolveSkillFilePath
 } from "./skills-tree.js";
+import { registerArchiveProtocolIntegrations } from "./archive-tool.js";
 
 /** Maximum `.skill` upload size for the Gateway install route (bytes). */
 const MAX_SKILL_INSTALL_BYTES = 32 * 1024 * 1024;
+const SKILLS_MANAGE_USAGE = "Usage: /skills-manage [enable <name> | disable <name>]";
 
 /**
  * Reads the raw request body with a hard size cap.
@@ -138,6 +140,15 @@ export function registerSkillsControl(
       }
     }
   });
+
+  api.registerCommand({
+    name: "skills-manage",
+    description: "Manage agent skills (enable, disable)",
+    acceptsArgs: true,
+    handler: async (ctx: any): Promise<any> => handleSkillsManageCommand(ctx, api)
+  });
+
+  registerArchiveProtocolIntegrations(api);
 
   api.registerHttpRoute({
     path: "/v1/config/agents/skills",
@@ -546,4 +557,34 @@ function mapSkillTreeErrorStatus(code: SkillTreeError["code"]): number {
 
 function encodeDownloadFileName(fileName: string): string {
   return fileName.replace(/["\\\r\n]/g, "_");
+}
+
+async function handleSkillsManageCommand(
+  ctx: any,
+  api: OpenClawPluginApi
+): Promise<{ text: string }> {
+  const args = (ctx.args || "").trim().split(/\s+/);
+  const sub = args[0]?.toLowerCase();
+
+  if (sub === "enable" || sub === "disable") {
+    const skillName = args[1];
+    if (!skillName) {
+      return { text: `Usage: /skills-manage ${sub} <name>` };
+    }
+
+    const currentConfig = await api.runtime.config.loadConfig();
+    const nextCfg = JSON.parse(JSON.stringify(currentConfig));
+
+    if (!nextCfg.skills) nextCfg.skills = {};
+    if (!nextCfg.skills.entries) nextCfg.skills.entries = {};
+    if (!nextCfg.skills.entries[skillName]) nextCfg.skills.entries[skillName] = {};
+
+    const enabled = sub === "enable";
+    nextCfg.skills.entries[skillName].enabled = enabled;
+
+    await api.runtime.config.writeConfigFile(nextCfg);
+    return { text: `Global skill "${skillName}" is now ${enabled ? "enabled" : "disabled"}.` };
+  }
+
+  return { text: SKILLS_MANAGE_USAGE };
 }

@@ -1,9 +1,11 @@
 import type { ModalProps } from 'antd'
 import { Button, Form, Input, Modal, message } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
+import intl from 'react-intl-universal'
 import type { ChannelConfig, ChannelType } from '@/apis/dip-studio/digital-human'
 import DingDingIcon from '@/assets/icons/dingding.svg'
 import FeiShuIcon from '@/assets/icons/feishu.svg'
+import { useLanguageStore } from '@/stores/languageStore'
 
 export interface AddChannelModalProps extends Omit<ModalProps, 'onCancel' | 'onOk'> {
   /** 确定成功的回调，传递通道配置 */
@@ -12,25 +14,36 @@ export interface AddChannelModalProps extends Omit<ModalProps, 'onCancel' | 'onO
   onCancel: () => void
 }
 
-const CHANNEL_OPTIONS: Array<{
-  type: ChannelType
-  name: string
-  configTitle: string
-  icon: string
-}> = [
-  { type: 'feishu', name: '飞书机器人', configTitle: '飞书机器人配置', icon: FeiShuIcon },
-  { type: 'dingtalk', name: '钉钉机器人', configTitle: '钉钉机器人配置', icon: DingDingIcon },
-]
-
-/** 添加通道弹窗 */
+/** 添加通道弹窗（飞书 / 钉钉机器人凭证） */
 const AddChannelModal = ({ open, onOk, onCancel }: AddChannelModalProps) => {
+  const { language } = useLanguageStore()
   const [form] = Form.useForm()
   const [selectedType, setSelectedType] = useState<ChannelType>('feishu')
   const [, messageContextHolder] = message.useMessage()
 
+  /** 左侧可选通道类型（展示名与配置标题走 i18n） */
+  const channelOptions = useMemo(
+    () =>
+      [
+        {
+          type: 'feishu' as const,
+          name: intl.get('digitalHuman.channelModal.feishuBot'),
+          configTitle: intl.get('digitalHuman.channelModal.feishuConfigTitle'),
+          icon: FeiShuIcon,
+        },
+        {
+          type: 'dingtalk' as const,
+          name: intl.get('digitalHuman.channelModal.dingtalkBot'),
+          configTitle: intl.get('digitalHuman.channelModal.dingtalkConfigTitle'),
+          icon: DingDingIcon,
+        },
+      ] as const,
+    [language],
+  )
+
   const selectedOption = useMemo(() => {
-    return CHANNEL_OPTIONS.find((o) => o.type === selectedType)
-  }, [selectedType])
+    return channelOptions.find((o) => o.type === selectedType)
+  }, [channelOptions, selectedType])
 
   useEffect(() => {
     if (!open) return
@@ -50,7 +63,7 @@ const AddChannelModal = ({ open, onOk, onCancel }: AddChannelModalProps) => {
   const handleTestConnection = async () => {
     try {
       await form.validateFields()
-      message.success('连接测试通过')
+      message.success(intl.get('digitalHuman.channelModal.testConnectionOk'))
     } catch {
       // 表单校验不通过时不提示额外错误
     }
@@ -71,7 +84,7 @@ const AddChannelModal = ({ open, onOk, onCancel }: AddChannelModalProps) => {
     } catch (err: any) {
       // 表单校验失败时不额外打断
       if (err?.errorFields) return
-      message.error(err?.description || '配置失败，请稍后重试')
+      message.error(err?.description || intl.get('digitalHuman.channelModal.configFailed'))
     }
   }
 
@@ -90,7 +103,7 @@ const AddChannelModal = ({ open, onOk, onCancel }: AddChannelModalProps) => {
       >
         <div className="flex min-h-[500px] overflow-hidden rounded-md border border-[#E5E6EA]">
           <div className="flex w-[220px] flex-col gap-1 border-r border-[#E5E6EA] bg-[#FAFBFC] px-2 py-[18px]">
-            {CHANNEL_OPTIONS.map((option) => {
+            {channelOptions.map((option) => {
               const isSelected = option.type === selectedType
               return (
                 <button
@@ -122,36 +135,36 @@ const AddChannelModal = ({ open, onOk, onCancel }: AddChannelModalProps) => {
               )}
               <div>
                 <div className="text-sm leading-5 text-[rgb(0_0_0_/_85%)]">
-                  {selectedOption?.configTitle ?? '通道配置'}
+                  {selectedOption?.configTitle ?? intl.get('digitalHuman.channelModal.configFallbackTitle')}
                 </div>
                 <div className="mt-0.5 text-xs leading-[18px] text-[rgb(0_0_0_/_50%)]">
-                  请为该通道配置独立参数
+                  {intl.get('digitalHuman.channelModal.configSubtitle')}
                 </div>
               </div>
             </div>
 
             <Form form={form} layout="vertical">
               <Form.Item
-                label="API Key"
+                label={intl.get('digitalHuman.channelModal.labelApiKey')}
                 name="app_id"
-                rules={[{ required: true, message: '请输入app_id' }]}
+                rules={[{ required: true, message: intl.get('digitalHuman.channelModal.ruleAppId') }]}
               >
                 <Input
                   placeholder={
                     selectedType === 'dingtalk'
-                      ? '请输入钉钉应用 App Key'
-                      : '请输入飞书应用 App Key'
+                      ? intl.get('digitalHuman.channelModal.placeholderDingtalkAppKey')
+                      : intl.get('digitalHuman.channelModal.placeholderFeishuAppKey')
                   }
                   autoComplete="off"
                 />
               </Form.Item>
 
               <Form.Item
-                label="API Secret"
+                label={intl.get('digitalHuman.channelModal.labelApiSecret')}
                 name="app_secret"
-                rules={[{ required: true, message: '请输入app_secret' }]}
+                rules={[{ required: true, message: intl.get('digitalHuman.channelModal.ruleAppSecret') }]}
               >
-                <Input placeholder="请输入该应用 App Secret" autoComplete="off" />
+                <Input placeholder={intl.get('digitalHuman.channelModal.placeholderAppSecret')} autoComplete="off" />
               </Form.Item>
             </Form>
             <div className="flex justify-between">
@@ -164,10 +177,10 @@ const AddChannelModal = ({ open, onOk, onCancel }: AddChannelModalProps) => {
               </button>
               <div className="flex justify-end gap-2">
                 <Button type="primary" onClick={handleOk}>
-                  确定
+                  {intl.get('global.ok')}
                 </Button>
-                <Button onClick={handleReset}>重置</Button>
-                <Button onClick={onCancel}>取消</Button>
+                <Button onClick={handleReset}>{intl.get('digitalHuman.channelModal.reset')}</Button>
+                <Button onClick={onCancel}>{intl.get('global.cancel')}</Button>
               </div>
             </div>
           </div>

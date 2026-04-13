@@ -1,5 +1,6 @@
 import { message } from 'antd'
 import { useEffect, useState } from 'react'
+import intl from 'react-intl-universal'
 import { getDigitalHumanDetail, getDigitalHumanSkills } from '@/apis'
 import {
   type DigitalHumanUiMode,
@@ -116,7 +117,7 @@ export function useDigitalHumanPageLoad(
           typeof (err as { description?: unknown }).description === 'string'
             ? (err as { description: string }).description
             : undefined
-        message.error(desc || '获取数字员工详情失败')
+        message.error(desc || intl.get('digitalHuman.errors.loadDetailFailed'))
         setUiMode('view')
         reset()
       } finally {

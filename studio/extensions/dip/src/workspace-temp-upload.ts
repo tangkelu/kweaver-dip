@@ -145,26 +145,25 @@ export function sanitizeUploadFilename(rawName?: string | null): string {
 }
 
 /**
- * Builds a hash-suffixed temp filename from one original filename.
+ * Builds a stable hash segment for one upload payload.
  *
- * Example: `a.txt` -> `a_<hash>.txt`
+ * @param payload Uploaded bytes used to compute hash.
+ * @returns Hash segment used to isolate one stored upload path.
+ */
+export function buildWorkspaceTempUploadHash(payload: Buffer): string {
+  return createHash("sha256").update(payload).digest("hex").slice(0, 12);
+}
+
+/**
+ * Sanitizes one upload filename while preserving the user-facing basename.
  *
  * @param rawName Original filename hint.
- * @param payload Uploaded bytes used to compute hash.
- * @returns Hash-suffixed filename.
+ * @returns Safe stored filename.
  */
-export function buildHashedUploadFilename(
+export function buildStoredUploadFilename(
   rawName: string | null | undefined,
-  payload: Buffer
 ): string {
-  const safe = sanitizeUploadFilename(rawName);
-  const initialExt = path.extname(safe);
-  const ext = initialExt.length === 0 && safe.startsWith(".") ? safe : initialExt;
-  const baseRaw = ext.length > 0 ? safe.slice(0, -ext.length) : safe;
-  const base = baseRaw.length > 0 ? baseRaw : "upload";
-  const hash = createHash("sha256").update(payload).digest("hex").slice(0, 12);
-
-  return ext.length > 0 ? `${base}_${hash}${ext}` : `${base}_${hash}`;
+  return sanitizeUploadFilename(rawName);
 }
 
 /**
@@ -237,20 +236,21 @@ export async function writeWorkspaceTempUpload(
     throw new Error("Upload body is empty");
   }
 
-  const hashedFilename = buildHashedUploadFilename(filename, payload);
+  const storedName = buildStoredUploadFilename(filename);
+  const hashSegment = buildWorkspaceTempUploadHash(payload);
   const sessionSegment = normalizeSessionSegment(session);
   const tempBaseDir = sessionSegment === undefined
     ? path.join(workspaceDir, "tmp")
     : path.join(workspaceDir, "tmp", sessionSegment);
-  await fs.promises.mkdir(tempBaseDir, { recursive: true });
+  const targetDir = path.join(tempBaseDir, hashSegment);
+  await fs.promises.mkdir(targetDir, { recursive: true });
 
-  const storedName = hashedFilename;
-  const absolutePath = path.join(tempBaseDir, storedName);
+  const absolutePath = path.join(targetDir, storedName);
   await fs.promises.writeFile(absolutePath, payload);
 
   const relativePath = sessionSegment === undefined
-    ? path.join("tmp", storedName)
-    : path.join("tmp", sessionSegment, storedName);
+    ? path.join("tmp", hashSegment, storedName)
+    : path.join("tmp", sessionSegment, hashSegment, storedName);
 
   return {
     name: storedName,

@@ -1,0 +1,19 @@
+{
+  "routes": {
+    "home": "首頁",
+    "myApp": "應用",
+    "appStore": "應用商店",
+    "digitalHuman": "我的數位員工",
+    "skills": "技能管理",
+    "skillDetail": "技能詳情",
+    "conversation": "會話",
+    "workPlan": "工作計劃",
+    "workPlanDetail": "工作計劃詳情",
+    "history": "歷史記錄",
+    "dhSettingNew": "新建數位員工",
+    "dhSettingItem": "數位員工配置",
+    "dhDetail": "數位員工詳情",
+    "initialConfiguration": "系統初始化配置",
+    "businessNetwork": "全域業務知識網路"
+  }
+}

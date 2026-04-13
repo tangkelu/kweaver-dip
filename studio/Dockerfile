@@ -1,31 +1,35 @@
-FROM node:22-bookworm-slim AS build
+# ── Stage 1: builder ────────────────────────────────────────────
 
-WORKDIR /app
+FROM node:25.9-bookworm AS builder
 
-COPY package.json package-lock.json ./
-RUN npm ci
+WORKDIR /build
 
 COPY . .
-RUN npm run build
 
-FROM node:22-bookworm-slim AS runtime
+RUN npm config set registry https://registry.npmmirror.com \
+    && npm install -g pnpm \
+    && pnpm install \
+    && pnpm run build \
+    && pnpm prune --prod
+
+# ── Stage 2: runtime ────────────────────────────────────────────
+
+FROM node:25.9-bookworm AS runtime
 
 WORKDIR /app
 
-ENV NODE_ENV=production
+COPY --from=builder /build/package.json ./package.json
+COPY --from=builder /build/dist ./dist
+COPY --from=builder /build/assets ./assets
+COPY --from=builder /build/templates ./templates
+COPY --from=builder /build/built-in ./built-in
+COPY --from=builder /build/extensions ./extensions
+COPY --from=builder /build/scripts ./scripts
+COPY --from=builder /build/node_modules ./node_modules
 
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN ln -sf /app/node_modules/openclaw/openclaw.mjs /usr/local/bin/openclaw \
+    && chmod +x /app/scripts/docker-entrypoint.sh
 
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/assets ./assets
-COPY --from=build /app/templates ./templates
-COPY --from=build /app/built-in ./built-in
-COPY --from=build /app/extensions ./extensions
-COPY --from=build /app/scripts ./scripts
+EXPOSE 3000
 
-RUN mkdir -p /data/.openclaw/workspace
-
-EXPOSE 3100
-
-CMD ["node", "dist/server.js"]
+CMD ["/app/scripts/docker-entrypoint.sh"]

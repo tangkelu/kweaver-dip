@@ -33,6 +33,8 @@ export interface OpenClawDetectedConfig {
   host: string
   port: number
   token: string
+  kweaver_base_url?: string
+  kweaver_token?: string
 }
 
 /** 初始化请求（GuideInitializeRequest） */

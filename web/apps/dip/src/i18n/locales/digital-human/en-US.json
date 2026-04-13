@@ -1,0 +1,157 @@
+{
+  "digitalHuman": {
+    "common": {
+      "columnName": "Name",
+      "columnFunctionDesc": "Description",
+      "columnAction": "Actions",
+      "remove": "Remove"
+    },
+    "management": {
+      "searchPlaceholder": "Search digital employees",
+      "refresh": "Refresh",
+      "createShort": "New",
+      "emptySearchDesc": "Sorry, no matching results",
+      "emptyTitle": "No digital employees yet",
+      "emptySubDesc": "There are no digital employees yet. Click the button below to create your first one.",
+      "createDigitalHuman": "Create digital employee",
+      "loadFailedTitle": "Failed to load digital employees",
+      "retry": "Retry",
+      "menuEdit": "Edit",
+      "menuDelete": "Delete",
+      "deleteModalTitle": "Delete digital employee",
+      "deleteConfirmBody": "Delete digital employee __DH_NAME__? All data under this employee will be permanently deleted. This action cannot be undone.",
+      "deleteOk": "Delete",
+      "deleteCancel": "Cancel",
+      "deleteNameLabel": "Enter the digital employee name to confirm deletion:",
+      "deleteNamePlaceholder": "Enter the digital employee name",
+      "validateNameRequired": "Please enter the digital employee name",
+      "validateNameMismatch": "The name does not match",
+      "deleteSuccess": "Deleted successfully",
+      "deleteFailed": "Delete failed. Please try again later",
+      "listSectionAll": "All"
+    },
+    "detail": {
+      "tabPlan": "Work plan",
+      "tabSession": "Sessions",
+      "tabConfig": "Employee settings",
+      "updatedAtPrefix": "Updated: "
+    },
+    "setting": {
+      "menuBasic": "Basics",
+      "menuSkill": "Skills",
+      "menuKnowledge": "Knowledge",
+      "menuChannel": "Channels",
+      "createTitle": "New digital employee",
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "publish": "Publish",
+      "nameRequired": "Please enter a name",
+      "publishSuccess": "Published successfully",
+      "createSuccess": "Created successfully",
+      "publishFailed": "Publish failed"
+    },
+    "card": {
+      "noBio": "[No description]",
+      "skillsCount": "{count} skills",
+      "knowledgeCount": "{count} knowledge networks",
+      "channelCount": "{count} channels"
+    },
+    "errors": {
+      "loadDetailFailed": "Failed to load digital employee details"
+    },
+    "basic": {
+      "infoSectionTitle": "Basic information",
+      "fieldName": "Name",
+      "fieldBio": "Bio",
+      "fieldSoul": "Role",
+      "editIntro": "Define the name, bio, and core responsibilities of the digital employee.",
+      "namePlaceholder": "Enter digital employee name",
+      "bioPlaceholder": "Enter digital employee bio",
+      "soulLabel": "Role"
+    },
+    "skill": {
+      "sectionDesc": "Choose skills for this digital employee, or create new skills in natural language.",
+      "colSkillName": "Skill",
+      "tagBuiltin": "Built-in",
+      "tagCustom": "Custom",
+      "tagOfficial": "Official",
+      "tooltipBuiltinSkill": "Basic skill required at runtime; cannot be removed",
+      "emptyNoSkills": "No skills yet",
+      "addSkillButton": "Skill"
+    },
+    "skillModal": {
+      "title": "Add skills",
+      "selectedCount": "{selected}/{max} selected",
+      "sessionCreate": "Create from chat",
+      "importCreate": "Import",
+      "searchPlaceholder": "Search skills",
+      "loadFailed": "Failed to load",
+      "emptyNoSkills": "No skills yet",
+      "toggleDeselectTitle": "Click to deselect",
+      "added": "Added",
+      "add": "Add"
+    },
+    "skillUpload": {
+      "errorGeneric": "Upload failed. Please try again.",
+      "formatInvalid": "Only .zip / .skill packages are supported",
+      "sizeExceeded": "Package size cannot exceed {maxMb}MB",
+      "importDoneNoCancel": "Import finished; cannot cancel",
+      "confirmCancelTitle": "Cancel import?",
+      "confirmCancelContent": "Upload is in progress. Cancel will abort the upload. Continue?",
+      "validating": "Validating package...",
+      "dragHint": "Click or drag a file here to upload",
+      "formatAndSizeHint": ".zip / .skill packages, up to {maxMb}MB",
+      "statusVerifying": "Verifying",
+      "statusWaitImport": "Ready to import",
+      "statusImportFailed": "Import failed",
+      "importButton": "Import skill",
+      "successTitle": "Skill imported",
+      "successDesc": "Your skill was imported. You can view it in the skill list.",
+      "viewSkill": "View skill",
+      "modalTitle": "Import skill"
+    },
+    "knowledge": {
+      "sectionDesc": "Link business knowledge networks (BKN). The digital employee will answer and act using this knowledge.",
+      "emptyNoKnowledge": "No knowledge yet",
+      "addButton": "Knowledge"
+    },
+    "knowledgeModal": {
+      "title": "Add knowledge",
+      "loadFailed": "Failed to load",
+      "emptyNoKnowledge": "No knowledge yet",
+      "updatedPrefix": "Updated: ",
+      "tabAllNetworks": "All business knowledge networks"
+    },
+    "channel": {
+      "sectionDesc": "Configure channels the digital employee can use, such as DingTalk or Feishu.",
+      "columnChannelDesc": "Channel",
+      "descDingtalk": "Receive messages and handle tasks in the DingTalk client",
+      "descFeishu": "Receive messages and handle tasks in the Feishu client",
+      "typeDingtalk": "DingTalk",
+      "typeFeishu": "Feishu",
+      "emptyNoChannel": "No channels yet",
+      "addButton": "Channel"
+    },
+    "channelModal": {
+      "feishuBot": "Feishu bot",
+      "dingtalkBot": "DingTalk bot",
+      "feishuConfigTitle": "Feishu bot settings",
+      "dingtalkConfigTitle": "DingTalk bot settings",
+      "configFallbackTitle": "Channel settings",
+      "configSubtitle": "Configure parameters for this channel",
+      "labelApiKey": "API Key",
+      "labelApiSecret": "API Secret",
+      "ruleAppId": "Please enter app_id",
+      "ruleAppSecret": "Please enter app_secret",
+      "placeholderDingtalkAppKey": "DingTalk app App Key",
+      "placeholderFeishuAppKey": "Feishu app App Key",
+      "placeholderAppSecret": "App Secret for this app",
+      "testConnectionOk": "Connection test passed",
+      "configFailed": "Save failed. Please try again later.",
+      "reset": "Reset"
+    },
+    "addSkillDrawer": {
+      "newSkillTitle": "New skill"
+    }
+  }
+}

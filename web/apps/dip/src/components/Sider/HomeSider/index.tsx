@@ -1,6 +1,7 @@
 import { Modal, message, Tooltip } from 'antd'
 import clsx from 'classnames'
 import { useCallback, useEffect, useMemo } from 'react'
+import intl from 'react-intl-universal'
 import { createSearchParams, useLocation, useNavigate } from 'react-router-dom'
 import dipFavicon from '@/assets/favicons/dip.png'
 import ChatIcon from '@/assets/images/sider/chat.svg?react'
@@ -170,7 +171,7 @@ const HomeSider = ({ collapsed, onCollapse, layout = 'entry' }: HomeSiderProps) 
 
       {hasStudio ? (
         <div className={clsx('flex items-center px-1.5', collapsed ? 'h-9 my-1' : 'pb-3')}>
-          <Tooltip title={collapsed ? '会话' : ''} placement="right">
+          <Tooltip title={collapsed ? intl.get('sider.chat') : ''} placement="right">
             <button
               type="button"
               onClick={handleCreateSession}
@@ -184,7 +185,7 @@ const HomeSider = ({ collapsed, onCollapse, layout = 'entry' }: HomeSiderProps) 
               )}
             >
               <ChatIcon className="w-4 h-4" />
-              {collapsed ? '' : '会话'}
+              {collapsed ? '' : intl.get('sider.chat')}
             </button>
           </Tooltip>
         </div>
@@ -232,12 +233,12 @@ const HomeSider = ({ collapsed, onCollapse, layout = 'entry' }: HomeSiderProps) 
                 }}
                 onDeleteHistory={(session) => {
                   modal.confirm({
-                    title: '确认删除',
-                    content: '删除后将无法恢复，是否继续？',
-                    okText: '确定',
+                    title: intl.get('sider.confirmDelete'),
+                    content: intl.get('sider.confirmDeleteCommon'),
+                    okText: intl.get('global.ok'),
                     okType: 'primary',
                     okButtonProps: { danger: true },
-                    cancelText: '取消',
+                    cancelText: intl.get('global.cancel'),
                     onOk: async () => {
                       await deleteHistorySession(session.key)
                     },

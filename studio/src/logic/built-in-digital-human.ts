@@ -140,7 +140,8 @@ export class DefaultBuiltInDigitalHumanLogic implements BuiltInDigitalHumanLogic
     return definitions.map((definition) => ({
       id: definition.id,
       name: definition.name,
-      description: definition.description
+      description: definition.description,
+      created: false
     }));
   }
 

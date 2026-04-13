@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:events";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import type { NextFunction, Request, Response } from "express";
 import { describe, expect, it, vi, beforeEach, afterAll } from "vitest";
@@ -212,7 +213,7 @@ describe("errorHandler", () => {
 
     expect(response.status).toHaveBeenCalledWith(418);
     expect(response.json).toHaveBeenCalledWith({
-      code: "HTTP_418",
+      code: "DipStudio.Http418",
       description: "Diagnostic failure"
     });
   });
@@ -224,7 +225,7 @@ describe("errorHandler", () => {
 
     expect(response.status).toHaveBeenCalledWith(500);
     expect(response.json).toHaveBeenCalledWith({
-      code: "INTERNAL_SERVER_ERROR",
+      code: "DipStudio.InternalServerError",
       description: "Internal Server Error"
     });
   });
@@ -261,13 +262,16 @@ describe("errorHandler", () => {
 
 describe("resolveErrorCode", () => {
   it("maps common public error codes and falls back for unsupported status codes", () => {
-    expect(resolveErrorCode(400)).toBe("INVALID_PARAMETER");
-    expect(resolveErrorCode(401)).toBe("UNAUTHORIZED");
-    expect(resolveErrorCode(403)).toBe("FORBIDDEN");
-    expect(resolveErrorCode(404)).toBe("NOT_FOUND");
-    expect(resolveErrorCode(409)).toBe("CONFLICT");
-    expect(resolveErrorCode(500)).toBe("INTERNAL_SERVER_ERROR");
-    expect(resolveErrorCode(418)).toBe("HTTP_418");
+    expect(resolveErrorCode(400)).toBe("DipStudio.InvalidParameter");
+    expect(resolveErrorCode(401)).toBe("DipStudio.Unauthorized");
+    expect(resolveErrorCode(403)).toBe("DipStudio.Forbidden");
+    expect(resolveErrorCode(404)).toBe("DipStudio.NotFound");
+    expect(resolveErrorCode(409)).toBe("DipStudio.Conflict");
+    expect(resolveErrorCode(413)).toBe("DipStudio.PayloadTooLarge");
+    expect(resolveErrorCode(500)).toBe("DipStudio.InternalServerError");
+    expect(resolveErrorCode(502)).toBe("DipStudio.UpstreamServiceError");
+    expect(resolveErrorCode(504)).toBe("DipStudio.UpstreamTimeout");
+    expect(resolveErrorCode(418)).toBe("DipStudio.Http418");
   });
 });
 
@@ -933,14 +937,17 @@ describe("gateway env helpers", () => {
     expect(() => resolveTimeoutMs("0")).toThrow(
       "Invalid OPENCLAW_GATEWAY_TIMEOUT_MS value: 0"
     );
-    expect(resolveWorkspaceDir(undefined)).toBe("workspace");
-    expect(resolveWorkspaceDir("./custom-workspace")).toBe("./custom-workspace");
+    expect(resolveWorkspaceDir(undefined)).toBe(
+      join(process.env.HOME ?? "", ".openclaw", "workspace")
+    );
+    expect(resolveWorkspaceDir("./custom-root")).toBe("custom-root/workspace");
   });
 });
 
 describe("getEnv", () => {
   it("reads HTTP and OpenClaw environment variables", () => {
     delete process.env.OPENCLAW_GATEWAY_URL;
+    delete process.env.OPENCLAW_ROOT_DIR;
     delete process.env.KWEAVER_BASE_URL;
     delete process.env.KWEAVER_TOKEN;
     delete process.env.KWEAVER_HYDRA_ADMIN_URL;
@@ -963,7 +970,7 @@ describe("getEnv", () => {
       openClawGatewayHttpUrl: "http://127.0.0.1:19001/",
       openClawGatewayToken: undefined,
       openClawGatewayTimeoutMs: 6000,
-      openClawWorkspaceDir: resolveWorkspaceDir(process.env.OPENCLAW_WORKSPACE_DIR)
+      openClawWorkspaceDir: resolveWorkspaceDir(process.env.OPENCLAW_ROOT_DIR)
     });
   });
 
@@ -974,7 +981,7 @@ describe("getEnv", () => {
       forceReload: true
     });
     process.env.OPENCLAW_GATEWAY_URL = "wss://gateway.example.com/ws";
-    process.env.OPENCLAW_WORKSPACE_DIR = "./openclaw-workspace";
+    process.env.OPENCLAW_ROOT_DIR = "./openclaw-root";
     process.env.KWEAVER_BASE_URL = "https://core.example.com";
     process.env.KWEAVER_TOKEN = "token-1";
     process.env.KWEAVER_HYDRA_ADMIN_URL = "https://hydra.example.com/admin";
@@ -989,7 +996,7 @@ describe("getEnv", () => {
       oauthMockUserId: "user-dev",
       openClawGatewayUrl: "wss://gateway.example.com/ws",
       openClawGatewayHttpUrl: "https://gateway.example.com/ws",
-      openClawWorkspaceDir: "./openclaw-workspace"
+      openClawWorkspaceDir: "openclaw-root/workspace"
     });
   });
 });

@@ -34,7 +34,7 @@ describe('Sider/WorkPlanSection', () => {
         onDeletePlan={async () => true}
       />,
     )
-    expect(screen.getByText('暂无计划')).toBeInTheDocument()
+    expect(screen.getByText('sider.workPlan.empty')).toBeInTheDocument()
   })
 
   it('点击更多与计划项触发对应回调，并显示状态文案', () => {
@@ -66,9 +66,9 @@ describe('Sider/WorkPlanSection', () => {
       />,
     )
 
-    expect(screen.getByText('[执行中]')).toBeInTheDocument()
+    expect(screen.getByText('sider.workPlan.statusRunning')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByText('更多'))
+    fireEvent.click(screen.getByText('sider.workPlan.more'))
     expect(onMore).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByTitle('计划一'))

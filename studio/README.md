@@ -56,7 +56,9 @@
 }
 ```
 
-## 生产模式
+## 生产模式（ OpenClaw 主机部署）
+
+以下步骤适用于 OpenClaw 部署在主机，Studio 服务部署在 K8s 服务中
 
 ### 准备
 
@@ -91,17 +93,198 @@ Approved cc8d2143cf8fcd04161ade9e5161006c410a0bee65f835e2629792aa584bb119 (3ef17
 
 4. 访问 DIP 首页进行登录和使用。
 
+## 生产模式（OpenClaw + Studio 容器化）
+
+以下模式适用 OpenClaw 和 Studio 服务部署在同一个容器镜像中。OpenClaw 固定为 v2026.3.11 版本，您可以通过修改 `pakcage.json` 中的 `dependencies.openclaw` 并修改代码来兼容更新版本。
+
+### Docker build
+
+1. 执行 docker build 来构建镜像，`platform` 根据实际需要填写。
+
+```bash
+docker buildx build \
+  --progress=plain \                    
+  --platform linux/arm64,linux/amd64 \
+  --load \        
+  -t dip-studio:0.4.0 \
+  .                        
+```
+
+2. 启动容器。
+
+- 3000 端口是 Studio 服务端口，18789 端口是 OpenClaw 默认端口。
+- `/data/.openclaw/` 用于挂载 OpenClaw 主目录到容器内（请根据实际情况选择本地路径）
+- `/data/.env` 用于挂载 Studio 环境变量配置到容器内（请根据实际情况选择本地路径）
+
+```bash
+docker run \
+  -d \
+  --restart unless-stopped \
+  -v /data/.openclaw:/root/.openclaw \
+  -v /data/.env:/app/.env \
+  -p 3000:3000 \
+  -p 18789:18789 \
+  dip-studio:0.4.0
+```
+
+3. 复制 `container_id`
+
+4. 进入容器
+
+```bash
+docker exec -it <container_id> /bin/bash
+```
+
+5. 初始化 OpenClaw。`openclaw.json` 会持久化到挂在到容器内的 OpenClaw 主目录
+
+```bash
+openclaw onboard
+```
+
+6. 安装 extensions 
+
+```bash
+openclaw plugins install /app/extensions/dip
+```
+
 ## Studio Web
 
 DIP 数字员工 Web 界面
 
-GitHub：https://github.com/kweaver-ai/web
-
-请参考 [`apps/dip`](https://github.com/kweaver-ai/web/tree/main/apps/dip) 下的 README.md 安装 Web 界面
+请参考 [`web/apps/dip`](https://github.com/kweaver-ai/kweaver-dip/tree/main/web/apps/dip) 下的 README.md 安装 Web 界面
 
 ## API
 
 除白名单接口外，所有接口都需要在请求头中携带 `Authorization: Bearer <access-token>`。服务端会通过 Hydra `/admin/oauth2/introspect` 做令牌内省；在 `NODE_ENV=development` 时，会跳过 Hydra，改为使用 `.env` 中的 `OAUTH_MOCK_USER_ID` 作为鉴权用户。
+
+### 错误响应规范
+
+所有接口的错误响应统一使用如下 JSON 结构：
+
+```json
+{
+  "code": "DipStudio.SkillBadLayout",
+  "description": "SKILL.md is missing required front matter metadata",
+  "solution": "补充合法的 front matter，并确保包含 name 字段",
+  "detail": {
+    "upstream": {
+      "service": "openclaw",
+      "operation": "skills.install",
+      "httpStatus": 400,
+      "code": "BAD_LAYOUT"
+    }
+  },
+  "link": "https://example.internal/docs/errors#DipStudio.SkillBadLayout"
+}
+```
+
+字段约束如下：
+
+| 字段 | 是否必填 | 说明 |
+| -- | -- | -- |
+| `code` | 是 | Studio 对外稳定业务错误码，供前端和调用方判断 |
+| `description` | 是 | 人类可读的错误描述 |
+| `solution` | 否 | 建议的处理方式 |
+| `detail` | 否 | 排障细节，不作为前端主判断依据 |
+| `link` | 否 | 错误帮助文档链接 |
+
+约束如下：
+
+- 前端必须优先依赖 `code` 做分支判断，不得依赖 `description`
+- 上游原始错误码只能放在 `detail.upstream.code`，不直接作为 Studio 稳定公共错误码
+- 未识别的异常允许使用兜底码，但新增接口和新增映射必须优先使用稳定业务错误码
+
+### 错误码命名规范
+
+错误码统一使用大驼峰，并采用以下格式：
+
+`ServiceName.ErrorCode`
+
+当前服务统一使用 `DipStudio` 作为 `ServiceName`。
+
+示例：
+
+- `DipStudio.InvalidParameter`
+- `DipStudio.Unauthorized`
+- `DipStudio.SkillBadLayout`
+- `DipStudio.SkillAlreadyExists`
+- `DipStudio.UpstreamTimeout`
+
+命名要求如下：
+
+- `ErrorCode` 必须使用大驼峰
+- `ErrorCode` 必须表达稳定语义，不直接暴露上游实现细节
+- 上游的原始错误码如 `BAD_LAYOUT`、`CONFLICT` 仅保留在 `detail.upstream.code`
+
+### HTTP 状态码使用规则
+
+客户端可修复的请求错误应返回 4xx：
+
+- `400`：参数非法、请求体格式错误、业务校验失败
+- `401`：未认证、认证失败
+- `403`：无权限
+- `404`：资源不存在
+- `409`：资源冲突
+- `413`：请求体过大
+
+服务端或上游异常应返回 5xx：
+
+- `500`：Studio 内部未预期错误
+- `502`：上游服务异常、响应不可解析、连接失败
+- `504`：上游请求超时
+
+规则如下：
+
+- 上游明确返回业务错误时，Studio 应尽量透传对应语义，不应统一包装为 `502`
+- 上游连接失败、TLS、DNS、协议错误、不可解析响应等，应映射为 `DipStudio.Upstream*` 系列错误码
+
+### 系统错误码列表
+
+以下列表为当前系统维护的稳定错误码。新增错误码时，必须同步更新本节。
+
+#### 通用错误码
+
+| HTTP 状态 | 错误码 | 说明 |
+| -- | -- | -- |
+| 400 | `DipStudio.InvalidParameter` | 参数非法、缺失或格式不符合要求 |
+| 401 | `DipStudio.Unauthorized` | 未认证或认证失败 |
+| 403 | `DipStudio.Forbidden` | 已认证但无权限执行 |
+| 404 | `DipStudio.NotFound` | 目标资源不存在 |
+| 409 | `DipStudio.Conflict` | 资源状态冲突 |
+| 413 | `DipStudio.PayloadTooLarge` | 请求体超过限制 |
+| 500 | `DipStudio.InternalServerError` | Studio 内部异常 |
+| 502 | `DipStudio.UpstreamServiceError` | 上游服务异常或返回非预期错误 |
+| 502 | `DipStudio.UpstreamUnavailable` | 上游不可达、连接失败或网络异常 |
+| 502 | `DipStudio.UpstreamBadResponse` | 上游返回体不可解析或不符合约定 |
+| 504 | `DipStudio.UpstreamTimeout` | 上游请求超时 |
+
+#### 技能安装错误码
+
+适用于 `POST /api/dip-studio/v1/skills/install`：
+
+| 上游 HTTP | 上游 code | Studio HTTP | Studio 错误码 | 说明 |
+| -- | -- | -- | -- | -- |
+| 400 | `BAD_LAYOUT` | 400 | `DipStudio.SkillBadLayout` | 技能包目录结构不合法 |
+| 400 | `MISSING_SKILL_MD` | 400 | `DipStudio.SkillMissingSkillMd` | 缺少 `SKILL.md` |
+| 400 | `INVALID_ZIP` | 400 | `DipStudio.SkillInvalidPackage` | 上传包不是合法 ZIP 或解压失败 |
+| 400 | `INVALID_NAME` | 400 | `DipStudio.SkillInvalidName` | 技能名称不合法 |
+| 400 | `BAD_FRONT_MATTER` | 400 | `DipStudio.SkillBadFrontMatter` | `SKILL.md` front matter 非法 |
+| 409 | `CONFLICT` | 409 | `DipStudio.SkillAlreadyExists` | 技能已存在且未允许覆盖 |
+| 413 | `TOO_LARGE` | 413 | `DipStudio.SkillPackageTooLarge` | 上传包超出限制 |
+| 401 | 任意 | 401 | `DipStudio.UpstreamUnauthorized` | 调用网关时认证失败 |
+| 403 | 任意 | 403 | `DipStudio.UpstreamForbidden` | 网关拒绝当前调用 |
+| 5xx | 任意 | 502 | `DipStudio.UpstreamServiceError` | 网关或插件内部错误 |
+| 无响应 | 超时 | 504 | `DipStudio.UpstreamTimeout` | 上游请求超时 |
+| 无响应 | 连接失败 | 502 | `DipStudio.UpstreamUnavailable` | 网络连接失败 |
+| 非 JSON | 任意 | 502 | `DipStudio.UpstreamBadResponse` | 上游返回体无法按约定解析 |
+
+维护要求如下：
+
+- 新增公开错误码时，必须同步更新本 README 中的“系统错误码列表”
+- 若错误码含义发生变化，必须同步修改说明和涉及的接口文档
+- 若路由新增了明确业务错误码，需同时更新对应 OpenAPI 文档
+
+完整规范可参考 [docs/references/error-codes.md](/Users/yannan/work/aishu/kweaver-dip/studio/docs/references/error-codes.md)。
 
 ### 数字员工
 
@@ -117,7 +300,7 @@ GitHub：https://github.com/kweaver-ai/web
 | -- | -- | -- |
 | state | string | 初始化状态，枚举值：`ready`、`pending` |
 | ready | boolean | 是否已完成初始化 |
-| missing | string[] | 当前缺失的初始化项，可能值包括 `envFile`、`gatewayProtocol`、`gatewayHost`、`gatewayPort`、`gatewayToken`、`workspaceDir`、`privateKey`、`publicKey` |
+| missing | string[] | 当前缺失的初始化项，可能值包括 `envFile`、`gatewayProtocol`、`gatewayHost`、`gatewayPort`、`gatewayToken`、`privateKey`、`publicKey` |
 
 `GET /api/dip-studio/v1/guide/openclaw-config`
 
@@ -129,6 +312,8 @@ GitHub：https://github.com/kweaver-ai/web
 | host | string | OpenClaw Gateway 主机地址 |
 | port | integer | OpenClaw Gateway 端口 |
 | token | string | 从运行时注入环境变量中读取的 Gateway Token |
+| kweaver_base_url | string | 从运行时注入环境变量中读取的 KWeaver 服务地址，未配置时为空 |
+| kweaver_token | string | 从运行时注入环境变量中读取的 KWeaver Token，未配置时为空 |
 
 错误响应：`500`、`502`
 
@@ -238,6 +423,7 @@ GitHub：https://github.com/kweaver-ai/web
 | [\].id | string | 预置数字员工模板 ID |
 | [\].name | string | 预置数字员工名称 |
 | [\].description | string | 预置数字员工描述，可选 |
+| [\].created | boolean | 是否已存在同 ID 的数字员工 |
 
 #### 创建或更新预置数字员工
 
@@ -377,7 +563,7 @@ GitHub：https://github.com/kweaver-ai/web
 
 前端示例：`form.append("file", fileBlob, "my-skill.skill")`（可用文件名代替显式 `skillName`）；覆盖时 `form.append("overwrite", "true")`；覆盖默认推导 id 时 `form.append("skillName", "other-id")`。
 
-> ⚠️ `SKILL.md` 中 front matter 的 `name` 字段必须与 `skillName`/目录名完全一致，否则安装会被拒绝。
+> ⚠️ `SKILL.md` 必须包含 front matter 元数据头，其中 `name` 字段必须与 `skillName`/目录名完全一致，否则安装会被拒绝。
 
 响应：`200 application/json`
 
@@ -633,7 +819,7 @@ GitHub：https://github.com/kweaver-ai/web
 | 参数 | 类型 | 是否必填 | 说明 |
 | -- | -- | -- | -- |
 | input | string \| MessageItem[] | 是 | OpenResponse 风格输入；当前服务会从中提取最后一条 `role=user` 的文本消息，或直接使用字符串 |
-| attachments | ChatAttachment[] | 否 | 附件数组。若包含文件，需先调用 `POST /api/dip-studio/v1/chat/upload` 拿到 `path`，再在此处传入 |
+| attachments | ChatAttachment[] | 否 | 附件数组。若包含文件，需先调用 `POST /api/dip-studio/v1/chat/upload` 拿到 `path`；其中 `name` 用于展示，`path` 用于实际引用 |
 
 `ChatAttachment` 字段：
 
@@ -683,15 +869,16 @@ If any file cannot be read, explicitly report which path failed and why.
 
 | 字段 | 类型 | 是否必填 | 说明 |
 | -- | -- | -- | -- |
-| file | binary | 是 | 本地文件二进制内容（字段名固定为 `file`） |
+| file | binary | 是 | 本地文件二进制内容（字段名固定为 `file`）；服务端会修正常见的 multipart UTF-8 中文文件名乱码 |
 
 响应：`200 application/json`
 
 | 参数 | 类型 | 说明 |
 | -- | -- | -- |
-| path | string | 工作区相对路径，用于后续 `POST /api/dip-studio/v1/chat/agent` 的 `attachments[].path` |
+| name | string | 原始文件名，供前端展示 |
+| path | string | 内部存储路径，用于后续 `POST /api/dip-studio/v1/chat/agent` 的 `attachments[].path` |
 
-推荐调用顺序：先调用 `POST /api/dip-studio/v1/chat/upload` 上传文件并拿到 `path`，再调用 `POST /api/dip-studio/v1/chat/agent` 发起对话。
+推荐调用顺序：先调用 `POST /api/dip-studio/v1/chat/upload` 上传文件并拿到 `name + path`，前端展示 `name`，再将 `path` 传给 `POST /api/dip-studio/v1/chat/agent` 发起对话。
 
 #### 获取会话消息详情
 
@@ -709,6 +896,7 @@ If any file cannot be read, explicitly report which path failed and why.
 响应：`200 application/json`
 
 返回指定 Chat 会话的历史消息详情，底层通过 OpenClaw WebSocket `chat.history` 获取。
+若消息中包含通过 `POST /api/dip-studio/v1/chat/upload` 上传并随 `POST /api/dip-studio/v1/chat/agent` 发送的附件，响应里的 `messages[].content` 会补齐为数组。单个附件时首项为 `{ type: "input_file", source: { type: "path", path } }`；多个附件时首项为 `{ type: "input_files", files: [{ type: "path", path }, ...] }`。
 
 #### 获取会话消息详情
 
@@ -725,6 +913,7 @@ If any file cannot be read, explicitly report which path failed and why.
 响应：`200 application/json`
 
 返回指定会话的完整消息详情。该接口内部复用 `GET /api/dip-studio/v1/chat/messages` 的消息查询逻辑，但保持原有路径参数与响应结构不变。
+当消息存在上传附件时，`messages[].content` 同样会在第一项返回标准化后的附件内容项。
 
 说明：会话历史响应会自动过滤上述隐藏附件上下文模板，不会返回给前端展示。
 

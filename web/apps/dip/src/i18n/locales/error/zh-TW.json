@@ -11,6 +11,9 @@
     "508": "伺服器過載，請求處理失敗。您可以稍後重試。如果長時間仍無反應，您可以聯絡管理員。",
     "networkError": "無法連線至網絡",
     "serverError": "無法連接伺服器",
-    "timeoutError": "您的請求已逾時"
+    "timeoutError": "您的請求已逾時",
+    "pageNotFound": "哎呀！頁面不見了...",
+    "noAccess": "哎呀！您沒有權限存取這個頁面...",
+    "serverUnavailable": "伺服器發生錯誤，請稍後再試..."
   }
 }

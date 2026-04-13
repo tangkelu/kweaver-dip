@@ -1,4 +1,4 @@
-﻿import isString from 'lodash/isString'
+import isString from 'lodash/isString'
 import intl from 'react-intl-universal'
 import type { DipChatKitAnswerEvent, DipChatKitPreviewPayload } from '../../../../types'
 import type { DipChatKitToolCardItem } from './types'
@@ -271,16 +271,21 @@ const findJsonObjectEndIndex = (text: string, startIndex: number): number => {
   return -1
 }
 
-const extractThinkingTextFromJson = (jsonText: string): string => {
+const tryParseThinkingJson = (jsonText: string): { thinking: string } | null => {
   const parsed = parseJsonRecord(jsonText)
-  if (!parsed) return ''
+  if (!parsed) return null
   if (normalizeMarkdownText(parsed.type).trim().toLowerCase() !== THINKING_TYPE) {
-    return ''
+    return null
   }
 
   const rawThinking = parsed.thinking
-  if (typeof rawThinking !== 'string') return ''
-  return rawThinking.trim()
+  const thinking = typeof rawThinking === 'string' ? rawThinking.trim() : ''
+  return { thinking }
+}
+
+const findPreviousOpeningBraceIndex = (source: string, objectStart: number): number => {
+  if (objectStart <= 0) return -1
+  return source.lastIndexOf('{', objectStart - 1)
 }
 
 const extractThinkingFromJsonObjects = (
@@ -303,20 +308,22 @@ const extractThinkingFromJsonObjects = (
       if (objectEnd < 0) break
 
       if (objectEnd < typeIndex) {
-        objectStart = text.lastIndexOf('{', objectStart - 1)
+        objectStart = findPreviousOpeningBraceIndex(text, objectStart)
         continue
       }
 
       const jsonText = text.slice(objectStart, objectEnd + 1)
-      const thinkingText = extractThinkingTextFromJson(jsonText)
-      if (thinkingText) {
-        thinkingParts.push(thinkingText)
+      const thinkingPayload = tryParseThinkingJson(jsonText)
+      if (thinkingPayload) {
+        if (thinkingPayload.thinking) {
+          thinkingParts.push(thinkingPayload.thinking)
+        }
         text = `${text.slice(0, objectStart)}${text.slice(objectEnd + 1)}`
         handled = true
         break
       }
 
-      objectStart = text.lastIndexOf('{', objectStart - 1)
+      objectStart = findPreviousOpeningBraceIndex(text, objectStart)
     }
 
     if (!handled) {

@@ -2,6 +2,7 @@ import { EllipsisOutlined, ExclamationCircleFilled } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 import { Dropdown, Modal, message, Tabs } from 'antd'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import intl from 'react-intl-universal'
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { getDigitalHumanDetail } from '@/apis/dip-studio/digital-human'
 import { type CronJob, getCronJob } from '@/apis/dip-studio/plan'
@@ -106,7 +107,7 @@ const WorkPlanDetail = () => {
         ? [
             {
               key: 'breadcrumb-digital-human-mgmt',
-              name: '我的数字员工',
+              name: intl.get('routes.digitalHuman'),
               path: '/studio/digital-human',
             },
             {
@@ -158,13 +159,13 @@ const WorkPlanDetail = () => {
   const handleDeletePlan = useCallback(() => {
     if (!workPlanId) return
     modal.confirm({
-      title: '确认删除',
+      title: intl.get('workPlan.common.deleteConfirmTitle'),
       icon: <ExclamationCircleFilled />,
-      content: '删除计划后，相关配置和数据将被清除，用户将无法使用计划。是否继续？',
-      okText: '确定',
+      content: intl.get('workPlan.common.deleteConfirmContent'),
+      okText: intl.get('global.ok'),
       okType: 'primary',
       okButtonProps: { danger: true },
-      cancelText: '取消',
+      cancelText: intl.get('global.cancel'),
       footer: (_, { OkBtn, CancelBtn }) => (
         <>
           <OkBtn />
@@ -174,7 +175,7 @@ const WorkPlanDetail = () => {
       onOk: async () => {
         const success = await deletePlan(workPlanId)
         if (success) {
-          messageApi.success('删除成功')
+          messageApi.success(intl.get('workPlan.common.deleteSuccess'))
           handleBack()
         }
       },
@@ -186,7 +187,7 @@ const WorkPlanDetail = () => {
     return [
       {
         key: currentPlan?.enabled ? 'pause' : 'resume',
-        label: currentPlan?.enabled ? '暂停' : '启动',
+        label: currentPlan?.enabled ? intl.get('workPlan.common.pause') : intl.get('workPlan.common.start'),
         onClick: async () => {
           if (!workPlanId) return
           if (currentPlan?.enabled) {
@@ -204,14 +205,14 @@ const WorkPlanDetail = () => {
       },
       {
         key: 'edit',
-        label: '编辑',
+        label: intl.get('workPlan.common.edit'),
         onClick: () => {
           setEditModalOpen(true)
         },
       },
       {
         key: 'delete',
-        label: '删除',
+        label: intl.get('workPlan.common.delete'),
         danger: true,
         onClick: () => {
           handleDeletePlan()
@@ -232,17 +233,17 @@ const WorkPlanDetail = () => {
     () => [
       {
         key: 'results' satisfies WorkPlanDetailTab,
-        label: '成果',
+        label: intl.get('workPlan.detail.results'),
         icon: <IconFont type="icon-doclib" />,
       },
       {
         key: 'tasks' satisfies WorkPlanDetailTab,
-        label: '执行',
+        label: intl.get('workPlan.detail.execution'),
         icon: <IconFont type="icon-taskplanning" />,
       },
       {
         key: 'conversation' satisfies WorkPlanDetailTab,
-        label: '指令',
+        label: intl.get('workPlan.detail.instructions'),
         icon: <IconFont type="icon-dialog" />,
       },
     ],
@@ -262,7 +263,7 @@ const WorkPlanDetail = () => {
             type="button"
             onClick={handleBack}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[--dip-text-color]"
-            aria-label="返回"
+            aria-label={intl.get('workPlan.common.back')}
           >
             <IconFont type="icon-left" />
           </button>
@@ -275,7 +276,7 @@ const WorkPlanDetail = () => {
                 {currentPlan?.name || '--'}
               </span>
               <span className="text-xs text-[--dip-text-color-65] truncate">
-                数字员工：{digitalHumanName}
+                {intl.get('workPlan.detail.dhPrefix', { name: digitalHumanName })}
               </span>
             </div>
           </div>

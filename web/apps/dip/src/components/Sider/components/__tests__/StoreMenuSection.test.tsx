@@ -43,6 +43,7 @@ vi.mock('@/routes/routes', () => ({
 vi.mock('@/routes/utils', () => ({
   getRouteSidebarMode: () => 'menu',
   isRouteVisibleForRoles: () => true,
+  getRouteLabel: (route: { label?: string; key?: string }) => route.label || route.key || '',
 }))
 vi.mock('@/stores', () => ({
   usePreferenceStore: () => ({
@@ -76,11 +77,11 @@ describe('Sider/StoreMenuSection', () => {
     )
 
     expect(screen.getByText('AI Store')).toBeInTheDocument()
-    expect(screen.getByText('智能问数')).toBeInTheDocument()
+    expect(screen.getByText('sider.aiStoreWenshu')).toBeInTheDocument()
     expect(screen.getByText('应用1')).toBeInTheDocument()
     expect(screen.getByText('商店路由')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByText('智能问数'))
+    fireEvent.click(screen.getByText('sider.aiStoreWenshu'))
     expect(navigate).toHaveBeenCalledWith('/application/ws')
 
     fireEvent.click(screen.getByText('商店路由'))

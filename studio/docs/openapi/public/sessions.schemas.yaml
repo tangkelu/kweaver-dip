@@ -132,7 +132,37 @@ components:
         role:
           type: string
         content:
-          description: 消息内容，结构随上游返回
+          description: 消息内容；存在附件时会补齐为数组，首项为 `input_file` 或 `input_files`，其后为原文本内容项
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                oneOf:
+                  - $ref: './responses.schemas.yaml#/components/schemas/ChatAgentInputTextContentPart'
+                  - $ref: './responses.schemas.yaml#/components/schemas/ChatAgentAttachment'
+                  - type: object
+                    additionalProperties: false
+                    properties:
+                      type:
+                        type: string
+                        const: input_files
+                      files:
+                        type: array
+                        items:
+                          type: object
+                          additionalProperties: false
+                          properties:
+                            type:
+                              type: string
+                              const: path
+                            path:
+                              type: string
+                          required:
+                            - type
+                            - path
+                    required:
+                      - type
+                      - files
         ts:
           type: integer
       additionalProperties: true

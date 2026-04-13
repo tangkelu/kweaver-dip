@@ -53,6 +53,16 @@ export interface OpenClawChatSendParams {
 }
 
 /**
+ * Internal request payload used by the chat agent stream orchestration.
+ */
+export interface OpenClawChatAgentStreamParams extends OpenClawChatSendParams {
+  /**
+   * Optional session label used only when the current request starts a new session.
+   */
+  sessionLabel?: string;
+}
+
+/**
  * Payload sent to OpenClaw `sessions.patch`.
  */
 export interface OpenClawSessionPatchParams {
@@ -65,6 +75,11 @@ export interface OpenClawSessionPatchParams {
    * Session-level verbosity used to expose tool events.
    */
   verboseLevel: "full";
+
+  /**
+   * Optional session label displayed by OpenClaw.
+   */
+  label?: string;
 }
 
 /**
@@ -130,7 +145,7 @@ export interface OpenClawChatAgentClient {
    * @returns The downstream SSE result.
    */
   createResponseStream(
-    request: OpenClawChatSendParams,
+    request: OpenClawChatAgentStreamParams,
     agentId: string,
     signal?: AbortSignal
   ): Promise<OpenClawChatAgentStreamResult>;
@@ -373,7 +388,7 @@ export class DefaultOpenClawChatAgentClient implements OpenClawChatAgentClient {
    * @returns The downstream SSE result.
    */
   public async createResponseStream(
-    request: OpenClawChatSendParams,
+    request: OpenClawChatAgentStreamParams,
     agentId: string,
     signal?: AbortSignal
   ): Promise<OpenClawChatAgentStreamResult> {
@@ -642,7 +657,7 @@ export class DefaultOpenClawChatAgentClient implements OpenClawChatAgentClient {
               JSON.stringify(
                 createSessionsPatchRequest(
                   sessionPatchRequestId,
-                  createSessionPatchParams(request.sessionKey)
+                  createSessionPatchParams(request.sessionKey, request.sessionLabel)
                 )
               )
             );
@@ -659,7 +674,12 @@ export class DefaultOpenClawChatAgentClient implements OpenClawChatAgentClient {
             }
 
             sessionPatchRequestId = undefined;
-            socket.send(JSON.stringify(createChatSendRequest(chatRequestId, request)));
+            socket.send(JSON.stringify(createChatSendRequest(chatRequestId, {
+              sessionKey: request.sessionKey,
+              message: request.message,
+              idempotencyKey: request.idempotencyKey,
+              attachments: request.attachments
+            })));
             return;
           }
 
@@ -945,14 +965,17 @@ export function createChatSendRequest(
  * Creates the `sessions.patch` parameters required by chat agent.
  *
  * @param sessionKey The target session key.
+ * @param label Optional session label applied to the first chat turn.
  * @returns The normalized `sessions.patch` payload.
  */
 export function createSessionPatchParams(
-  sessionKey: string
+  sessionKey: string,
+  label?: string
 ): OpenClawSessionPatchParams {
   return {
     key: sessionKey,
-    verboseLevel: "full"
+    verboseLevel: "full",
+    ...(label === undefined ? {} : { label })
   };
 }
 

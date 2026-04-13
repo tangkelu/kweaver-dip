@@ -1,5 +1,6 @@
 import { Button, message, Spin } from 'antd'
 import { useLayoutEffect, useState } from 'react'
+import intl from 'react-intl-universal'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   type CreateDigitalHumanRequest,
@@ -84,7 +85,7 @@ const DHSetting = () => {
   const handlePublish = async () => {
     const name = basic.name.trim()
     if (!name) {
-      message.error('请输入名称')
+      message.error(intl.get('digitalHuman.setting.nameRequired'))
       return
     }
 
@@ -114,15 +115,15 @@ const DHSetting = () => {
         }
         await updateDigitalHuman(digitalHumanId, updateBody)
         useDigitalHumanStore.setState({ frozenDisplayNameForEdit: name })
-        message.success('发布成功')
+        message.success(intl.get('digitalHuman.setting.publishSuccess'))
         handleBack()
       } else {
         await createDigitalHuman(createBody)
-        message.success('创建成功')
+        message.success(intl.get('digitalHuman.setting.createSuccess'))
         navigate(`/studio/digital-human`, { replace: true })
       }
     } catch (err: any) {
-      message.error(err?.description || '发布失败')
+      message.error(err?.description || intl.get('digitalHuman.setting.publishFailed'))
     } finally {
       setPublishing(false)
     }
@@ -171,7 +172,9 @@ const DHSetting = () => {
                     className="flex-shrink-0 flex items-center justify-center rounded w-6 h-6 bg-[rgb(var(--dip-primary-color-rgb-space)/10%)] text-[var(--dip-primary-color)]"
                   />
                 )}
-                <span className="font-medium text-[--dip-text-color]">新建数字员工</span>
+                <span className="font-medium text-[--dip-text-color]">
+                  {intl.get('digitalHuman.setting.createTitle')}
+                </span>
               </>
             ) : routeId ? (
               <>
@@ -193,7 +196,7 @@ const DHSetting = () => {
                   <span className="font-medium text-[--dip-text-color]">{headerDisplayName}</span>
                   {detail?.updated_at && (
                     <span className="text-[--dip-text-color-65] text-xs">
-                      更新：
+                      {intl.get('digitalHuman.detail.updatedAtPrefix')}
                       {formatTimeSlash(new Date(detail.updated_at).getTime())}
                     </span>
                   )}
@@ -205,13 +208,15 @@ const DHSetting = () => {
         <div className="flex items-center gap-2">
           {uiMode === 'view' ? (
             <Button type="primary" onClick={() => setUiMode('edit')}>
-              编辑
+              {intl.get('digitalHuman.setting.edit')}
             </Button>
           ) : (
             <>
-              {uiMode === 'edit' && <Button onClick={handleCancelEdit}>取消</Button>}
+              {uiMode === 'edit' && (
+                <Button onClick={handleCancelEdit}>{intl.get('digitalHuman.setting.cancel')}</Button>
+              )}
               <Button type="primary" loading={publishing} onClick={() => void handlePublish()}>
-                发布
+                {intl.get('digitalHuman.setting.publish')}
               </Button>
             </>
           )}

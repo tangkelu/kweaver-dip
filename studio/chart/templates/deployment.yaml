@@ -31,7 +31,7 @@ spec:
           image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.studio.port }}
+            - containerPort: {{ .Values.service.port }}
               name: studio-http
               protocol: TCP
           env:
@@ -45,16 +45,6 @@ spec:
                 configMapKeyRef:
                   name: {{ .Chart.Name }}-config
                   key: OPENCLAW_ROOT_DIR
-            - name: OPENCLAW_WORKSPACE_DIR
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Chart.Name }}-config
-                  key: OPENCLAW_WORKSPACE_DIR
-            - name: OPENCLAW_CONFIG_PATH
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Chart.Name }}-config
-                  key: OPENCLAW_CONFIG_PATH
             - name: KWEAVER_BASE_URL
               valueFrom:
                 configMapKeyRef:

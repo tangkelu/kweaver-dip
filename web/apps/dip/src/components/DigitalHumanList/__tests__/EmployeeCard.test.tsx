@@ -1,6 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+vi.mock('@/utils/publicEnv', () => ({
+  isPublicChannelVisible: true,
+}))
+
 vi.mock('@/utils/digital-human/resolveDigitalHumanIcon', () => ({
   resolveDigitalHumanIconSrc: (id?: string) => (id ? `/icon/${id}.png` : ''),
 }))
@@ -28,9 +32,9 @@ describe('DigitalHumanList/EmployeeCard', () => {
 
     expect(screen.getByTitle('小助手')).toBeInTheDocument()
     expect(screen.getByText('简介')).toBeInTheDocument()
-    expect(screen.getByText('2 个技能')).toBeInTheDocument()
-    expect(screen.getByText('1 个知识网络')).toBeInTheDocument()
-    expect(screen.getByText('1 个通道')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.card.skillsCount')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.card.knowledgeCount')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.card.channelCount')).toBeInTheDocument()
     expect(screen.getByTestId('fallback-icon')).toBeInTheDocument()
   })
 

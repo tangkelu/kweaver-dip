@@ -1,0 +1,23 @@
+{
+  "history": {
+    "common": {
+      "all": "All",
+      "searchPlaceholder": "Search history conversations",
+      "deleteConfirmTitle": "Confirm deletion",
+      "deleteConfirmContent": "This action cannot be undone. Continue?",
+      "noData": "No data",
+      "loadFailed": "Load failed",
+      "retry": "Retry",
+      "searchNoResult": "Sorry, no matching content found",
+      "dash": "-"
+    },
+    "list": {
+      "fromDigitalHuman": "From Digital Human: {name}",
+      "updateTime": "Updated at",
+      "deleteSessionAria": "Delete history session",
+      "today": "Today {time}",
+      "tomorrow": "Tomorrow {time}",
+      "yesterday": "Yesterday {time}"
+    }
+  }
+}

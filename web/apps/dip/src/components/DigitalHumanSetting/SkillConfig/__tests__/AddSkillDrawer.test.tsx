@@ -21,7 +21,7 @@ describe('DigitalHumanSetting/SkillConfig/AddSkillDrawer', () => {
     render(<AddSkillDrawer open onClose={mockOnClose} />)
 
     expect(screen.getByTestId('dip-chat-kit')).toBeInTheDocument()
-    expect(screen.getByText('新建技能')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.addSkillDrawer.newSkillTitle')).toBeInTheDocument()
   })
 
   it('应该使用传入的 payload 内容作为标题', () => {

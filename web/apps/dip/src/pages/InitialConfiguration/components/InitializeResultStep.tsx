@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef } from 'react'
+import intl from 'react-intl-universal'
 import type { GuideInitializeResponse } from '@/apis/dip-studio/guide'
 import fireworksUrl from '@/assets/images/fireworks.png'
 import styles from './index.module.less'
@@ -124,10 +125,10 @@ const InitializeResultStep = ({ initResult: _initResult }: InitializeResultStepP
         <canvas ref={canvasRef} className={styles.fireworksCanvas} />
         <img src={fireworksUrl} alt="fireworks" className={styles.fireworksCenter} />
       </div>
-      <div className="mt-5 text-[26px] font-bold text-[--dip-text-color] pr-2">连接成功</div>
-      <div className="mt-3 text-sm text-black/50">
-        您的系统现在已就绪，开始创建属于你的数字员工吧。
+      <div className="mt-5 text-[26px] font-bold text-[--dip-text-color] pr-2">
+        {intl.get('initialConfiguration.result.title')}
       </div>
+      <div className="mt-3 text-sm text-black/50">{intl.get('initialConfiguration.result.subtitle')}</div>
     </div>
   )
 }

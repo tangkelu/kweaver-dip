@@ -3,7 +3,7 @@
 `dip` 是一个 OpenClaw 网关扩展，当前主要提供三类能力：
 
 1. **Agent skills**：按 agent 读写技能绑定、通过 Gateway 上传 `.skill`（zip）安装到仓库 `skills/`，以及读取 skill 目录内容。
-2. **工作区 archives**：HTTP 读取 `archives/`，以及写文件后的归档路径补齐。
+2. **工作区 archives**：HTTP 读取 `archives/`，以及通过工具执行归档搬移。
 3. **内置技能包**：插件目录下附带若干 skill 文档，供 Studio 侧状态管理与内容访问使用。
 4. **工作区临时上传**：将上传文件写入 `workspace/tmp`（可按会话分目录）。
 
@@ -15,6 +15,37 @@
 ## 当前实现的能力
 
 ### 1. Skills 管理
+
+#### CLI
+
+```text
+/skills-manage [enable <name> | disable <name>]
+```
+
+- `enable <name>` / `disable <name>`：写入 `openclaw` 配置里的 `skills.entries.<name>.enabled`。
+
+#### 工具
+
+- `archive`：通过 Gateway 工具目录暴露，Agent 调用时需传入：
+  - `kind`: `"plan"` / `"file"`
+  - `sourcePath`: 待归档文件的工作区相对路径
+  - 可选 `displayName`：归档卡片展示名
+  - 可选 `timestamp`: `YYYY-MM-DD-HH-MM-SS`（仅 `file` 变体，可复用同一时间桶）
+  - 可选 `sessionKey` / `sessionId`: 当上下文未携带 session 信息时的覆盖值
+  - 可选 `workspace`: 当插件无法自动解析时的工作区绝对路径
+
+示例：
+
+```json
+{
+  "name": "archive",
+  "arguments": {
+    "kind": "file",
+    "sourcePath": "drafts/result.json",
+    "displayName": "AI Summary"
+  }
+}
+```
 
 #### HTTP
 
@@ -157,8 +188,8 @@ POST /v1/workspace/tmp/upload
 
 - `sessionId` 来自 `ctx.sessionKey` 最后一段，取不到时回退到 `ctx.sessionId`
 - 文件名会被标准化为小写、空白转 `_`、移除非法字符，扩展名保留为小写
-- 如果原路径已经符合上述规则，则不会重复复制
-- 当前实现是“复制到合规归档路径”，不会移动原文件
+- 如果原路径已经符合上述规则，则不会重复搬移
+- 当前实现是“搬移到合规归档路径”；跨设备场景会退化为 copy + delete，原文件不会继续保留在工作区
 
 ## 当前内置 skills
 
@@ -172,7 +203,7 @@ POST /v1/workspace/tmp/upload
 - 写入后必须回读校验
 - 输出归档状态与用于 WebUI 的卡片 JSON
 
-注意：这些是该 skill 文档定义的操作协议，不是插件代码主动替 agent 执行的完整流程。插件代码当前只实现了上一节描述的“写文件后归档补齐”。
+注意：这些是该 skill 文档定义的操作协议。插件代码当前通过 `archive` 工具执行归档搬移与回执生成，但不会替 agent 自动决定何时归档。
 
 ### `schedule-plan`
 

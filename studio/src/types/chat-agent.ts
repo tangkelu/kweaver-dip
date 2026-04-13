@@ -14,6 +14,36 @@ export interface ChatAgentInputTextContentPart {
 }
 
 /**
+ * OpenResponse-style file content part used in message history responses.
+ */
+export interface ChatAgentInputFileContentPart {
+  /**
+   * Content part discriminator.
+   */
+  type: "input_file";
+
+  /**
+   * Attachment source descriptor.
+   */
+  source: ChatAgentAttachment["source"];
+}
+
+/**
+ * OpenResponse-style multi-file content part used in message history responses.
+ */
+export interface ChatAgentInputFilesContentPart {
+  /**
+   * Content part discriminator.
+   */
+  type: "input_files";
+
+  /**
+   * Attachment source descriptors in original order.
+   */
+  files: ChatAgentAttachment["source"][];
+}
+
+/**
  * OpenResponse-style message item accepted by the chat agent endpoint.
  */
 export interface ChatAgentMessageInputItem {

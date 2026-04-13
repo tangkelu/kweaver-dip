@@ -41,6 +41,7 @@ vi.mock('@/routes/routes', () => ({
 vi.mock('@/routes/utils', () => ({
   getRouteSidebarMode: () => 'menu',
   isRouteVisibleForRoles: () => true,
+  getRouteLabel: (route: { label?: string; key?: string }) => route.label || route.key || '',
 }))
 vi.mock('../GradientMaskIcon', () => ({
   MaskIcon: () => <span data-testid="mask-icon" />,

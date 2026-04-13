@@ -59,7 +59,7 @@ describe("connectOpenClawGatewayIfInitialized", () => {
         "OPENCLAW_GATEWAY_HOST=127.0.0.1",
         "OPENCLAW_GATEWAY_PORT=19001",
         "OPENCLAW_GATEWAY_TOKEN=token-1",
-        `OPENCLAW_WORKSPACE_DIR=${join(studioRootDir, "workspace")}`
+        `OPENCLAW_ROOT_DIR=${join(studioRootDir, ".openclaw")}`
       ].join("\n"),
       "utf8"
     );
@@ -81,7 +81,7 @@ describe("connectOpenClawGatewayIfInitialized", () => {
       openClawGatewayHttpUrl: "http://127.0.0.1:19001/",
       openClawGatewayToken: "token-1",
       openClawGatewayTimeoutMs: 5000,
-      openClawWorkspaceDir: join(studioRootDir, "workspace")
+      openClawWorkspaceDir: join(studioRootDir, ".openclaw", "workspace")
     });
 
     await expect(
@@ -97,5 +97,69 @@ describe("connectOpenClawGatewayIfInitialized", () => {
       "token-1"
     );
     expect(connector.connect).toHaveBeenCalledOnce();
+  });
+
+  it("does not block Studio startup when the gateway is temporarily unavailable", async () => {
+    vi.useFakeTimers();
+
+    const studioRootDir = await mkdtemp(join(tmpdir(), "dip-gateway-bootstrap-retry-"));
+    await mkdir(join(studioRootDir, "assets"), { recursive: true });
+    await writeFile(
+      join(studioRootDir, ".env"),
+      [
+        "OPENCLAW_GATEWAY_PROTOCOL=ws",
+        "OPENCLAW_GATEWAY_HOST=127.0.0.1",
+        "OPENCLAW_GATEWAY_PORT=19001",
+        "OPENCLAW_GATEWAY_TOKEN=token-1",
+        `OPENCLAW_ROOT_DIR=${join(studioRootDir, ".openclaw")}`
+      ].join("\n"),
+      "utf8"
+    );
+    await writeFile(join(studioRootDir, "assets", "private.pem"), "private", "utf8");
+    await writeFile(join(studioRootDir, "assets", "public.pem"), "public", "utf8");
+
+    const connector = {
+      reconfigureConnection: vi.fn(),
+      connect: vi.fn()
+        .mockRejectedValueOnce(new Error("gateway down"))
+        .mockResolvedValueOnce(undefined)
+    };
+    const envReader = vi.fn().mockReturnValue({
+      port: 3000,
+      bknBackendUrl: "http://127.0.0.1:13014/",
+      appUserToken: undefined,
+      hydraAdminUrl: "http://127.0.0.1:4445/",
+      isDevelopment: false,
+      oauthMockUserId: undefined,
+      openClawGatewayUrl: "ws://127.0.0.1:19001/",
+      openClawGatewayHttpUrl: "http://127.0.0.1:19001/",
+      openClawGatewayToken: "token-1",
+      openClawGatewayTimeoutMs: 5000,
+      openClawWorkspaceDir: join(studioRootDir, ".openclaw", "workspace")
+    });
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    try {
+      await expect(
+        connectOpenClawGatewayIfInitialized({
+          studioRootDir,
+          connector,
+          envReader
+        })
+      ).resolves.toBe(true);
+
+      await vi.runAllTicks();
+      expect(connector.connect).toHaveBeenCalledTimes(1);
+
+      await vi.advanceTimersByTimeAsync(1_000);
+      await vi.runAllTicks();
+
+      expect(connector.reconfigureConnection).toHaveBeenCalledTimes(2);
+      expect(connector.connect).toHaveBeenCalledTimes(2);
+      expect(warnSpy).toHaveBeenCalledOnce();
+    } finally {
+      warnSpy.mockRestore();
+      vi.useRealTimers();
+    }
   });
 });

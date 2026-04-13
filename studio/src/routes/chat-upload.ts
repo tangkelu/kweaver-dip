@@ -11,11 +11,17 @@ import {
   readRequiredSessionKeyHeader
 } from "./chat";
 import { getEnv } from "../utils/env";
+import { normalizeMultipartFilename } from "../utils/upload";
 
 /**
  * Response body returned by chat upload endpoint.
  */
 export interface ChatUploadResponse {
+  /**
+   * Original filename preserved for UI display.
+   */
+  name: string;
+
   /**
    * Workspace-relative temp path to be reused by `/chat/agent`.
    */
@@ -90,16 +96,18 @@ export function createChatUploadRouter(
         if (file === undefined || file.buffer.length === 0) {
           throw new HttpError(400, "Multipart field `file` is required");
         }
+        const filename = normalizeMultipartFilename(file.originalname);
         const sessionKey = readRequiredSessionKeyHeader(request.headers);
         const agentId = readAgentIdFromSessionKey(sessionKey);
         const uploadResult = await workspaceTempClient.uploadTempFile({
           agentId,
           sessionKey,
-          filename: file.originalname,
+          filename,
           body: file.buffer
         });
 
         response.status(200).json({
+          name: filename,
           path: uploadResult.path
         });
       } catch (error) {

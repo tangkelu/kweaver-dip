@@ -1,0 +1,34 @@
+{
+  "skillManagement": {
+    "allSkills": "全部技能",
+    "searchPlaceholder": "搜尋技能",
+    "refresh": "刷新",
+    "retry": "重試",
+    "importCreate": "導入建立",
+    "chatCreate": "會話建立",
+    "delete": "刪除",
+    "deleteTitle": "刪除技能",
+    "deleteContent": "刪除後，技能的相關配置和資料將被清除，且無法被數字員工再次調用，請謹慎操作。",
+    "deleteSuccess": "刪除成功",
+    "confirm": "確定",
+    "cancel": "取消",
+    "searchEmpty": "抱歉，沒有找到相關內容",
+    "emptyTitle": "暫無技能",
+    "emptySubDesc": "目前沒有可用技能，可點擊下方按鈕導入或會話建立技能。",
+    "loadFailed": "技能列表載入失敗"
+  },
+  "skillDetail": {
+    "filesTab": "檔案列表",
+    "skillNotFound": "技能不存在",
+    "previewTruncated": "（預覽已截斷，伺服器可能限制長度）",
+    "fileLoadFailed": "檔案內容載入失敗",
+    "fileFormatInvalid": "檔案資料格式異常",
+    "defaultDownloadName": "download",
+    "downloadFailed": "下載失敗",
+    "skillMdLoadFailed": "SKILL.md 載入失敗",
+    "contentTruncatedHint": "（內容已截斷）",
+    "treeLoadFailed": "技能目錄載入失敗",
+    "emptyNoFiles": "暫無檔案",
+    "columnFileName": "檔案名稱"
+  }
+}

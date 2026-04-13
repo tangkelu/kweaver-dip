@@ -1,20 +1,24 @@
 import { Button, Flex, Table, Tooltip } from 'antd'
 import { memo, useMemo, useState } from 'react'
+import intl from 'react-intl-universal'
 import type { BknKnowledgeNetworkInfo } from '@/apis'
 import type { BknEntry } from '@/apis/dip-studio/digital-human'
 import AppIcon from '@/components/AppIcon'
 import Empty from '@/components/Empty'
 import IconFont from '@/components/IconFont'
 import ScrollBarContainer from '@/components/ScrollBarContainer'
+import { useLanguageStore } from '@/stores/languageStore'
 import { useDigitalHumanStore } from '../digitalHumanStore'
 import styles from './index.module.less'
 import SelectKnowledgeModal from './SelectKnowledgeModal'
 
 interface KnowledgeConfigProps {
+  /** 只读（非管理员详情等） */
   readonly?: boolean
 }
 
 const KnowledgeConfig = ({ readonly }: KnowledgeConfigProps) => {
+  const { language } = useLanguageStore()
   const { bkn, updateBkn, deleteBkn } = useDigitalHumanStore()
   const [selectKnowledgeModalOpen, setSelectKnowledgeModalOpen] = useState(false)
 
@@ -23,7 +27,7 @@ const KnowledgeConfig = ({ readonly }: KnowledgeConfigProps) => {
     setSelectKnowledgeModalOpen(true)
   }
 
-  /** 选择知识网络结果 */
+  /** 选择知识网络结果，写入 store */
   const handleSelectKnowledgeResult = (result: BknKnowledgeNetworkInfo[]) => {
     const next: BknEntry[] = result.map((k) => ({
       name: k.name,
@@ -32,10 +36,11 @@ const KnowledgeConfig = ({ readonly }: KnowledgeConfigProps) => {
     updateBkn(next)
   }
 
+  // 知识表格列定义（`url` 列展示名沿用「功能描述」表头，与历史接口字段一致）
   const knowledgeColumns = useMemo(() => {
     const columns = [
       {
-        title: '名称',
+        title: intl.get('digitalHuman.common.columnName'),
         dataIndex: 'name',
         key: 'name',
         width: '40%',
@@ -54,19 +59,19 @@ const KnowledgeConfig = ({ readonly }: KnowledgeConfigProps) => {
         ),
       },
       {
-        title: '功能描述',
+        title: intl.get('digitalHuman.common.columnFunctionDesc'),
         dataIndex: 'url',
         key: 'url',
         ellipsis: true,
         render: (text: string) => text || '--',
       },
       {
-        title: '操作',
+        title: intl.get('digitalHuman.common.columnAction'),
         key: 'action',
         width: 80,
         render: (_: unknown, record: BknEntry) => (
           <Flex align="center">
-            <Tooltip title="移除">
+            <Tooltip title={intl.get('digitalHuman.common.remove')}>
               <Button
                 type="text"
                 onClick={(e) => {
@@ -81,16 +86,16 @@ const KnowledgeConfig = ({ readonly }: KnowledgeConfigProps) => {
       },
     ]
     return readonly ? columns.slice(0, 2) : columns
-  }, [deleteBkn, readonly])
+  }, [deleteBkn, readonly, language])
 
   return (
     <ScrollBarContainer className="h-full flex flex-col p-6">
       <div className="flex justify-between mb-4">
         <div className="flex flex-col gap-y-1">
-          <div className="font-medium text-[--dip-text-color]">知识配置</div>
-          <div className="text-[--dip-text-color-45]">
-            选择该数字员工需要关联的业务知识网络（BKN）。数字员工将基于这些知识网络回答问题和执行任务。
+          <div className="font-medium text-[--dip-text-color]">
+            {intl.get('digitalHuman.setting.menuKnowledge')}
           </div>
+          <div className="text-[--dip-text-color-45]">{intl.get('digitalHuman.knowledge.sectionDesc')}</div>
         </div>
         {bkn.length > 0 && !readonly && (
           <div className="flex items-end gap-x-3">
@@ -100,7 +105,7 @@ const KnowledgeConfig = ({ readonly }: KnowledgeConfigProps) => {
               onClick={handleSelectKnowledge}
               variant="outlined"
             >
-              知识
+              {intl.get('digitalHuman.knowledge.addButton')}
             </Button>
           </div>
         )}
@@ -116,7 +121,7 @@ const KnowledgeConfig = ({ readonly }: KnowledgeConfigProps) => {
         scroll={{ y: 'max(246px, calc(100vh - 299px))' }}
         locale={{
           emptyText: (
-            <Empty type="empty" title="暂无知识">
+            <Empty type="empty" title={intl.get('digitalHuman.knowledge.emptyNoKnowledge')}>
               {readonly ? undefined : (
                 <Button
                   icon={<IconFont type="icon-add" />}
@@ -124,7 +129,7 @@ const KnowledgeConfig = ({ readonly }: KnowledgeConfigProps) => {
                   variant="outlined"
                   onClick={handleSelectKnowledge}
                 >
-                  知识
+                  {intl.get('digitalHuman.knowledge.addButton')}
                 </Button>
               )}
             </Empty>

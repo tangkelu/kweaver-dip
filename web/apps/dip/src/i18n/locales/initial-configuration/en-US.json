@@ -1,0 +1,52 @@
+{
+  "initialConfiguration": {
+    "stepTitles": {
+      "connect": "Connect OpenClaw",
+      "checkEnv": "Check environment",
+      "selectPreset": "Select preset digital human",
+      "done": "Initialization complete"
+    },
+    "errors": {
+      "missingConnectInfo": "Please complete connection info in step 1 first",
+      "initFailed": "Initialization failed"
+    },
+    "connect": {
+      "loading": "Reading OpenClaw configuration, please wait...",
+      "title": "Connect OpenClaw",
+      "subtitle": "Enter the OpenClaw Gateway address and token to initialize default DIP Studio settings.",
+      "connectionAddressLabel": "Connection address",
+      "connectionAddressRequired": "Please enter the OpenClaw Gateway connection address",
+      "connectionAddressPlaceholder": "Please enter the OpenClaw Gateway connection address",
+      "tokenLabel": "Token",
+      "tokenRequired": "Please enter the OpenClaw Gateway token",
+      "tokenPlaceholder": "Please enter the OpenClaw Gateway token",
+      "kweaverBaseUrlLabel": "KWeaver service URL (optional)",
+      "kweaverBaseUrlInvalidProtocol": "KWeaver service URL must use http or https",
+      "kweaverBaseUrlInvalid": "Please enter a valid KWeaver service URL (including protocol, e.g. https://example.com)",
+      "kweaverBaseUrlPlaceholder": "For example: https://example.com",
+      "kweaverTokenLabel": "KWeaver token",
+      "kweaverTokenRequiredWhenBaseUrl": "KWeaver token is required after filling KWeaver service URL",
+      "kweaverTokenPlaceholder": "Please enter the KWeaver token",
+      "kweaverTokenPlaceholderDisabled": "Fill in KWeaver service URL first",
+      "next": "Next"
+    },
+    "check": {
+      "title": "OpenClaw service connection",
+      "subtitle": "The system is trying to establish a secure tunnel with OpenClaw."
+    },
+    "selectPreset": {
+      "listLoadFailed": "Failed to load preset template list",
+      "createFailed": "Failed to create preset digital human",
+      "title": "Select preset digital human",
+      "subtitle": "Digital humans can serve as your second brain to assist with complex tasks",
+      "loadFailedTitle": "Load failed",
+      "emptyTitle": "No preset digital human templates",
+      "skip": "Skip",
+      "installNow": "Install now"
+    },
+    "result": {
+      "title": "Connected successfully",
+      "subtitle": "Your system is ready. Start creating your own digital humans now."
+    }
+  }
+}

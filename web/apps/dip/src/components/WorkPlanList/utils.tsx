@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import intl from 'react-intl-universal'
 import type { CronJob } from '@/apis/dip-studio/plan'
 import { formatTimeMinute } from '@/utils/handle-function/FormatTime'
 import type {
@@ -16,7 +17,7 @@ export function formatDailyCronLabel(expr: string): string | null {
   if (dom === '*' && month === '*' && dow === '*') {
     const h = hour.padStart(2, '0')
     const m = min.padStart(2, '0')
-    return `每日${h}:${m}`
+    return intl.get('workPlan.list.dailyAt', { time: `${h}:${m}` })
   }
   return null
 }
@@ -61,20 +62,20 @@ export function planExecutionConditionText(job: CronJob): string {
     const daily = formatDailyCronLabel(expr)
     if (daily) return daily
   }
-  return '—'
+  return intl.get('workPlan.common.dash')
 }
 
 /** 今天/明天/昨天 HH:mm，否则 MM/DD HH:mm */
 export function formatPlanRelativeDayTime(ms: number | undefined): string {
-  if (ms == null || !Number.isFinite(ms)) return '—'
+  if (ms == null || !Number.isFinite(ms)) return intl.get('workPlan.common.dash')
   const d = dayjs(ms)
   const today = dayjs().startOf('day')
   const target = d.startOf('day')
   const diff = target.diff(today, 'day')
   const hm = d.format('HH:mm')
-  if (diff === 0) return `今天 ${hm}`
-  if (diff === 1) return `明天 ${hm}`
-  if (diff === -1) return `昨天 ${hm}`
+  if (diff === 0) return intl.get('workPlan.list.today', { time: hm })
+  if (diff === 1) return intl.get('workPlan.list.tomorrow', { time: hm })
+  if (diff === -1) return intl.get('workPlan.list.yesterday', { time: hm })
   return d.format('MM/DD HH:mm')
 }
 
@@ -92,7 +93,7 @@ type PlanJobDisplayEntry = { pill: PlanStatusPill; leftIcon: PlanJobLeftIconStyl
 const PLAN_JOB_DISPLAY: Record<PlanJobDisplayStatus, PlanJobDisplayEntry> = {
   disabled: {
     pill: {
-      text: '已暂停',
+      text: intl.get('workPlan.list.statusDisabled'),
       className: 'bg-[#FFFBE6] text-[#D48806]',
     },
     leftIcon: {
@@ -102,7 +103,7 @@ const PLAN_JOB_DISPLAY: Record<PlanJobDisplayStatus, PlanJobDisplayEntry> = {
   },
   running: {
     pill: {
-      text: '执行中',
+      text: intl.get('workPlan.list.statusRunning'),
       className: 'bg-[#ECF2FA] text-[#497ED2]',
     },
     leftIcon: {
@@ -112,7 +113,7 @@ const PLAN_JOB_DISPLAY: Record<PlanJobDisplayStatus, PlanJobDisplayEntry> = {
   },
   ok: {
     pill: {
-      text: '已完成',
+      text: intl.get('workPlan.list.statusDone'),
       className: 'bg-[#E9F6EF] text-[#519B72]',
     },
     leftIcon: {
@@ -122,7 +123,7 @@ const PLAN_JOB_DISPLAY: Record<PlanJobDisplayStatus, PlanJobDisplayEntry> = {
   },
   error: {
     pill: {
-      text: '失败',
+      text: intl.get('workPlan.list.statusFailed'),
       className: 'bg-[rgba(255,77,79,0.12)] text-[#ff4d4f]',
     },
     leftIcon: {
@@ -132,7 +133,7 @@ const PLAN_JOB_DISPLAY: Record<PlanJobDisplayStatus, PlanJobDisplayEntry> = {
   },
   pending: {
     pill: {
-      text: '待执行',
+      text: intl.get('workPlan.list.statusPending'),
       className: 'bg-[rgba(0,0,0,0.06)] text-[rgba(0,0,0,0.65)]',
     },
     leftIcon: {
@@ -142,7 +143,7 @@ const PLAN_JOB_DISPLAY: Record<PlanJobDisplayStatus, PlanJobDisplayEntry> = {
   },
   skipped: {
     pill: {
-      text: '已跳过',
+      text: intl.get('workPlan.list.statusSkipped'),
       className: 'bg-[rgba(0,0,0,0.06)] text-[rgba(0,0,0,0.65)]',
     },
     leftIcon: {

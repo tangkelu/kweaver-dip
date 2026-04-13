@@ -1,5 +1,6 @@
 import { Button, Checkbox, message, Spin } from 'antd'
 import { memo, useEffect, useMemo, useState } from 'react'
+import intl from 'react-intl-universal'
 import {
   type BuiltInDigitalHuman,
   createBuiltInDigitalHuman,
@@ -36,7 +37,7 @@ const SelectPresetDigitalHumanStep = ({
       } catch (error: any) {
         if (cancelled) return
         setTemplates([])
-        setListError(error?.description || '预置模板列表加载失败')
+        setListError(error?.description || intl.get('initialConfiguration.selectPreset.listLoadFailed'))
       } finally {
         if (!cancelled) setListLoading(false)
       }
@@ -64,7 +65,7 @@ const SelectPresetDigitalHumanStep = ({
       onConfirmSuccess()
     } catch (e: unknown) {
       const desc = e && typeof e === 'object' && 'description' in e ? String(e.description) : ''
-      message.error(desc || '创建预置数字员工失败')
+      message.error(desc || intl.get('initialConfiguration.selectPreset.createFailed'))
     } finally {
       setCreating(false)
     }
@@ -72,8 +73,12 @@ const SelectPresetDigitalHumanStep = ({
 
   return (
     <div className="w-full flex flex-col">
-      <div className="font-bold text-[--dip-text-color] text-[26px]">选择预置数字员工</div>
-      <div className="text-black/50 mt-3">数字员工将作为您的第二大脑，协助处理复杂任务</div>
+      <div className="font-bold text-[--dip-text-color] text-[26px]">
+        {intl.get('initialConfiguration.selectPreset.title')}
+      </div>
+      <div className="text-black/50 mt-3">
+        {intl.get('initialConfiguration.selectPreset.subtitle')}
+      </div>
 
       <div className="flex flex-col items-center justify-center min-h-[208px]">
         {listLoading ? (
@@ -81,9 +86,13 @@ const SelectPresetDigitalHumanStep = ({
             <Spin />
           </div>
         ) : listError ? (
-          <Empty title="加载失败" desc={listError} type="failed" />
+          <Empty
+            title={intl.get('initialConfiguration.selectPreset.loadFailedTitle')}
+            desc={listError}
+            type="failed"
+          />
         ) : !first ? (
-          <Empty title="暂无预置数字员工模板" />
+          <Empty title={intl.get('initialConfiguration.selectPreset.emptyTitle')} />
         ) : (
           <div className="self-center">
             <button
@@ -110,7 +119,7 @@ const SelectPresetDigitalHumanStep = ({
 
       <div className="mt-4 flex justify-center gap-3">
         <Button onClick={onSkip} style={{ width: '88px' }}>
-          跳过
+          {intl.get('initialConfiguration.selectPreset.skip')}
         </Button>
         <Button
           type="primary"
@@ -118,7 +127,7 @@ const SelectPresetDigitalHumanStep = ({
           disabled={primaryDisabled}
           loading={creating}
         >
-          立即安装
+          {intl.get('initialConfiguration.selectPreset.installNow')}
         </Button>
       </div>
     </div>

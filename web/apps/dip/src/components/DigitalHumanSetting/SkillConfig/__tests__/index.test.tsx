@@ -10,6 +10,10 @@ import SkillConfig from '../index'
 const mockDeleteSkill = vi.fn()
 const mockUpdateSkills = vi.fn()
 
+vi.mock('@/stores/languageStore', () => ({
+  useLanguageStore: () => ({ language: 'zh-CN' }),
+}))
+
 vi.mock('../../digitalHumanStore', () => ({
   useDigitalHumanStore: vi.fn(),
 }))
@@ -35,6 +39,8 @@ vi.mock('@/components/IconFont', () => ({
 
 const mockedUseDigitalHumanStore = vi.mocked(useDigitalHumanStore)
 
+const addSkillBtnName = 'digitalHuman.skill.addSkillButton'
+
 describe('DigitalHumanSetting/SkillConfig', () => {
   it('应该正确渲染空状态，显示添加技能按钮', () => {
     mockedUseDigitalHumanStore.mockReturnValue({
@@ -46,12 +52,10 @@ describe('DigitalHumanSetting/SkillConfig', () => {
 
     render(<SkillConfig />)
 
-    expect(screen.getByText('技能配置')).toBeInTheDocument()
-    expect(
-      screen.getByText('选择该数字员工需要具备的技能，也可通过自然语言创建新技能。'),
-    ).toBeInTheDocument()
-    expect(screen.getByText('暂无技能')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /技能/ })).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.setting.menuSkill')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.skill.sectionDesc')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.skill.emptyNoSkills')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: addSkillBtnName })).toBeInTheDocument()
   })
 
   it('只读模式空状态不显示添加按钮', () => {
@@ -64,8 +68,8 @@ describe('DigitalHumanSetting/SkillConfig', () => {
 
     render(<SkillConfig readonly />)
 
-    expect(screen.getByText('暂无技能')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /技能/ })).not.toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.skill.emptyNoSkills')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: addSkillBtnName })).not.toBeInTheDocument()
   })
 
   it('已有技能时应该正确渲染表格', () => {
@@ -87,10 +91,10 @@ describe('DigitalHumanSetting/SkillConfig', () => {
 
     expect(screen.getByText('产品问答')).toBeInTheDocument()
     expect(screen.getByText('回答产品相关问题')).toBeInTheDocument()
-    expect(screen.getByText('@官方')).toBeInTheDocument()
+    expect(screen.getByText('@digitalHuman.skill.tagOfficial')).toBeInTheDocument()
     const buttons = screen.getAllByRole('button')
-    expect(buttons.length).toBeGreaterThanOrEqual(2) // 移除按钮 + 添加技能按钮
-    expect(screen.getByRole('button', { name: /技能/ })).toBeInTheDocument()
+    expect(buttons.length).toBeGreaterThanOrEqual(2)
+    expect(screen.getByRole('button', { name: addSkillBtnName })).toBeInTheDocument()
   })
 
   it('内置技能删除按钮禁用', () => {
@@ -133,8 +137,8 @@ describe('DigitalHumanSetting/SkillConfig', () => {
     render(<SkillConfig readonly />)
 
     expect(screen.getByText('产品问答')).toBeInTheDocument()
-    expect(screen.queryByText('操作')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /技能/ })).not.toBeInTheDocument()
+    expect(screen.queryByText('digitalHuman.common.columnAction')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: addSkillBtnName })).not.toBeInTheDocument()
   })
 
   it('自定义技能显示正确标签', () => {
@@ -154,7 +158,7 @@ describe('DigitalHumanSetting/SkillConfig', () => {
 
     render(<SkillConfig />)
 
-    expect(screen.getByText('@自定义')).toBeInTheDocument()
+    expect(screen.getByText('@digitalHuman.skill.tagCustom')).toBeInTheDocument()
   })
 
   it('点击添加技能按钮应该打开弹窗', () => {
@@ -173,7 +177,7 @@ describe('DigitalHumanSetting/SkillConfig', () => {
     })
 
     render(<SkillConfig />)
-    fireEvent.click(screen.getByRole('button', { name: /技能/ }))
+    fireEvent.click(screen.getByRole('button', { name: addSkillBtnName }))
 
     expect(screen.getByTestId('select-skill-modal')).toBeInTheDocument()
   })
@@ -187,7 +191,7 @@ describe('DigitalHumanSetting/SkillConfig', () => {
     })
 
     render(<SkillConfig />)
-    fireEvent.click(screen.getByRole('button', { name: /技能/ }))
+    fireEvent.click(screen.getByRole('button', { name: addSkillBtnName }))
 
     expect(screen.getByTestId('select-skill-modal')).toBeInTheDocument()
   })

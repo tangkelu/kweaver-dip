@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import intl from 'react-intl-universal'
 import { createSearchParams, useLocation, useNavigate } from 'react-router-dom'
 import SearchInput from '@/components/SearchInput'
 import PlanList from '@/components/WorkPlanList'
@@ -15,9 +16,11 @@ const WorkPlan = () => {
   return (
     <div className="h-full flex flex-col bg-[--dip-white] overflow-hidden relative">
       <div className="flex justify-between items-center mt-6 mb-4 flex-shrink-0 z-20 max-w-[880px] w-full mx-auto">
-        <span className="font-bold text-lg text-[--dip-text-color]">全部</span>
+        <span className="font-bold text-lg text-[--dip-text-color]">
+          {intl.get('workPlan.common.all')}
+        </span>
         <div className="flex-shrink-0">
-          <SearchInput placeholder="搜索工作计划" onSearch={handleSearch} />
+          <SearchInput placeholder={intl.get('workPlan.common.searchPlaceholder')} onSearch={handleSearch} />
         </div>
       </div>
       <PlanList

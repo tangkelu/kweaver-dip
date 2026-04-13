@@ -47,7 +47,7 @@ const agentSkillsLogic = new DefaultAgentSkillsLogic(
 const digitalHumanLogic = new DefaultDigitalHumanLogic({
   openClawAgentsAdapter,
   agentSkillsLogic,
-  openClawWorkspaceDir: env.openClawWorkspaceDir
+  openClawRootDir: process.env.OPENCLAW_ROOT_DIR
 });
 const builtInDigitalHumanLogic = new DefaultBuiltInDigitalHumanLogic();
 
@@ -270,7 +270,18 @@ export function createDigitalHumanRouter(): Router {
       next: NextFunction
     ): Promise<void> => {
       try {
-        response.status(200).json(await builtInDigitalHumanLogic.listBuiltInDigitalHumans());
+        const [builtIns, digitalHumans] = await Promise.all([
+          builtInDigitalHumanLogic.listBuiltInDigitalHumans(),
+          digitalHumanLogic.listDigitalHumans()
+        ]);
+        const existingIds = new Set(digitalHumans.map((digitalHuman) => digitalHuman.id));
+
+        response.status(200).json(
+          builtIns.map((builtIn) => ({
+            ...builtIn,
+            created: existingIds.has(builtIn.id)
+          }))
+        );
       } catch (error) {
         next(
           error instanceof HttpError

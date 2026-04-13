@@ -1,0 +1,157 @@
+{
+  "digitalHuman": {
+    "common": {
+      "columnName": "名稱",
+      "columnFunctionDesc": "功能描述",
+      "columnAction": "操作",
+      "remove": "移除"
+    },
+    "management": {
+      "searchPlaceholder": "搜尋數位員工",
+      "refresh": "重新整理",
+      "createShort": "新增",
+      "emptySearchDesc": "抱歉，沒有找到相關內容",
+      "emptyTitle": "尚無數位員工",
+      "emptySubDesc": "目前尚無數位員工，您可以點擊下方按鈕建立第一位數位員工。",
+      "createDigitalHuman": "建立數位員工",
+      "loadFailedTitle": "數位員工載入失敗",
+      "retry": "重試",
+      "menuEdit": "編輯",
+      "menuDelete": "刪除",
+      "deleteModalTitle": "確認刪除數位員工",
+      "deleteConfirmBody": "您確定要刪除數位員工 __DH_NAME__ 嗎？刪除後，該數位員工下的所有資料將被永久刪除，此操作無法復原。",
+      "deleteOk": "刪除",
+      "deleteCancel": "取消",
+      "deleteNameLabel": "請輸入數位員工名稱以確認刪除：",
+      "deleteNamePlaceholder": "請輸入數位員工名稱",
+      "validateNameRequired": "請輸入數位員工名稱",
+      "validateNameMismatch": "輸入的數位員工名稱不一致",
+      "deleteSuccess": "刪除成功",
+      "deleteFailed": "刪除失敗，請稍後重試",
+      "listSectionAll": "全部"
+    },
+    "detail": {
+      "tabPlan": "工作計劃",
+      "tabSession": "會話",
+      "tabConfig": "員工設定",
+      "updatedAtPrefix": "更新："
+    },
+    "setting": {
+      "menuBasic": "基本設定",
+      "menuSkill": "技能設定",
+      "menuKnowledge": "知識設定",
+      "menuChannel": "通道接入",
+      "createTitle": "建立數位員工",
+      "edit": "編輯",
+      "cancel": "取消",
+      "publish": "發布",
+      "nameRequired": "請輸入名稱",
+      "publishSuccess": "發布成功",
+      "createSuccess": "建立成功",
+      "publishFailed": "發布失敗"
+    },
+    "card": {
+      "noBio": "[暫無簡介]",
+      "skillsCount": "{count} 個技能",
+      "knowledgeCount": "{count} 個知識網路",
+      "channelCount": "{count} 個通道"
+    },
+    "errors": {
+      "loadDetailFailed": "取得數位員工詳情失敗"
+    },
+    "basic": {
+      "infoSectionTitle": "基本資訊",
+      "fieldName": "名稱",
+      "fieldBio": "簡介",
+      "fieldSoul": "角色設定",
+      "editIntro": "定義數位員工的名稱、簡介與核心職責描述。",
+      "namePlaceholder": "請輸入數位員工名稱",
+      "bioPlaceholder": "請輸入數位員工簡介",
+      "soulLabel": "角色設定"
+    },
+    "skill": {
+      "sectionDesc": "選擇該數位員工需要具備的技能，亦可透過自然語言建立新技能。",
+      "colSkillName": "技能名稱",
+      "tagBuiltin": "內建",
+      "tagCustom": "自訂",
+      "tagOfficial": "官方",
+      "tooltipBuiltinSkill": "數位員工執行時所需的基本技能，無法移除",
+      "emptyNoSkills": "暫無技能",
+      "addSkillButton": "技能"
+    },
+    "skillModal": {
+      "title": "新增技能",
+      "selectedCount": "已選 {selected}/{max}",
+      "sessionCreate": "會話建立",
+      "importCreate": "匯入建立",
+      "searchPlaceholder": "搜尋技能",
+      "loadFailed": "載入失敗",
+      "emptyNoSkills": "暫無技能",
+      "toggleDeselectTitle": "點擊取消選擇",
+      "added": "已新增",
+      "add": "新增"
+    },
+    "skillUpload": {
+      "errorGeneric": "上傳失敗，請重試",
+      "formatInvalid": "僅支援 .zip / .skill 格式的技能包",
+      "sizeExceeded": "技能包大小不能超過 {maxMb}MB",
+      "importDoneNoCancel": "匯入已完成，無法取消",
+      "confirmCancelTitle": "確認取消匯入",
+      "confirmCancelContent": "正在上傳中，取消後將中斷上傳。是否繼續？",
+      "validating": "正在驗證技能包...",
+      "dragHint": "點擊或將檔案拖曳到此處上傳",
+      "formatAndSizeHint": "支援 .zip / .skill 格式的技能包，大小不超過 {maxMb}MB",
+      "statusVerifying": "驗證中",
+      "statusWaitImport": "等待匯入",
+      "statusImportFailed": "匯入失敗",
+      "importButton": "匯入技能",
+      "successTitle": "技能匯入成功",
+      "successDesc": "您的技能已匯入成功，可前往技能列表查看",
+      "viewSkill": "查看技能",
+      "modalTitle": "匯入技能"
+    },
+    "knowledge": {
+      "sectionDesc": "選擇該數位員工需要關聯的業務知識網路（BKN）。數位員工將基於這些知識網路回答問題和執行任務。",
+      "emptyNoKnowledge": "暫無知識",
+      "addButton": "知識"
+    },
+    "knowledgeModal": {
+      "title": "新增知識",
+      "loadFailed": "載入失敗",
+      "emptyNoKnowledge": "暫無知識",
+      "updatedPrefix": "更新：",
+      "tabAllNetworks": "全部業務知識網路"
+    },
+    "channel": {
+      "sectionDesc": "設定數位員工可接入的通訊通道，如釘釘、飛書等。",
+      "columnChannelDesc": "通道描述",
+      "descDingtalk": "用於在釘釘用戶端接收訊息、處理事務",
+      "descFeishu": "用於在飛書用戶端接收訊息、處理事務",
+      "typeDingtalk": "釘釘",
+      "typeFeishu": "飛書",
+      "emptyNoChannel": "暫無通道",
+      "addButton": "通道"
+    },
+    "channelModal": {
+      "feishuBot": "飛書機器人",
+      "dingtalkBot": "釘釘機器人",
+      "feishuConfigTitle": "飛書機器人設定",
+      "dingtalkConfigTitle": "釘釘機器人設定",
+      "configFallbackTitle": "通道設定",
+      "configSubtitle": "請為該通道設定獨立參數",
+      "labelApiKey": "API Key",
+      "labelApiSecret": "API Secret",
+      "ruleAppId": "請輸入 app_id",
+      "ruleAppSecret": "請輸入 app_secret",
+      "placeholderDingtalkAppKey": "請輸入釘釘應用 App Key",
+      "placeholderFeishuAppKey": "請輸入飛書應用 App Key",
+      "placeholderAppSecret": "請輸入該應用 App Secret",
+      "testConnectionOk": "連線測試通過",
+      "configFailed": "設定失敗，請稍後重試",
+      "reset": "重置"
+    },
+    "addSkillDrawer": {
+      "newSkillTitle": "新建技能"
+    }
+  }
+}

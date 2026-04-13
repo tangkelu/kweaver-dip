@@ -23,4 +23,6 @@ interface ImportMetaEnv {
   readonly PUBLIC_TOKEN?: string
   // 本地调试时使用的 refresh token（仅开发模式读取）
   readonly PUBLIC_REFRESH_TOKEN?: string
+  // 为 'true' 时数字员工通道相关 UI 可见
+  readonly PUBLIC_CHANNEL_VISIBLE?: string
 }

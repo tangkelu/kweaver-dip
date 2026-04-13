@@ -32,7 +32,7 @@ describe('Sider/HistorySection', () => {
         onOpenHistoryDetail={() => {}}
       />,
     )
-    expect(screen.getByText('暂无历史记录')).toBeInTheDocument()
+    expect(screen.getByText('sider.history.empty')).toBeInTheDocument()
   })
 
   it('点击更多触发 onMore，点击会话触发详情', () => {
@@ -48,7 +48,7 @@ describe('Sider/HistorySection', () => {
       />,
     )
 
-    fireEvent.click(screen.getByText('更多'))
+    fireEvent.click(screen.getByText('sider.history.more'))
     expect(onMore).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByTitle('会话1'))
@@ -68,7 +68,7 @@ describe('Sider/HistorySection', () => {
         onDeleteHistory={onDeleteHistory}
       />,
     )
-    fireEvent.click(screen.getByLabelText('删除历史会话'))
+    fireEvent.click(screen.getByLabelText('sider.history.deleteAria'))
     expect(onDeleteHistory).toHaveBeenCalledWith(s)
   })
 })

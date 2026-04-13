@@ -4,7 +4,8 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
-  buildHashedUploadFilename,
+  buildStoredUploadFilename,
+  buildWorkspaceTempUploadHash,
   normalizeSessionSegment,
   parseMultipartUploadFile,
   sanitizeUploadFilename,
@@ -36,22 +37,17 @@ describe("workspace-temp-upload", () => {
     expect(normalizeSessionSegment("")).toBeUndefined();
   });
 
-  it("renames file with hash suffix", () => {
-    const name = buildHashedUploadFilename("a.txt", Buffer.from("hello", "utf8"));
-    expect(name).toMatch(/^a_[0-9a-f]{12}\.txt$/);
+  it("builds stable upload hash segments", () => {
+    const hash = buildWorkspaceTempUploadHash(Buffer.from("hello", "utf8"));
+    expect(hash).toMatch(/^[0-9a-f]{12}$/);
   });
 
-  it("keeps unicode filename before hash suffix", () => {
-    const name = buildHashedUploadFilename(
-      "流程支持并行执行.md",
-      Buffer.from("hello", "utf8")
-    );
-    expect(name).toMatch(/^流程支持并行执行_[0-9a-f]{12}\.md$/);
+  it("keeps original unicode filename for stored basename", () => {
+    expect(buildStoredUploadFilename("流程支持并行执行.md")).toBe("流程支持并行执行.md");
   });
 
   it("falls back to upload basename when filename has only extension", () => {
-    const name = buildHashedUploadFilename(".md", Buffer.from("hello", "utf8"));
-    expect(name).toMatch(/^upload_[0-9a-f]{12}\.md$/);
+    expect(buildStoredUploadFilename(".md")).toBe(".md");
   });
 
   it("parses multipart file payload with original filename", () => {
@@ -85,8 +81,8 @@ describe("workspace-temp-upload", () => {
 
     const result = await writeWorkspaceTempUpload(workspaceDir, payload, "note.md");
 
-    expect(result.relativePath.startsWith("tmp/")).toBe(true);
-    expect(result.name).toMatch(/^note_[0-9a-f]{12}\.md$/);
+    expect(result.relativePath).toMatch(/^tmp\/[0-9a-f]{12}\/note\.md$/);
+    expect(result.name).toBe("note.md");
     expect(result.bytes).toBe(5);
     expect(fs.readFileSync(result.absolutePath, "utf8")).toBe("hello");
   });
@@ -102,8 +98,8 @@ describe("workspace-temp-upload", () => {
       "agent:a:user:b:direct:chat-1"
     );
 
-    expect(result.relativePath.startsWith("tmp/chat-1/")).toBe(true);
-    expect(result.name).toMatch(/^report_[0-9a-f]{12}\.pdf$/);
+    expect(result.relativePath).toMatch(/^tmp\/chat-1\/[0-9a-f]{12}\/report\.pdf$/);
+    expect(result.name).toBe("report.pdf");
     expect(fs.existsSync(result.absolutePath)).toBe(true);
   });
 

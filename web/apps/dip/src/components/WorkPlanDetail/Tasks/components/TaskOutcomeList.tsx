@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons'
 import { Spin } from 'antd'
 import { memo, useEffect, useMemo, useState } from 'react'
+import intl from 'react-intl-universal'
 import {
   getSessionArchiveSubpath,
   getSessionArchives,
@@ -52,7 +53,7 @@ function renderFileTypeMeta(fileName: string) {
   const iconClassName = 'text-[--dip-text-color-45]'
 
   if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'ico', 'avif'].includes(ext)) {
-    return { icon: <FileImageOutlined className={iconClassName} />, label: '图片' }
+    return { icon: <FileImageOutlined className={iconClassName} />, label: intl.get('workPlan.detail.fileTypeImage') }
   }
   if (ext === 'pdf') {
     return { icon: <FilePdfOutlined className={iconClassName} />, label: 'PDF' }
@@ -64,13 +65,13 @@ function renderFileTypeMeta(fileName: string) {
     return { icon: <FileExcelOutlined className={iconClassName} />, label: 'Excel' }
   }
   if (['zip', 'rar', '7z', 'tar', 'gz', 'tgz'].includes(ext)) {
-    return { icon: <FileZipOutlined className={iconClassName} />, label: '压缩包' }
+    return { icon: <FileZipOutlined className={iconClassName} />, label: intl.get('workPlan.detail.fileTypeArchive') }
   }
   if (['mp4', 'webm', 'mov', 'm4v', 'ogv'].includes(ext)) {
-    return { icon: <VideoCameraOutlined className={iconClassName} />, label: '视频' }
+    return { icon: <VideoCameraOutlined className={iconClassName} />, label: intl.get('workPlan.detail.fileTypeVideo') }
   }
   if (['mp3', 'wav', 'aac', 'flac', 'm4a', 'opus', 'oga', 'weba'].includes(ext)) {
-    return { icon: <AudioOutlined className={iconClassName} />, label: '音频' }
+    return { icon: <AudioOutlined className={iconClassName} />, label: intl.get('workPlan.detail.fileTypeAudio') }
   }
   if (['md', 'mdx', 'markdown'].includes(ext)) {
     return { icon: <FileMarkdownOutlined className={iconClassName} />, label: 'Markdown' }
@@ -94,13 +95,13 @@ function renderFileTypeMeta(fileName: string) {
   ) {
     return {
       icon: <FileTextOutlined className={iconClassName} />,
-      label: ext ? ext.toUpperCase() : '文本',
+      label: ext ? ext.toUpperCase() : intl.get('workPlan.detail.fileTypeText'),
     }
   }
 
   return {
     icon: <FileUnknownOutlined className={iconClassName} />,
-    label: ext ? ext.toUpperCase() : '未知',
+    label: ext ? ext.toUpperCase() : intl.get('workPlan.detail.fileTypeUnknown'),
   }
 }
 
@@ -180,7 +181,7 @@ function TaskOutcomeListInner({ digitalHumanId, sessionId }: TaskOutcomeListProp
         )
         if (!cancelled) setEntries(nested.flat())
       } catch (error: any) {
-        if (!cancelled) setError(error?.description ?? '归档产物拉取失败')
+        if (!cancelled) setError(error?.description ?? intl.get('workPlan.detail.archiveFetchFailed'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -192,7 +193,7 @@ function TaskOutcomeListInner({ digitalHumanId, sessionId }: TaskOutcomeListProp
   }, [dhId, sessionIdTrimmed])
 
   if (!canFetch) {
-    return <Empty title="暂无产物" />
+    return <Empty title={intl.get('workPlan.detail.noOutcome')} />
   }
   if (loading) {
     return (
@@ -202,10 +203,10 @@ function TaskOutcomeListInner({ digitalHumanId, sessionId }: TaskOutcomeListProp
     )
   }
   if (error) {
-    return <Empty type="failed" title="加载失败" desc={error} />
+    return <Empty type="failed" title={intl.get('workPlan.common.loadFailed')} desc={error} />
   }
   if (entries.length === 0) {
-    return <Empty title="暂无产物" />
+    return <Empty title={intl.get('workPlan.detail.noOutcome')} />
   }
   return (
     <>

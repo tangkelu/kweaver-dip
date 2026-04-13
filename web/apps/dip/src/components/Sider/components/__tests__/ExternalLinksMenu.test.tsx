@@ -19,8 +19,8 @@ import { ExternalLinksSection } from '../ExternalLinksMenu'
 describe('Sider/ExternalLinksMenu', () => {
   it('渲染两个外链并带正确 href', () => {
     render(<ExternalLinksSection collapsed={false} />)
-    const sso = screen.getByRole('link', { name: /全局业务知识网络/ })
-    const deploy = screen.getByRole('link', { name: /系统工作台/ })
+    const sso = screen.getByRole('link', { name: /sider.externalBusinessNetwork/ })
+    const deploy = screen.getByRole('link', { name: /sider.externalSystemWorkbench/ })
 
     expect(sso).toHaveAttribute('href', getFullPath(BUSINESS_NETWORK_BASE_PATH))
     expect(deploy).toHaveAttribute('href', `${window.location.origin}/deploy`)

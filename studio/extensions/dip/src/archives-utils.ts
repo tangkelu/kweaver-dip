@@ -51,3 +51,43 @@ export function sanitizeFileName(name: string): string {
     .replace(/^_|_$/g, "");
   return (sanitizedBase || "unnamed") + ext.toLowerCase();
 }
+
+/**
+ * Derives the archive identifier from the session metadata.
+ *
+ * @param sessionKey Session key string such as `agent:a:user:b:direct:chat-1`.
+ * @param fallbackSessionId Optional fallback session id when no key is available.
+ * @returns Sanitized archive id or `undefined` if it cannot be derived.
+ */
+export function deriveArchiveIdFromSession(
+  sessionKey?: string | null,
+  fallbackSessionId?: string | null
+): string | undefined {
+  const sources: Array<string | null | undefined> = [sessionKey, fallbackSessionId];
+
+  for (const source of sources) {
+    if (typeof source !== "string") continue;
+    const trimmed = source.trim();
+    if (!trimmed) continue;
+
+    const lastSegment = trimmed.split(":").filter(Boolean).pop();
+    if (!lastSegment) continue;
+
+    const sanitized = lastSegment.replace(/[^a-zA-Z0-9-_]/g, "_");
+    if (sanitized.length > 0) {
+      return sanitized;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Checks whether a timestamp string matches the archive protocol format.
+ *
+ * @param value Timestamp candidate.
+ * @returns True when the value is `YYYY-MM-DD-HH-MM-SS`.
+ */
+export function isValidArchiveTimestamp(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$/.test(value);
+}

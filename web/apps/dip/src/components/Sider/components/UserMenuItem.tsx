@@ -1,6 +1,8 @@
 import type { MenuProps } from 'antd'
 import { Dropdown } from 'antd'
 import clsx from 'classnames'
+import intl from 'react-intl-universal'
+import { useNavigate } from 'react-router-dom'
 import AvatarIcon from '@/assets/images/sider/avatar.svg?react'
 import { useUserInfoStore } from '@/stores'
 
@@ -10,17 +12,36 @@ export interface UserMenuItemProps {
 }
 
 export const UserMenuItem = ({ collapsed }: UserMenuItemProps) => {
+  const navigate = useNavigate()
   const { userInfo, logout } = useUserInfoStore()
+  const showSystemSettings = useUserInfoStore(
+    (s) => s.isAdmin && s.modules.includes('studio'),
+  )
+
   const handleLogout = () => {
     logout()
   }
 
-  const displayName = userInfo?.email || userInfo?.vision_name || userInfo?.account || '用户'
+  const displayName =
+    userInfo?.email || userInfo?.vision_name || userInfo?.account || intl.get('sider.defaultUser')
 
   const menuItems: MenuProps['items'] = [
+    ...(showSystemSettings
+      ? [
+          {
+            key: 'system-settings',
+            label: intl.get('sider.systemSettings'),
+            title: '',
+            onClick: () => {
+              navigate('/studio/initial-configuration')
+            },
+          },
+          { type: 'divider' as const },
+        ]
+      : []),
     {
       key: 'logout',
-      label: '退出登录',
+      label: intl.get('sider.logout'),
       title: '',
       onClick: handleLogout,
     },

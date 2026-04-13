@@ -323,7 +323,9 @@ export function readOpenClawDetectedConfigFromEnv(
     protocol: resolveGatewayProtocol(envSource.OPENCLAW_GATEWAY_PROTOCOL),
     host: resolveGatewayHost(envSource.OPENCLAW_GATEWAY_HOST),
     port: resolveGatewayPort(envSource.OPENCLAW_GATEWAY_PORT),
-    token
+    token,
+    kweaver_base_url: readOptionalString(envSource.KWEAVER_BASE_URL),
+    kweaver_token: readOptionalString(envSource.KWEAVER_TOKEN)
   };
 }
 
@@ -437,13 +439,11 @@ export function buildGuideEnvEntries(
   request: NormalizedInitializeGuideRequest
 ): ReadonlyArray<readonly [string, string]> {
   return [
-    ["OPENCLAW_CONFIG_PATH", request.configPath],
     ["OPENCLAW_ROOT_DIR", request.stateDir],
     ["OPENCLAW_GATEWAY_PROTOCOL", request.protocol],
     ["OPENCLAW_GATEWAY_HOST", request.host],
     ["OPENCLAW_GATEWAY_PORT", String(request.port)],
     ["OPENCLAW_GATEWAY_TOKEN", request.token],
-    ["OPENCLAW_WORKSPACE_DIR", request.workspaceDir],
     ["KWEAVER_BASE_URL", request.kweaver_base_url ?? ""],
     ["KWEAVER_TOKEN", request.kweaver_token ?? ""]
   ];
@@ -472,8 +472,6 @@ export function buildGuideEnvFileContent(
     "OPENCLAW_GATEWAY_TIMEOUT_MS=5000",
     "",
     `OPENCLAW_ROOT_DIR=${encodeEnvValue(request.stateDir)}`,
-    `OPENCLAW_CONFIG_PATH=${encodeEnvValue(request.configPath)}`,
-    `OPENCLAW_WORKSPACE_DIR=${encodeEnvValue(request.workspaceDir)}`,
     "",
     `KWEAVER_BASE_URL=${encodeEnvValue(request.kweaver_base_url ?? "")}`,
     `KWEAVER_TOKEN=${encodeEnvValue(request.kweaver_token ?? "")}`,
@@ -517,24 +515,15 @@ export function resolveOpenClawLocalPathsFromEnv(
   workspaceDir: string;
 } {
   const configuredRootDir = readOptionalString(envSource.OPENCLAW_ROOT_DIR);
-  const configuredConfigPath = readOptionalString(envSource.OPENCLAW_CONFIG_PATH);
   const stateDir = resolveInjectedPath(
-    configuredRootDir ?? dirname(configuredConfigPath ?? join(homedir(), ".openclaw", "openclaw.json")),
+    configuredRootDir ?? join(homedir(), ".openclaw"),
     studioRootDir
   );
-  const configPath = resolveInjectedPath(
-    configuredConfigPath ?? join(stateDir, "openclaw.json"),
-    studioRootDir
-  );
-  const configuredWorkspaceDir = readOptionalString(envSource.OPENCLAW_WORKSPACE_DIR);
 
   return {
-    configPath,
+    configPath: join(stateDir, "openclaw.json"),
     stateDir,
-    workspaceDir: resolveInjectedPath(
-      configuredWorkspaceDir ?? resolveWorkspaceDir(stateDir),
-      studioRootDir
-    )
+    workspaceDir: resolveWorkspaceDir(stateDir)
   };
 }
 
@@ -626,7 +615,6 @@ export async function collectMissingRequirements(
       "gatewayHost",
       "gatewayPort",
       "gatewayToken",
-      "workspaceDir",
       "privateKey",
       "publicKey"
     ];
@@ -648,10 +636,6 @@ export async function collectMissingRequirements(
 
   if (readOptionalString(envValues.OPENCLAW_GATEWAY_TOKEN) === undefined) {
     missing.push("gatewayToken");
-  }
-
-  if (readOptionalString(envValues.OPENCLAW_WORKSPACE_DIR) === undefined) {
-    missing.push("workspaceDir");
   }
 
   if (!(await pathExists(privateKeyPath))) {

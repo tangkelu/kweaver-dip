@@ -17,7 +17,8 @@
   "dependencies": {
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
-    "multer": "^2.1.1"
+    "multer": "^2.1.1",
+    "openclaw": "2026.3.11"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",

@@ -77,9 +77,13 @@ components:
         description:
           type: string
           title: 预置数字员工描述
+        created:
+          type: boolean
+          title: 是否已创建
       required:
         - id
         - name
+        - created
 
     BuiltInDigitalHumanList:
       summary: 预置数字员工模板列表
@@ -124,7 +128,7 @@ components:
       summary: 创建数字员工请求
       description: |
         后端通过 OpenClaw `agents.create` 创建 agent：内部注册名优先使用请求中的 `id`，未提供时使用 UUID，展示名写在 `IDENTITY.md`。
-        `channel` 写入本机 `OPENCLAW_CONFIG_PATH` 指向的 `openclaw.json`（非 Gateway `config.patch`）。
+        `channel` 写入本机 `OPENCLAW_ROOT_DIR/openclaw.json`（非 Gateway `config.patch`）。
       type: object
       properties:
         id:

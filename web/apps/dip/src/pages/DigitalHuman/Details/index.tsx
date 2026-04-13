@@ -1,5 +1,6 @@
 import { message, Spin, Tabs } from 'antd'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import intl from 'react-intl-universal'
 import { createSearchParams, useLocation, useNavigate, useParams } from 'react-router-dom'
 import AppIcon from '@/components/AppIcon'
 import DigitalHumanSetting from '@/components/DigitalHumanSetting'
@@ -84,17 +85,17 @@ const Details = () => {
     return [
       {
         key: 'session',
-        label: '会话',
+        label: intl.get('digitalHuman.detail.tabSession'),
         icon: <IconFont type="icon-dialog" />,
       },
       {
         key: 'plan',
-        label: '工作计划',
+        label: intl.get('digitalHuman.detail.tabPlan'),
         icon: <IconFont type="icon-plan" />,
       },
       {
         key: 'config',
-        label: '员工配置',
+        label: intl.get('digitalHuman.detail.tabConfig'),
         icon: <IconFont type="icon-settings" />,
       },
     ]
@@ -147,7 +148,8 @@ const Details = () => {
               <span className="font-medium text-[--dip-text-color]">{basic.name}</span>
               {detail?.updated_at && (
                 <span className="text-[--dip-text-color-65] text-xs">
-                  更新：{formatTimeSlash(new Date(detail.updated_at).getTime())}
+                  {intl.get('digitalHuman.detail.updatedAtPrefix')}
+                  {formatTimeSlash(new Date(detail.updated_at).getTime())}
                 </span>
               )}
             </div>

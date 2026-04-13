@@ -1,6 +1,7 @@
 import type { ModalProps } from 'antd'
 import { Form, Input, Modal, message } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
+import intl from 'react-intl-universal'
 import { type CronJob, updateCronJob } from '@/apis/dip-studio/plan'
 
 interface EditPlanFormValues {
@@ -44,7 +45,7 @@ const ActionModal = ({ open, onCancel, onSuccess, plan }: ActionModalProps) => {
       }
       setLoading(true)
       const updatedPlan = await updateCronJob(plan.id, payload)
-      messageApi.success('编辑计划成功')
+      messageApi.success(intl.get('workPlan.actionModal.editPlanSuccess'))
       onSuccess(updatedPlan)
       onCancel?.(undefined as never)
     } catch (error: any) {
@@ -54,7 +55,7 @@ const ActionModal = ({ open, onCancel, onSuccess, plan }: ActionModalProps) => {
       if (error?.description) {
         messageApi.error(error.description)
       } else {
-        messageApi.error('编辑计划失败，请稍后重试')
+        messageApi.error(intl.get('workPlan.actionModal.editPlanFailed'))
       }
     } finally {
       setLoading(false)
@@ -65,7 +66,7 @@ const ActionModal = ({ open, onCancel, onSuccess, plan }: ActionModalProps) => {
     <>
       {contextHolder}
       <Modal
-        title="编辑计划"
+        title={intl.get('workPlan.actionModal.editPlanTitle')}
         open={open}
         onCancel={onCancel}
         onOk={handleOk}
@@ -73,8 +74,8 @@ const ActionModal = ({ open, onCancel, onSuccess, plan }: ActionModalProps) => {
         mask={{ closable: false }}
         destroyOnHidden
         width={520}
-        okText="确定"
-        cancelText="取消"
+        okText={intl.get('global.ok')}
+        cancelText={intl.get('global.cancel')}
         confirmLoading={loading}
         okButtonProps={{ loading, disabled: submitDisabled }}
         footer={(_, { OkBtn, CancelBtn }) => (
@@ -91,11 +92,17 @@ const ActionModal = ({ open, onCancel, onSuccess, plan }: ActionModalProps) => {
           initialValues={{ enabled: true }}
         >
           <Form.Item
-            label="计划名称"
+            label={intl.get('workPlan.actionModal.planName')}
             name="name"
-            rules={[{ required: true, whitespace: true, message: '请输入计划名称' }]}
+            rules={[
+              {
+                required: true,
+                whitespace: true,
+                message: intl.get('workPlan.actionModal.planNameRequired'),
+              },
+            ]}
           >
-            <Input placeholder="请输入计划名称" maxLength={128} showCount />
+            <Input placeholder={intl.get('workPlan.actionModal.planNamePlaceholder')} maxLength={128} showCount />
           </Form.Item>
         </Form>
       </Modal>

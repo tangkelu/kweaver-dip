@@ -20,6 +20,7 @@ const importMetaEnv = {
   PUBLIC_ENABLED_MODULES: '',
   PUBLIC_TOKEN: '',
   PUBLIC_REFRESH_TOKEN: '',
+  PUBLIC_CHANNEL_VISIBLE: 'true',
 }
 
 // Plugin to remove mac-scrollbar CSS import that causes resolution issues

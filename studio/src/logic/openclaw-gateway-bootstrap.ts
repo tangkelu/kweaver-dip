@@ -2,6 +2,11 @@ import { collectMissingRequirements } from "./guide";
 import { OpenClawGatewayClient } from "../infra/openclaw-gateway-client";
 import { getEnv } from "../utils/env";
 
+const OPENCLAW_GATEWAY_RETRY_DELAY_MS = 1_000;
+
+let reconnectTimer: NodeJS.Timeout | undefined;
+let reconnectInFlight = false;
+
 /**
  * Minimal gateway connector contract used by bootstrap flows.
  */
@@ -40,6 +45,11 @@ export interface OpenClawGatewayBootstrapOptions {
    * Optional environment reader used by tests.
    */
   envReader?: typeof getEnv;
+
+  /**
+   * Optional scheduler override used by tests.
+   */
+  scheduleRetry?: typeof setTimeout;
 }
 
 /**
@@ -60,15 +70,63 @@ export async function connectOpenClawGatewayIfInitialized(
 
   const envReader = options.envReader ?? getEnv;
   const env = envReader();
-
-  await connectOpenClawGateway({
+  scheduleGatewayReconnect({
     url: env.openClawGatewayUrl,
     token: env.openClawGatewayToken,
     timeoutMs: env.openClawGatewayTimeoutMs,
-    connector: options.connector
+    connector: options.connector,
+    scheduleRetry: options.scheduleRetry
   });
 
   return true;
+}
+
+/**
+ * Starts a background reconnect loop for the OpenClaw Gateway.
+ *
+ * The loop attempts one immediate connection. When the gateway is temporarily
+ * unavailable, it logs the failure and retries every second until successful.
+ *
+ * @param options Target gateway connection settings.
+ */
+function scheduleGatewayReconnect(options: {
+  url: string;
+  token?: string;
+  timeoutMs?: number;
+  connector?: OpenClawGatewayConnector;
+  scheduleRetry?: typeof setTimeout;
+}): void {
+  const scheduleRetry = options.scheduleRetry ?? setTimeout;
+
+  if (reconnectTimer !== undefined || reconnectInFlight) {
+    return;
+  }
+
+  const attemptConnection = async (): Promise<void> => {
+    if (reconnectInFlight) {
+      return;
+    }
+
+    reconnectInFlight = true;
+
+    try {
+      await connectOpenClawGateway(options);
+      reconnectTimer = undefined;
+    } catch (error) {
+      console.warn(
+        "[openclaw-gateway-bootstrap] OpenClaw Gateway unavailable, retrying in 1s:",
+        error
+      );
+      reconnectTimer = scheduleRetry(() => {
+        reconnectTimer = undefined;
+        void attemptConnection();
+      }, OPENCLAW_GATEWAY_RETRY_DELAY_MS);
+    } finally {
+      reconnectInFlight = false;
+    }
+  };
+
+  void attemptConnection();
 }
 
 /**

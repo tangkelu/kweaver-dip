@@ -1,5 +1,6 @@
 import type { DrawerProps } from 'antd'
 import { Drawer } from 'antd'
+import intl from 'react-intl-universal'
 import Empty from '@/components/Empty'
 import ArchivePreviewPanel from './ArchivePreviewPanel'
 import type { ArchivePreviewState } from './useArchivePreview'
@@ -54,7 +55,7 @@ const ArchivePreviewDrawer = ({
           />
         ) : (
           <div className="flex h-full items-center justify-center p-6">
-            <Empty title="暂无预览内容" />
+            <Empty title={intl.get('workPlan.detail.noPreview')} />
           </div>
         )}
       </div>

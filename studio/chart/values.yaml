@@ -36,7 +36,6 @@ ingress:
 
 studio:
   nodeEnv: production
-  port: 3000
   envFilePath: /data/.env
   OpenClawRootDir: /data/.openclaw
   KWeaverBaseURL: http://bkn-backend-svc:13014

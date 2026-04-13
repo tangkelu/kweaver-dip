@@ -17,7 +17,10 @@ import {
  * @param skillMd SKILL.md body.
  * @returns Zip bytes.
  */
-function buildSkillZip(skillId: string, skillMd = "# Test skill\n"): Buffer {
+function buildSkillZip(
+  skillId: string,
+  skillMd = ["---", `name: ${skillId}`, "---", "# Test skill"].join("\n")
+): Buffer {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "dip-skills-zip-"));
   try {
     const skillDir = path.join(root, skillId);
@@ -49,17 +52,20 @@ function buildSkillZip(skillId: string, skillMd = "# Test skill\n"): Buffer {
 /**
  * Zip with `SKILL.md` at archive root (optional extra files).
  */
-function buildFlatZip(skillMd = "# Flat skill\n"): Buffer {
+function buildFlatZip(
+  skillMd = ["---", "name: flat-skill", "---", "# Flat skill"].join("\n")
+): Buffer {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "dip-skills-flat-"));
   try {
     fs.writeFileSync(path.join(root, "SKILL.md"), skillMd);
     fs.writeFileSync(path.join(root, "extra.txt"), "x");
     const outZip = path.join(root, "out.zip");
-    const zipCmd = spawnSync("zip", ["-q", outZip, "SKILL.md", "extra.txt"], { cwd: root });
+    const entries = ["SKILL.md", "extra.txt"];
+    const zipCmd = spawnSync("zip", ["-q", outZip, ...entries], { cwd: root });
     if (zipCmd.status === 0) {
       return fs.readFileSync(outZip);
     }
-    const tarCmd = spawnSync("tar", ["-a", "-cf", outZip, "SKILL.md", "extra.txt"], {
+    const tarCmd = spawnSync("tar", ["-a", "-cf", outZip, ...entries], {
       cwd: root
     });
     if (tarCmd.status === 0) {
@@ -149,7 +155,7 @@ describe("skills-install", () => {
     const result = installSkillFromZipBuffer(zip, repoSkillsDir);
 
     expect(result.name).toBe("weather");
-    expect(result.displayName).toBeUndefined();
+    expect(result.displayName).toBe("weather");
     expect(result.skillPath).toBe(path.join(repoSkillsDir, "weather"));
     expect(
       fs.readFileSync(path.join(repoSkillsDir, "weather", "SKILL.md"), "utf8")
@@ -181,8 +187,8 @@ describe("skills-install", () => {
   });
 
   it.skipIf(!canPackZip)("replaces an existing skill when overwrite is true", () => {
-    const zip1 = buildSkillZip("dup", "v1");
-    const zip2 = buildSkillZip("dup", "v2");
+    const zip1 = buildSkillZip("dup", ["---", "name: dup", "---", "v1"].join("\n"));
+    const zip2 = buildSkillZip("dup", ["---", "name: dup", "---", "v2"].join("\n"));
     installSkillFromZipBuffer(zip1, repoSkillsDir);
 
     installSkillFromZipBuffer(zip2, repoSkillsDir, { overwrite: true });
@@ -212,6 +218,34 @@ describe("skills-install", () => {
       fs.readFileSync(path.join(repoSkillsDir, "flat-skill", "SKILL.md"), "utf8")
     ).toContain("hello");
     expect(fs.readFileSync(path.join(repoSkillsDir, "flat-skill", "extra.txt"), "utf8")).toBe("x");
+  });
+
+  it.skipIf(!canPackZip)("rejects nested layout when front matter metadata is missing", () => {
+    const zip = buildSkillZip("weather", "# body\n");
+
+    expect(() => installSkillFromZipBuffer(zip, repoSkillsDir)).toThrow(SkillInstallError);
+    try {
+      installSkillFromZipBuffer(zip, repoSkillsDir);
+    } catch (e: unknown) {
+      expect(e).toMatchObject({ code: "BAD_LAYOUT" });
+      expect(e).toBeInstanceOf(SkillInstallError);
+      expect((e as SkillInstallError).message).toContain("front matter metadata");
+    }
+  });
+
+  it.skipIf(!canPackZip)("rejects flat layout when front matter metadata is missing", () => {
+    const zip = buildFlatZip("# body");
+
+    expect(() =>
+      installSkillFromZipBuffer(zip, repoSkillsDir, { name: "flat-skill" })
+    ).toThrow(SkillInstallError);
+    try {
+      installSkillFromZipBuffer(zip, repoSkillsDir, { name: "flat-skill" });
+    } catch (e: unknown) {
+      expect(e).toMatchObject({ code: "BAD_LAYOUT" });
+      expect(e).toBeInstanceOf(SkillInstallError);
+      expect((e as SkillInstallError).message).toContain("front matter metadata");
+    }
   });
 
   it.skipIf(!canPackZip)("rejects when SKILL.md name mismatches directory name", () => {

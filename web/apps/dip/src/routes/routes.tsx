@@ -43,7 +43,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'home',
     key: 'home',
-    label: '首页',
+    labelKey: 'routes.home',
     iconUrl: chatUrl,
     requiredRoleIds: [],
     element: <Home />,
@@ -62,7 +62,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'store/my-app',
     key: 'my-app',
-    label: '应用',
+    labelKey: 'routes.myApp',
     iconUrl: applicationsUrl,
     requiredRoleIds: [],
     element: <MyApp />,
@@ -79,7 +79,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'store/app-store',
     key: 'app-store',
-    label: '应用商店',
+    labelKey: 'routes.appStore',
     iconUrl: appStoreUrl,
     requiredRoleIds: [],
     element: <AppStore />,
@@ -98,7 +98,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'studio/digital-human',
     key: 'digital-human',
-    label: '我的数字员工',
+    labelKey: 'routes.digitalHuman',
     iconUrl: digitalHumanUrl,
     element: <DigitalHumanManagement />,
     sidebarMode: 'menu',
@@ -114,7 +114,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'studio/skills',
     key: 'skills',
-    label: '技能管理',
+    labelKey: 'routes.skills',
     iconUrl: skillUrl,
     element: <SkillsManagement />,
     sidebarMode: 'menu',
@@ -130,7 +130,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'studio/skills/:skillName',
     key: 'skill-item',
-    label: '技能详情',
+    labelKey: 'routes.skillDetail',
     element: <SkillsDetailPage />,
     sidebarMode: 'hidden',
     handle: {
@@ -145,7 +145,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'studio/conversation',
     key: 'studio-conversation',
-    label: '会话',
+    labelKey: 'routes.conversation',
     iconUrl: chatUrl,
     requiredRoleIds: [],
     element: <Conversation />,
@@ -162,7 +162,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'studio/work-plan',
     key: 'work-plan',
-    label: '工作计划',
+    labelKey: 'routes.workPlan',
     iconUrl: dipStudioUrl,
     element: <WorkPlan />,
     sidebarMode: 'hidden',
@@ -178,7 +178,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'studio/work-plan/:workPlanId',
     key: 'work-plan-item',
-    label: '工作计划详情',
+    labelKey: 'routes.workPlanDetail',
     element: <WorkPlanDetail />,
     sidebarMode: 'hidden',
     handle: {
@@ -193,7 +193,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'studio/history',
     key: 'history',
-    label: '历史记录',
+    labelKey: 'routes.history',
     iconUrl: dipStudioUrl,
     element: <History />,
     sidebarMode: 'hidden',
@@ -209,7 +209,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'studio/history/:sessionKey',
     key: 'history-item',
-    label: '历史记录',
+    labelKey: 'routes.history',
     element: <HistoryConversation />,
     sidebarMode: 'hidden',
     handle: {
@@ -224,7 +224,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'studio/digital-human/setting',
     key: 'digital-human-setting-new',
-    label: '新建数字员工',
+    labelKey: 'routes.dhSettingNew',
     element: <DHSetting />,
     sidebarMode: 'hidden',
     handle: {
@@ -239,7 +239,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'studio/digital-human/:digitalHumanId/setting',
     key: 'digital-human-setting-item',
-    label: '数字员工配置',
+    labelKey: 'routes.dhSettingItem',
     element: <DHSetting />,
     sidebarMode: 'hidden',
     handle: {
@@ -254,7 +254,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'studio/digital-human/:digitalHumanId',
     key: 'digital-human-detail',
-    label: '数字员工详情',
+    labelKey: 'routes.dhDetail',
     element: <DigitalHumanDetail />,
     sidebarMode: 'hidden',
     handle: {
@@ -269,7 +269,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: 'studio/initial-configuration',
     key: 'initial-configuration',
-    label: '系统初始化配置',
+    labelKey: 'routes.initialConfiguration',
     element: <InitialConfiguration />,
     sidebarMode: 'hidden',
     handle: {
@@ -284,7 +284,7 @@ export const routeConfigs: RouteConfig[] = [
   {
     path: BUSINESS_NETWORK_BASE_PATH.replace(/^\//, ''),
     key: 'business-network',
-    label: '全局业务知识网络',
+    labelKey: 'routes.businessNetwork',
     element: <BusinessNetwork />,
     sidebarMode: 'menu',
     handle: {

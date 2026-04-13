@@ -1,4 +1,5 @@
 import type { SessionArchiveEntry, SessionArchivesResponse } from '@/apis/dip-studio/sessions'
+import intl from 'react-intl-universal'
 
 /** 目录名形如 `{uuid}_{YYYY-MM-DD-HH-mm-ss}` 或 `{YYYY-MM-DD-HH-mm-ss}`，提取 `YYYY-MM-DD` 用于分组 */
 const DIR_NAME_RE =
@@ -24,7 +25,7 @@ function formatDisplayDateSeparators(text: string): string {
 
 /** 分组键 `YYYY-MM-DD` → 面板标题等展示用 `YYYY/MM/DD` */
 export function formatDateKeyForDisplay(dateKey: string): string {
-  if (dateKey === '其他') return dateKey
+  if (dateKey === intl.get('workPlan.detail.other')) return dateKey
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return dateKey.replace(/-/g, '/')
   return dateKey
 }
@@ -81,7 +82,7 @@ export function getArchiveEntryDisplayTime(
     const v = o[k]
     if (typeof v === 'string' && v.trim()) return formatDisplayDateSeparators(v.trim())
   }
-  return formatArchiveDirectoryTimeLabel(parentDirName) ?? '—'
+  return formatArchiveDirectoryTimeLabel(parentDirName) ?? intl.get('workPlan.common.dash')
 }
 
 /** 按日期分组顶层目录；无法解析日期的归入「其他」 */
@@ -91,7 +92,7 @@ export function groupArchiveDirectoriesByDate(
   const dirs = entries.filter((e) => e.type === 'directory')
   const map = new Map<string, SessionArchiveEntry[]>()
   for (const d of dirs) {
-    const dateKey = parseArchiveDirectoryDateKey(d.name) ?? '其他'
+    const dateKey = parseArchiveDirectoryDateKey(d.name) ?? intl.get('workPlan.detail.other')
     const list = map.get(dateKey) ?? []
     list.push(d)
     map.set(dateKey, list)
@@ -104,8 +105,8 @@ export function groupArchiveDirectoriesByDate(
 
 export function sortDateKeysDesc(dateKeys: string[]): string[] {
   return [...dateKeys].sort((a, b) => {
-    if (a === '其他') return 1
-    if (b === '其他') return -1
+    if (a === intl.get('workPlan.detail.other')) return 1
+    if (b === intl.get('workPlan.detail.other')) return -1
     return b.localeCompare(a)
   })
 }
@@ -322,7 +323,7 @@ export function formatPreviewContent(
   fileName: string,
 ): string {
   if (typeof res === 'string') return res
-  if (res instanceof ArrayBuffer) return '[二进制内容，无法以文本预览]'
+  if (res instanceof ArrayBuffer) return intl.get('workPlan.detail.binaryNoPreview')
   if (isSessionArchivesResponse(res)) return JSON.stringify(res, null, 2)
   if (fileName.toLowerCase().endsWith('.json')) return JSON.stringify(res, null, 2)
   return String(res)

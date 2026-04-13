@@ -1,6 +1,7 @@
 import { Spin } from 'antd'
 import { throttle } from 'lodash'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import intl from 'react-intl-universal'
 import { List } from 'react-window'
 import { type CronJob, getDigitalHumanPlanList } from '@/apis/dip-studio/plan'
 import Empty from '@/components/Empty'
@@ -216,7 +217,7 @@ function PlanListInner({
 
   const stateContent = (() => {
     if (isNoDigitalHumanId) {
-      return <Empty title="暂无数据" />
+      return <Empty title={intl.get('workPlan.common.noData')} />
     }
 
     if (initialLoading) {
@@ -225,9 +226,9 @@ function PlanListInner({
 
     if (filteredListData.length === 0) {
       if (trimmedSearchValue) {
-        return <Empty type="search" desc="抱歉，没有找到相关内容" />
+        return <Empty type="search" desc={intl.get('workPlan.common.searchNoResult')} />
       }
-      return <Empty title="暂无数据" />
+      return <Empty title={intl.get('workPlan.common.noData')} />
     }
 
     return null

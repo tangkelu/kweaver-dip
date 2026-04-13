@@ -40,7 +40,8 @@ describe("DefaultBuiltInDigitalHumanLogic", () => {
       {
         id: "__bkn_creator__",
         name: "BKN Creator",
-        description: "BKN helper"
+        description: "BKN helper",
+        created: false
       }
     ]);
   });

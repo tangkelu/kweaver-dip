@@ -1,5 +1,6 @@
 import { message, Spin, Tabs } from 'antd'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import intl from 'react-intl-universal'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { DigitalHumanSkill } from '@/apis'
 import { downloadSkillFile, getEnabledSkills, getSkillFileContent } from '@/apis'
@@ -73,7 +74,7 @@ const SkillsDetailPage = () => {
         label: (
           <span className="inline-flex items-center gap-1">
             <IconFont type="icon-doclib" />
-            文件列表
+            {intl.get('skillDetail.filesTab')}
           </span>
         ),
       },
@@ -119,7 +120,7 @@ const SkillsDetailPage = () => {
 
       const found = list.find((s) => s.name === decodedName)
       if (!found) {
-        messageApi.error('技能不存在')
+        messageApi.error(intl.get('skillDetail.skillNotFound'))
         navigate('/studio/skills', { replace: true })
         return
       }
@@ -153,7 +154,9 @@ const SkillsDetailPage = () => {
           const res = SKILL_DETAIL_USE_MOCK
             ? await mockFetchSkillFileContent(decodedName, { path })
             : await getSkillFileContent(decodedName, { path })
-          const body = res.content + (res.truncated ? '\n\n（预览已截断，服务端可能限制长度）' : '')
+          const body =
+            res.content +
+            (res.truncated ? `\n\n${intl.get('skillDetail.previewTruncated')}` : '')
           setFilePreview((p) =>
             p
               ? {
@@ -173,7 +176,7 @@ const SkillsDetailPage = () => {
                   body: '',
                   loading: false,
                   viewer: 'text',
-                  error: '文件内容加载失败',
+                  error: intl.get('skillDetail.fileLoadFailed'),
                 }
               : null,
           )
@@ -195,21 +198,21 @@ const SkillsDetailPage = () => {
     try {
       const res = await downloadSkillFile(decodedName, { path: subpath })
       if (!(res instanceof ArrayBuffer)) {
-        messageApi.error('文件数据格式异常')
+        messageApi.error(intl.get('skillDetail.fileFormatInvalid'))
         return
       }
       const blob = new Blob([res], { type: getArchiveFileMimeForBlob(name) })
       const blobUrl = URL.createObjectURL(blob)
       const anchor = document.createElement('a')
       anchor.href = blobUrl
-      anchor.download = name || 'download'
+      anchor.download = name || intl.get('skillDetail.defaultDownloadName')
       anchor.style.display = 'none'
       document.body.appendChild(anchor)
       anchor.click()
       anchor.remove()
       URL.revokeObjectURL(blobUrl)
     } catch {
-      messageApi.error('下载失败')
+      messageApi.error(intl.get('skillDetail.downloadFailed'))
     }
   }, [decodedName, filePreview, messageApi])
 

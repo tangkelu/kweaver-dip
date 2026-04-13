@@ -1,10 +1,12 @@
 import { Drawer, type DrawerProps } from 'antd'
+import intl from 'react-intl-universal'
 import DipChatKit from '@/components/DipChatKit'
 import IconFont from '@/components/IconFont'
 
 export interface AddSkillDrawerProps {
   open: boolean
   onClose: () => void
+  /** DipChatKit 初始提交内容等 */
   payload?: any
   /** 抽屉挂载节点；不传时使用数字员工设置页容器 `#digital-human-setting-container` */
   getContainer?: DrawerProps['getContainer']
@@ -13,6 +15,7 @@ export interface AddSkillDrawerProps {
 const defaultGetContainer = () =>
   document.getElementById('digital-human-setting-container') as HTMLElement
 
+/** 新建技能会话抽屉（内嵌 DipChatKit） */
 const AddSkillDrawer = ({ open, onClose, payload, getContainer }: AddSkillDrawerProps) => {
   return (
     <Drawer
@@ -27,9 +30,9 @@ const AddSkillDrawer = ({ open, onClose, payload, getContainer }: AddSkillDrawer
           </button>
           <span
             className="flex-1 min-w-0 font-medium text-[--dip-text-color] truncate"
-            title={payload?.content ?? '新建技能'}
+            title={payload?.content ?? intl.get('digitalHuman.addSkillDrawer.newSkillTitle')}
           >
-            {payload?.content ?? '新建技能'}
+            {payload?.content ?? intl.get('digitalHuman.addSkillDrawer.newSkillTitle')}
           </span>
         </div>
       }

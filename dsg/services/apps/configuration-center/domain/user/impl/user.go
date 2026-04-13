@@ -1353,13 +1353,21 @@ func (u *User) RetryUserApply() {
 		log.WithContext(context.Background()).Error("UserApply strconv.ParseInt Error", zap.Error(err))
 	}
 	for _, userInfo := range userInfos {
+		var email string
+		if userInfo != nil && userInfo.User != nil && userInfo.User.Email != nil {
+			email = *userInfo.User.Email
+		}
+		var phoneNumber string
+		if userInfo != nil && userInfo.User != nil && userInfo.User.TelNumber != nil {
+			phoneNumber = *userInfo.User.TelNumber
+		}
 		userInfoMap[userInfo.ID] = &model.User{
 			ID:          userInfo.ID,
 			Name:        *userInfo.User.DisplayName,
 			Status:      int32(configuration_center.UserNormal),
 			UserType:    int32(tempType),
-			PhoneNumber: *userInfo.User.TelNumber,
-			MailAddress: *userInfo.User.Email,
+			PhoneNumber: phoneNumber,
+			MailAddress: email,
 			LoginName:   userInfo.User.LoginName,
 			UpdatedAt:   t,
 		}

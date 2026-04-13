@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import { memo, useId, useState } from 'react'
+import intl from 'react-intl-universal'
 import ScrollBarContainer from '@/components/ScrollBarContainer'
 import TaskConversation from './TaskConversation'
 import TaskOutcomeList from './TaskOutcomeList'
@@ -29,9 +30,13 @@ function TaskRunExpandedPanelInner({ id, digitalHumanId, sessionId }: TaskRunExp
   const [activeTab, setActiveTab] = useState<TaskRunExpandedTab>('session')
 
   return (
-    <section id={id} className="" aria-label="执行记录展开内容">
+    <section id={id} className="" aria-label={intl.get('workPlan.detail.taskExpandAria')}>
       <div className="mx-5 h-px bg-[#f5f5f5] mb-4" aria-hidden />
-      <div className="flex gap-2 mx-5 mb-2" role="tablist" aria-label="执行记录详情">
+      <div
+        className="flex gap-2 mx-5 mb-2"
+        role="tablist"
+        aria-label={intl.get('workPlan.detail.taskDetailAria')}
+      >
         <button
           type="button"
           id={tabSessionId}
@@ -41,7 +46,7 @@ function TaskRunExpandedPanelInner({ id, digitalHumanId, sessionId }: TaskRunExp
           className={classNames(tabBtnBase, activeTab === 'session' && tabBtnActive)}
           onClick={() => setActiveTab('session')}
         >
-          执行过程
+          {intl.get('workPlan.detail.taskTabSession')}
         </button>
         <button
           type="button"
@@ -52,7 +57,7 @@ function TaskRunExpandedPanelInner({ id, digitalHumanId, sessionId }: TaskRunExp
           className={classNames(tabBtnBase, activeTab === 'outcomes' && tabBtnActive)}
           onClick={() => setActiveTab('outcomes')}
         >
-          输出成果
+          {intl.get('workPlan.detail.taskTabOutcome')}
         </button>
       </div>
 

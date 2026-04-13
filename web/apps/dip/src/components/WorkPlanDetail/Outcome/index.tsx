@@ -2,6 +2,7 @@ import { FolderOpenOutlined } from '@ant-design/icons'
 import { Collapse, Spin } from 'antd'
 import classNames from 'classnames'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import intl from 'react-intl-universal'
 import type { SessionArchiveEntry, SessionArchivesResponse } from '@/apis/dip-studio/sessions'
 import { getSessionArchiveSubpath, getSessionArchives } from '@/apis/dip-studio/sessions'
 import Empty from '@/components/Empty'
@@ -203,7 +204,7 @@ const ResultsPanel = ({
                 })}
                 {fileRows.length === 0 ? (
                   <li className="px-4 py-3 text-center text-xs leading-5 text-[var(--dip-text-color-45)]">
-                    暂无文件
+                    {intl.get('workPlan.detail.noFile')}
                   </li>
                 ) : null}
               </ul>
@@ -219,7 +220,7 @@ const ResultsPanel = ({
   if (!(dhId && sessionId)) {
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-6">
-        <Empty type="failed" title="加载失败" />
+        <Empty type="failed" title={intl.get('workPlan.common.loadFailed')} />
       </div>
     )
   }
@@ -235,7 +236,7 @@ const ResultsPanel = ({
   if (rootError || !root) {
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-6">
-        <Empty title="暂无数据" />
+        <Empty title={intl.get('workPlan.common.noData')} />
       </div>
     )
   }
@@ -243,7 +244,7 @@ const ResultsPanel = ({
   if (dateKeys.length === 0) {
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-6">
-        <Empty title="暂无数据" />
+        <Empty title={intl.get('workPlan.common.noData')} />
       </div>
     )
   }
@@ -254,8 +255,8 @@ const ResultsPanel = ({
         <div className="flex min-h-0 flex-col px-6 py-5">
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-[--dip-border-color] bg-[--dip-white]">
             <div className="flex h-10 shrink-0 items-center justify-between gap-4 border-b border-[--dip-border-color] bg-[#F5F5F4] px-6 text-[--dip-text-color-65]">
-              <span>文件名称</span>
-              <span className="w-36">更新时间</span>
+              <span>{intl.get('workPlan.detail.fileName')}</span>
+              <span className="w-36">{intl.get('workPlan.detail.updateTime')}</span>
             </div>
             <ScrollBarContainer className="min-h-0 min-w-0 flex-1 overflow-auto">
               <Collapse

@@ -53,7 +53,7 @@ describe('DigitalHumanSetting/KnowledgeConfig/SelectKnowledgeModal', () => {
       <SelectKnowledgeModal open onOk={mockOnOk} onCancel={mockOnCancel} defaultSelectedIds={[]} />,
     )
 
-    expect(screen.getByText('添加知识')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.knowledgeModal.title')).toBeInTheDocument()
     expect(await screen.findAllByText('产品知识库')).toHaveLength(2) // AppIcon 和标题
     expect(await screen.findAllByText('技术知识库')).toHaveLength(2)
     expect(screen.getByText('这是产品相关的知识')).toBeInTheDocument()
@@ -69,7 +69,7 @@ describe('DigitalHumanSetting/KnowledgeConfig/SelectKnowledgeModal', () => {
       <SelectKnowledgeModal open onOk={mockOnOk} onCancel={mockOnCancel} defaultSelectedIds={[]} />,
     )
 
-    expect(await screen.findByText('暂无知识')).toBeInTheDocument()
+    expect(await screen.findByText('digitalHuman.knowledgeModal.emptyNoKnowledge')).toBeInTheDocument()
   })
 
   it('加载失败显示错误状态', async () => {
@@ -79,7 +79,7 @@ describe('DigitalHumanSetting/KnowledgeConfig/SelectKnowledgeModal', () => {
       <SelectKnowledgeModal open onOk={mockOnOk} onCancel={mockOnCancel} defaultSelectedIds={[]} />,
     )
 
-    expect(await screen.findByText('加载失败')).toBeInTheDocument()
+    expect(await screen.findByText('digitalHuman.knowledgeModal.loadFailed')).toBeInTheDocument()
   })
 
   it('默认选中正确的知识项', async () => {

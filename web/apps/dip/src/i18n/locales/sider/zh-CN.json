@@ -1,0 +1,38 @@
+{
+  "sider": {
+    "chat": "会话",
+    "confirmDelete": "确认删除",
+    "confirmDeleteCommon": "删除后将无法恢复，是否继续？",
+    "expand": "展开",
+    "collapse": "收起",
+    "logout": "退出登录",
+    "defaultUser": "用户",
+    "aiStoreWenshu": "智能问数",
+    "unpin": "取消固定",
+    "externalBusinessNetwork": "全局业务知识网络",
+    "externalSystemWorkbench": "系统工作台",
+    "systemSettings": "系统设置",
+    "workPlan": {
+      "sectionTitle": "工作计划（{count}）",
+      "more": "更多",
+      "empty": "暂无计划",
+      "deleteConfirmContent": "删除计划后，相关配置和数据将被清除，用户将无法使用计划。是否继续？",
+      "deleteSuccess": "删除成功",
+      "actionPause": "暂停",
+      "actionEnable": "启用",
+      "actionDelete": "删除",
+      "statusRunning": "[执行中]",
+      "statusOk": "[已完成]",
+      "statusError": "[失败]",
+      "statusSkipped": "[已跳过]",
+      "statusDisabled": "[已暂停]",
+      "statusPending": "[待执行]"
+    },
+    "history": {
+      "sectionTitle": "历史记录（{count}）",
+      "more": "更多",
+      "empty": "暂无历史记录",
+      "deleteAria": "删除历史会话"
+    }
+  }
+}

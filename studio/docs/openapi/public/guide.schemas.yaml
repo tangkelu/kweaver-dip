@@ -25,7 +25,6 @@ components:
               - gatewayHost
               - gatewayPort
               - gatewayToken
-              - workspaceDir
               - privateKey
               - publicKey
 
@@ -51,6 +50,12 @@ components:
         token:
           type: string
           description: 从运行时注入环境变量中读取的 Gateway Token
+        kweaver_base_url:
+          type: string
+          description: 从运行时注入环境变量中读取的 KWeaver 服务地址；为空时表示未配置
+        kweaver_token:
+          type: string
+          description: 从运行时注入环境变量中读取的 KWeaver Token；为空时表示未配置
 
     GuideInitializeRequest:
       type: object
@@ -78,7 +83,6 @@ components:
         - state
         - envFilePath
         - assetsDir
-        - workspaceDir
       properties:
         initialized:
           type: boolean

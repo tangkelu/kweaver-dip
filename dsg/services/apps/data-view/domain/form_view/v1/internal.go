@@ -8,22 +8,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kweaver-ai/idrm-go-common/errorcode"
+	"github.com/google/uuid"
 	"github.com/kweaver-ai/dsg/services/apps/data-view/adapter/driven/mq/es"
 	"github.com/kweaver-ai/dsg/services/apps/data-view/adapter/driven/rest/mdl_data_model"
 	my_errorcode "github.com/kweaver-ai/dsg/services/apps/data-view/common/errorcode"
+	"github.com/kweaver-ai/idrm-go-common/errorcode"
 	"github.com/kweaver-ai/idrm-go-frame/core/errorx/agerrors"
 	"github.com/kweaver-ai/idrm-go-frame/core/telemetry/log"
-	"github.com/google/uuid"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 
-	"github.com/kweaver-ai/idrm-go-common/rest/data_view"
 	form_view_repo "github.com/kweaver-ai/dsg/services/apps/data-view/adapter/driven/gorm/form_view"
 	"github.com/kweaver-ai/dsg/services/apps/data-view/common/constant"
 	"github.com/kweaver-ai/dsg/services/apps/data-view/common/util"
 	"github.com/kweaver-ai/dsg/services/apps/data-view/domain/form_view"
 	"github.com/kweaver-ai/dsg/services/apps/data-view/infrastructure/db/model"
+	"github.com/kweaver-ai/idrm-go-common/rest/data_view"
 	"github.com/kweaver-ai/idrm-go-frame/core/enum"
 )
 
@@ -427,12 +427,17 @@ func (f *formViewUseCase) newFormView(ctx context.Context, uniformCatalogCode st
 	fieldObjs := make([]*es.FieldObj, len(table.Fields)) // 发送ES消息字段列表
 	var selectField string
 	for i, field := range table.Fields {
+		// 优先取注释，如果注释为空，则取技术名称，如果注释不为空且长度超过255个字符截取
+		businessName := util.CutStringByCharCount(field.Comment, 255)
+		if businessName == "" {
+			businessName = field.Name
+		}
 		fields[i] = &model.FormViewField{
 			FormViewID:       formViewId,
 			TechnicalName:    field.Name,
-			BusinessName:     field.DisplayName,
+			BusinessName:     businessName,
 			OriginalName:     field.OriginalName,
-			Comment:          sql.NullString{String: util.CutStringByCharCount(field.Comment, constant.CommentCharCountLimit), Valid: true},
+			Comment:          sql.NullString{String: util.CutStringByCharCount(field.Comment, 255), Valid: true},
 			Status:           constant.FormViewNew.Integer.Int32(),
 			PrimaryKey:       sql.NullBool{Bool: false, Valid: true},
 			DataType:         field.Type,
@@ -448,17 +453,22 @@ func (f *formViewUseCase) newFormView(ctx context.Context, uniformCatalogCode st
 		}
 		selectField = util.CE(selectField == "", util.QuotationMark(field.Name), fmt.Sprintf("%s,%s", selectField, util.QuotationMark(field.Name))).(string)
 	}
+	// 优先取注释，如果注释为空，则取技术名称，如果注释不为空且长度超过255个字符截取
+	businessName := util.CutStringByCharCount(table.Comment, 255)
+	if businessName == "" {
+		businessName = table.TechnicalName
+	}
 	formView := &model.FormView{
 		ID:                 formViewId,
 		UniformCatalogCode: uniformCatalogCode,
 		TechnicalName:      table.TechnicalName,
-		BusinessName:       table.Name,
+		BusinessName:       businessName,
 		OriginalName:       table.TechnicalName,
 		Type:               constant.FormViewTypeDatasource.Integer.Int32(),
 		DatasourceID:       viewMap[table.Id].DataSourceId,
 		Status:             constant.FormViewNew.Integer.Int32(),
 		EditStatus:         constant.FormViewDraft.Integer.Int32(),
-		Comment:            sql.NullString{String: util.CutStringByCharCount(table.Comment, constant.CommentCharCountLimit), Valid: true},
+		Comment:            sql.NullString{String: util.CutStringByCharCount(table.Comment, 255), Valid: true},
 		CreatedByUID:       table.Creator.ID,
 		UpdatedByUID:       table.Updater.ID,
 		MdlID:              table.Id,
@@ -505,12 +515,17 @@ func (f *formViewUseCase) updateFormView(ctx context.Context, formView *model.Fo
 		}
 		if fieldMap[field.Name] == nil {
 			//field new
+			// 优先取注释，如果注释为空，则取技术名称，如果注释不为空且长度超过255个字符截取
+			businessName := util.CutStringByCharCount(field.Comment, 255)
+			if businessName == "" {
+				businessName = field.Name
+			}
 			newField := &model.FormViewField{
 				FormViewID:       formView.ID,
 				TechnicalName:    field.Name,
-				BusinessName:     field.DisplayName,
+				BusinessName:     businessName,
 				OriginalName:     field.OriginalName,
-				Comment:          sql.NullString{String: util.CutStringByCharCount(field.Comment, constant.CommentCharCountLimit), Valid: true},
+				Comment:          sql.NullString{String: util.CutStringByCharCount(field.Comment, 255), Valid: true},
 				Status:           constant.FormViewFieldNew.Integer.Int32(),
 				PrimaryKey:       sql.NullBool{Bool: false, Valid: true},
 				DataType:         field.Type,
@@ -539,7 +554,7 @@ func (f *formViewUseCase) updateFormView(ctx context.Context, formView *model.Fo
 				formViewModify = true
 			case oldField.Comment.String != field.Comment: //不变状态
 				oldField.FormViewField.Index = i + 1
-				oldField.FormViewField.Comment = sql.NullString{String: util.CutStringByCharCount(field.Comment, constant.CommentCharCountLimit), Valid: true}
+				oldField.FormViewField.Comment = sql.NullString{String: util.CutStringByCharCount(field.Comment, 255), Valid: true}
 				updateFields = append(updateFields, oldField.FormViewField)
 			case oldField.Index != i+1:
 				oldField.FormViewField.Index = i + 1
@@ -564,9 +579,9 @@ func (f *formViewUseCase) updateFormView(ctx context.Context, formView *model.Fo
 	}
 	tableStatusInt := enum.ToInteger[constant.FormViewScanStatus](table.Status).Int32()
 	formViewUpdate := formView.Comment.String != table.Comment || formView.OriginalName != table.TechnicalName ||
-		formView.BusinessName != table.Name || formView.Status != tableStatusInt
+		formView.BusinessName != util.CutStringByCharCount(table.Comment, 255) || formView.Status != tableStatusInt
 	if formViewUpdate {
-		formView.Comment = sql.NullString{String: util.CutStringByCharCount(table.Comment, constant.CommentCharCountLimit), Valid: true}
+		formView.Comment = sql.NullString{String: util.CutStringByCharCount(table.Comment, 255), Valid: true}
 		formView.OriginalName = table.TechnicalName
 	}
 	var query string
@@ -585,7 +600,10 @@ func (f *formViewUseCase) updateFormView(ctx context.Context, formView *model.Fo
 		formViewUpdate = true
 	}
 	formView.Status = tableStatusInt
-	formView.BusinessName = table.Name
+	formView.BusinessName = util.CutStringByCharCount(table.Comment, 255)
+	if formView.BusinessName == "" {
+		formView.BusinessName = table.TechnicalName
+	}
 	// 字段没有变化且视图信息也没有变化时，不更新 DB/ES
 	if len(newFields) == 0 && len(updateFields) == 0 && len(deleteFields) == 0 && !formViewUpdate && !newUniformCatalogCode {
 		return nil

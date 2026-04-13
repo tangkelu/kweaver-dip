@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import intl from 'react-intl-universal'
 import { getSessionArchiveSubpath } from '@/apis/dip-studio/sessions'
 import {
   mockGetDigitalHumanSessionArchiveSubpath,
@@ -63,7 +64,13 @@ export function useArchivePreview(dhId: string, sessionId: string) {
             // message.error('文件数据格式异常')
             setPreview((p) =>
               p
-                ? { ...p, body: '', loading: false, viewer: 'text', error: '文件数据格式异常' }
+                ? {
+                    ...p,
+                    body: '',
+                    loading: false,
+                    viewer: 'text',
+                    error: intl.get('workPlan.detail.fileDataFormatInvalid'),
+                  }
                 : null,
             )
             return
@@ -100,7 +107,15 @@ export function useArchivePreview(dhId: string, sessionId: string) {
         // message.error('加载文件失败')
         revokePreviewBlobUrl()
         setPreview((p) =>
-          p ? { ...p, body: '', loading: false, viewer: 'text', error: '加载文件失败' } : null,
+          p
+            ? {
+                ...p,
+                body: '',
+                loading: false,
+                viewer: 'text',
+                error: intl.get('workPlan.detail.loadFileFailed'),
+              }
+            : null,
         )
       }
     },
@@ -121,7 +136,7 @@ export function useArchivePreview(dhId: string, sessionId: string) {
             responseType: 'arraybuffer',
           })
       if (!(res instanceof ArrayBuffer)) {
-        throw new Error('文件数据格式异常')
+        throw new Error(intl.get('workPlan.detail.fileDataFormatInvalid'))
       }
       const blob = new Blob([res], { type: getArchiveFileMimeForBlob(fileName) })
       const blobUrl = URL.createObjectURL(blob)

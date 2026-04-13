@@ -1,4 +1,5 @@
 import { Spin } from 'antd'
+import intl from 'react-intl-universal'
 import classNames from 'classnames'
 import { memo, useEffect, useState } from 'react'
 import type { SkillTreeEntry } from '@/apis'
@@ -53,7 +54,7 @@ const SkillFilesTab = ({ skillName, onFileClick, selectedPath }: SkillFilesTabPr
         setFiles(flattenSkillFiles(treeRes.entries ?? []))
       } catch {
         if (cancelled) return
-        setError('技能目录加载失败')
+        setError(intl.get('skillDetail.treeLoadFailed'))
         setFiles([])
       } finally {
         if (!cancelled) setLoading(false)
@@ -84,7 +85,7 @@ const SkillFilesTab = ({ skillName, onFileClick, selectedPath }: SkillFilesTabPr
   if (files.length === 0) {
     return (
       <SkillTabStateShell>
-        <Empty type="empty" title="暂无文件" />
+        <Empty type="empty" title={intl.get('skillDetail.emptyNoFiles')} />
       </SkillTabStateShell>
     )
   }
@@ -93,7 +94,7 @@ const SkillFilesTab = ({ skillName, onFileClick, selectedPath }: SkillFilesTabPr
       <div className="flex min-h-0 flex-col">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-[--dip-border-color] bg-[--dip-white]">
           <div className="flex h-10 shrink-0 items-center justify-between gap-4 border-b border-[--dip-border-color] bg-[#F5F5F4] px-6 text-[--dip-text-color-65]">
-            <span>文件名称</span>
+            <span>{intl.get('skillDetail.columnFileName')}</span>
             {/* <span className="w-36">路径</span> */}
           </div>
           <ScrollBarContainer className="min-h-0 min-w-0 flex-1 overflow-auto">

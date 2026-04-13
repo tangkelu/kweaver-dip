@@ -5,13 +5,14 @@ import {
   getBreadcrumbAncestorRoutes,
   getBreadcrumbLinkPathForRoute,
   getRouteByPath,
+  getRouteLabel,
+  routeHasDisplayLabel,
   shouldShowCurrentRouteInBreadcrumb,
 } from '@/routes/utils'
 import { useBreadcrumbDetailStore, useLanguageStore, useOEMConfigStore } from '@/stores'
 import { useUserInfoStore } from '@/stores/userInfoStore'
 import type { BreadcrumbItem } from '@/utils/micro-app/globalState'
 import { Breadcrumb } from '../components/Breadcrumb'
-import { UserInfo } from '../components/UserInfo'
 
 /**
  * 获取 BaseHeaderType 对应的名称
@@ -25,7 +26,7 @@ const getSectionName = (type: HeaderType): string => {
  * 通过路由路径和配置自动判断分类，无需传递 type prop
  */
 const BaseHeader = ({ headerType }: { headerType: HeaderType }) => {
-  const isStudioHeader = headerType === 'studio'
+  // const isStudioHeader = headerType === 'studio'
   const location = useLocation()
   const navigate = useNavigate()
   const { getOEMResourceConfig } = useOEMConfigStore()
@@ -99,22 +100,22 @@ const BaseHeader = ({ headerType }: { headerType: HeaderType }) => {
         } else {
           const ancestorRoutes = getBreadcrumbAncestorRoutes(currentRoute)
           for (const ancestor of ancestorRoutes) {
-            if (!ancestor.label) continue
+            if (!routeHasDisplayLabel(ancestor)) continue
             result.push({
               key: ancestor.key || `route-${ancestor.path}`,
-              name: ancestor.label,
+              name: getRouteLabel(ancestor),
               path: getBreadcrumbLinkPathForRoute(ancestor),
             })
           }
         }
       }
 
-      if (shouldShowCurrentRouteInBreadcrumb(currentRoute) && currentRoute.label) {
+      if (shouldShowCurrentRouteInBreadcrumb(currentRoute) && routeHasDisplayLabel(currentRoute)) {
         const dynamicTitle =
           detailBreadcrumb && currentRoute.key && detailBreadcrumb.routeKey === currentRoute.key
             ? detailBreadcrumb.title
             : undefined
-        const displayName = dynamicTitle ?? currentRoute.label
+        const displayName = dynamicTitle ?? getRouteLabel(currentRoute)
         let routePath: string | undefined
         if (currentRoute.path?.includes(':')) {
           routePath = location.pathname
@@ -131,7 +132,14 @@ const BaseHeader = ({ headerType }: { headerType: HeaderType }) => {
     }
 
     return result
-  }, [headerType, currentRoute, detailBreadcrumb, location.pathname, isInitialConfigOnlyMode])
+  }, [
+    headerType,
+    currentRoute,
+    detailBreadcrumb,
+    language,
+    location.pathname,
+    isInitialConfigOnlyMode,
+  ])
 
   const getLogoUrl = () => {
     return oemResourceConfig?.['logo.png']
@@ -178,7 +186,7 @@ const BaseHeader = ({ headerType }: { headerType: HeaderType }) => {
       </div>
 
       {/* 右侧：用户信息 */}
-      <div className="flex items-center gap-x-4 h-full">{isStudioHeader ? null : <UserInfo />}</div>
+      {/* <div className="flex items-center gap-x-4 h-full">{isStudioHeader ? null : <UserInfo />}</div> */}
     </>
   )
 }

@@ -7,7 +7,7 @@ import ChannelConfig from './ChannelConfig'
 import KnowledgeConfig from './KnowledgeConfig'
 import SkillConfig from './SkillConfig'
 import { DESettingMenuKey } from './types'
-import { deSettingMenuItems } from './utils'
+import { getDeSettingMenuItems } from './utils'
 
 /** 配置内容区：左侧菜单 + 右侧表单（顶栏与返回由 Details / DHSetting 负责） */
 const DigitalHumanSetting = ({ readonly }: { readonly?: boolean }) => {
@@ -40,7 +40,7 @@ const DigitalHumanSetting = ({ readonly }: { readonly?: boolean }) => {
       <div className="flex flex-1 min-h-0 overflow-hidden p-6 bg-[#F8FAFC] gap-x-4">
         <div className="w-60 pl-2 pr-1.5 py-4 bg-[--dip-white] shrink-0 rounded-md">
           <div className="flex flex-col gap-2">
-            {deSettingMenuItems.map((item) => (
+            {getDeSettingMenuItems().map((item) => (
               <button
                 type="button"
                 key={item.key}

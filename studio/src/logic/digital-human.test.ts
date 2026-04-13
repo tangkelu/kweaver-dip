@@ -166,9 +166,11 @@ describe("DefaultDigitalHumanLogic", () => {
 });
 
 describe("resolveDefaultWorkspace", () => {
-  it("places workspace under ~/.openclaw/<uuid>", () => {
+  it("places workspace under ~/.openclaw/workspace/<uuid>", () => {
     const id = "550e8400-e29b-41d4-a716-446655440000";
-    expect(resolveDefaultWorkspace(id)).toBe(join(fakeHomeForOsMock, ".openclaw", id));
+    expect(resolveDefaultWorkspace(id)).toBe(
+      join(fakeHomeForOsMock, ".openclaw", "workspace", id)
+    );
   });
 });
 
@@ -247,7 +249,9 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     );
     writeFileSync(join(ws, "SOUL.md"), "Soul text\n", "utf8");
 
-    const configPath = join(fakeHome, "openclaw.json");
+    const rootDir = join(fakeHome, ".openclaw");
+    mkdirSync(rootDir, { recursive: true });
+    const configPath = join(rootDir, "openclaw.json");
     const accountId = normalizeOpenClawAccountIdFromAppId("cli_app-1");
     writeFileSync(
       configPath,
@@ -273,8 +277,8 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       }),
       "utf8"
     );
-    const prev = process.env.OPENCLAW_CONFIG_PATH;
-    process.env.OPENCLAW_CONFIG_PATH = configPath;
+    const prev = process.env.OPENCLAW_ROOT_DIR;
+    process.env.OPENCLAW_ROOT_DIR = rootDir;
 
     try {
       const adapter = {
@@ -300,9 +304,9 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       });
     } finally {
       if (prev === undefined) {
-        delete process.env.OPENCLAW_CONFIG_PATH;
+        delete process.env.OPENCLAW_ROOT_DIR;
       } else {
-        process.env.OPENCLAW_CONFIG_PATH = prev;
+        process.env.OPENCLAW_ROOT_DIR = prev;
       }
     }
   });
@@ -318,7 +322,9 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     );
     writeFileSync(join(ws, "SOUL.md"), "Soul text\n", "utf8");
 
-    const configPath = join(fakeHome, "openclaw.json");
+    const rootDir = join(fakeHome, ".openclaw");
+    mkdirSync(rootDir, { recursive: true });
+    const configPath = join(rootDir, "openclaw.json");
     writeFileSync(
       configPath,
       JSON.stringify({
@@ -333,8 +339,8 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       }),
       "utf8"
     );
-    const prev = process.env.OPENCLAW_CONFIG_PATH;
-    process.env.OPENCLAW_CONFIG_PATH = configPath;
+    const prev = process.env.OPENCLAW_ROOT_DIR;
+    process.env.OPENCLAW_ROOT_DIR = rootDir;
 
     try {
       const adapter = {
@@ -360,9 +366,9 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       });
     } finally {
       if (prev === undefined) {
-        delete process.env.OPENCLAW_CONFIG_PATH;
+        delete process.env.OPENCLAW_ROOT_DIR;
       } else {
-        process.env.OPENCLAW_CONFIG_PATH = prev;
+        process.env.OPENCLAW_ROOT_DIR = prev;
       }
     }
   });
@@ -374,10 +380,12 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     writeFileSync(join(ws, "IDENTITY.md"), "- Name: A\n", "utf8");
     writeFileSync(join(ws, "SOUL.md"), "x\n", "utf8");
 
-    const configPath = join(fakeHome, "bad.json");
+    const rootDir = join(fakeHome, ".openclaw");
+    mkdirSync(rootDir, { recursive: true });
+    const configPath = join(rootDir, "openclaw.json");
     writeFileSync(configPath, "{ not json", "utf8");
-    const prev = process.env.OPENCLAW_CONFIG_PATH;
-    process.env.OPENCLAW_CONFIG_PATH = configPath;
+    const prev = process.env.OPENCLAW_ROOT_DIR;
+    process.env.OPENCLAW_ROOT_DIR = rootDir;
 
     try {
       const adapter = {
@@ -399,9 +407,9 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       expect(detail.channel).toBeUndefined();
     } finally {
       if (prev === undefined) {
-        delete process.env.OPENCLAW_CONFIG_PATH;
+        delete process.env.OPENCLAW_ROOT_DIR;
       } else {
-        process.env.OPENCLAW_CONFIG_PATH = prev;
+        process.env.OPENCLAW_ROOT_DIR = prev;
       }
     }
   });
@@ -413,7 +421,9 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     writeFileSync(join(ws, "IDENTITY.md"), "- Name: A\n", "utf8");
     writeFileSync(join(ws, "SOUL.md"), "x\n", "utf8");
 
-    const configPath = join(fakeHome, "oc-unknown-ch.json");
+    const rootDir = join(fakeHome, ".openclaw");
+    mkdirSync(rootDir, { recursive: true });
+    const configPath = join(rootDir, "openclaw.json");
     writeFileSync(
       configPath,
       JSON.stringify({
@@ -422,8 +432,8 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       }),
       "utf8"
     );
-    const prev = process.env.OPENCLAW_CONFIG_PATH;
-    process.env.OPENCLAW_CONFIG_PATH = configPath;
+    const prev = process.env.OPENCLAW_ROOT_DIR;
+    process.env.OPENCLAW_ROOT_DIR = rootDir;
 
     try {
       const adapter = {
@@ -445,9 +455,9 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       expect(detail.channel).toBeUndefined();
     } finally {
       if (prev === undefined) {
-        delete process.env.OPENCLAW_CONFIG_PATH;
+        delete process.env.OPENCLAW_ROOT_DIR;
       } else {
-        process.env.OPENCLAW_CONFIG_PATH = prev;
+        process.env.OPENCLAW_ROOT_DIR = prev;
       }
     }
   });
@@ -459,7 +469,9 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     writeFileSync(join(ws, "IDENTITY.md"), "- Name: A\n", "utf8");
     writeFileSync(join(ws, "SOUL.md"), "x\n", "utf8");
 
-    const configPath = join(fakeHome, "oc2.json");
+    const rootDir = join(fakeHome, ".openclaw");
+    mkdirSync(rootDir, { recursive: true });
+    const configPath = join(rootDir, "openclaw.json");
     writeFileSync(
       configPath,
       JSON.stringify({
@@ -468,8 +480,8 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       }),
       "utf8"
     );
-    const prev = process.env.OPENCLAW_CONFIG_PATH;
-    process.env.OPENCLAW_CONFIG_PATH = configPath;
+    const prev = process.env.OPENCLAW_ROOT_DIR;
+    process.env.OPENCLAW_ROOT_DIR = rootDir;
 
     try {
       const adapter = {
@@ -491,9 +503,9 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       expect(detail.channel).toBeUndefined();
     } finally {
       if (prev === undefined) {
-        delete process.env.OPENCLAW_CONFIG_PATH;
+        delete process.env.OPENCLAW_ROOT_DIR;
       } else {
-        process.env.OPENCLAW_CONFIG_PATH = prev;
+        process.env.OPENCLAW_ROOT_DIR = prev;
       }
     }
   });
@@ -505,7 +517,9 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     writeFileSync(join(ws, "IDENTITY.md"), "- Name: A\n", "utf8");
     writeFileSync(join(ws, "SOUL.md"), "x\n", "utf8");
 
-    const configPath = join(fakeHome, "oc3.json");
+    const rootDir = join(fakeHome, ".openclaw");
+    mkdirSync(rootDir, { recursive: true });
+    const configPath = join(rootDir, "openclaw.json");
     writeFileSync(
       configPath,
       JSON.stringify({
@@ -514,8 +528,8 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       }),
       "utf8"
     );
-    const prev = process.env.OPENCLAW_CONFIG_PATH;
-    process.env.OPENCLAW_CONFIG_PATH = configPath;
+    const prev = process.env.OPENCLAW_ROOT_DIR;
+    process.env.OPENCLAW_ROOT_DIR = rootDir;
 
     try {
       const adapter = {
@@ -537,9 +551,9 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       expect(detail.channel).toBeUndefined();
     } finally {
       if (prev === undefined) {
-        delete process.env.OPENCLAW_CONFIG_PATH;
+        delete process.env.OPENCLAW_ROOT_DIR;
       } else {
-        process.env.OPENCLAW_CONFIG_PATH = prev;
+        process.env.OPENCLAW_ROOT_DIR = prev;
       }
     }
   });
@@ -899,12 +913,12 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
     );
 
-    const cfg = join(fakeHome, "openclaw.json");
+    const stateDir = join(fakeHome, ".openclaw");
+    mkdirSync(stateDir, { recursive: true });
+    const cfg = join(stateDir, "openclaw.json");
     writeFileSync(cfg, "{}\n", "utf8");
-    const prev = process.env.OPENCLAW_CONFIG_PATH;
     const prevState = process.env.OPENCLAW_ROOT_DIR;
-    delete process.env.OPENCLAW_ROOT_DIR;
-    process.env.OPENCLAW_CONFIG_PATH = cfg;
+    process.env.OPENCLAW_ROOT_DIR = stateDir;
 
     const createAgent = vi.fn().mockResolvedValue({ ok: true });
     const getConfig = vi.fn().mockResolvedValue({ raw: "{}", hash: "base-hash-1" });
@@ -960,7 +974,6 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       patch.bindings.find((b) => b.agentId === result.id)?.match.accountId
     ).toBe(accId);
 
-    process.env.OPENCLAW_CONFIG_PATH = prev;
     process.env.OPENCLAW_ROOT_DIR = prevState;
   });
 
@@ -973,9 +986,7 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     mkdirSync(stateDir, { recursive: true });
     const cfgPath = join(stateDir, "openclaw.json");
     writeFileSync(cfgPath, "{}\n", "utf8");
-    const prevCfg = process.env.OPENCLAW_CONFIG_PATH;
     const prevState = process.env.OPENCLAW_ROOT_DIR;
-    delete process.env.OPENCLAW_CONFIG_PATH;
     process.env.OPENCLAW_ROOT_DIR = stateDir;
 
     const createAgent = vi.fn().mockResolvedValue({ ok: true });
@@ -1017,7 +1028,6 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     const raw = (patchConfig.mock.calls[0][0] as { raw: string }).raw;
     expect(raw).toContain(result.id);
 
-    process.env.OPENCLAW_CONFIG_PATH = prevCfg;
     process.env.OPENCLAW_ROOT_DIR = prevState;
   });
 
@@ -1032,7 +1042,9 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     );
     writeFileSync(join(ws, "SOUL.md"), "Soul text\n", "utf8");
 
-    const configPath = join(fakeHome, "oc-ding-acct.json");
+    const rootDir = join(fakeHome, ".openclaw");
+    mkdirSync(rootDir, { recursive: true });
+    const configPath = join(rootDir, "openclaw.json");
     const accountId = normalizeOpenClawAccountIdFromAppId("ding_app_1");
     writeFileSync(
       configPath,
@@ -1055,8 +1067,8 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       }),
       "utf8"
     );
-    const prev = process.env.OPENCLAW_CONFIG_PATH;
-    process.env.OPENCLAW_CONFIG_PATH = configPath;
+    const prev = process.env.OPENCLAW_ROOT_DIR;
+    process.env.OPENCLAW_ROOT_DIR = rootDir;
 
     try {
       const adapter = {
@@ -1082,9 +1094,9 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       });
     } finally {
       if (prev === undefined) {
-        delete process.env.OPENCLAW_CONFIG_PATH;
+        delete process.env.OPENCLAW_ROOT_DIR;
       } else {
-        process.env.OPENCLAW_CONFIG_PATH = prev;
+        process.env.OPENCLAW_ROOT_DIR = prev;
       }
     }
   });
@@ -1100,7 +1112,9 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     );
     writeFileSync(join(ws, "SOUL.md"), "Soul text\n", "utf8");
 
-    const configPath = join(fakeHome, "oc-ding.json");
+    const rootDir = join(fakeHome, ".openclaw");
+    mkdirSync(rootDir, { recursive: true });
+    const configPath = join(rootDir, "openclaw.json");
     writeFileSync(
       configPath,
       JSON.stringify({
@@ -1115,8 +1129,8 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       }),
       "utf8"
     );
-    const prev = process.env.OPENCLAW_CONFIG_PATH;
-    process.env.OPENCLAW_CONFIG_PATH = configPath;
+    const prev = process.env.OPENCLAW_ROOT_DIR;
+    process.env.OPENCLAW_ROOT_DIR = rootDir;
 
     try {
       const adapter = {
@@ -1142,20 +1156,20 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       });
     } finally {
       if (prev === undefined) {
-        delete process.env.OPENCLAW_CONFIG_PATH;
+        delete process.env.OPENCLAW_ROOT_DIR;
       } else {
-        process.env.OPENCLAW_CONFIG_PATH = prev;
+        process.env.OPENCLAW_ROOT_DIR = prev;
       }
     }
   });
 
   it("createDigitalHuman binds dingtalk channel when type is dingtalk", async () => {
-    const cfg = join(fakeHome, "openclaw-ding.json");
+    const stateDir = join(fakeHome, ".openclaw");
+    mkdirSync(stateDir, { recursive: true });
+    const cfg = join(stateDir, "openclaw.json");
     writeFileSync(cfg, "{}\n", "utf8");
-    const prev = process.env.OPENCLAW_CONFIG_PATH;
     const prevState = process.env.OPENCLAW_ROOT_DIR;
-    delete process.env.OPENCLAW_ROOT_DIR;
-    process.env.OPENCLAW_CONFIG_PATH = cfg;
+    process.env.OPENCLAW_ROOT_DIR = stateDir;
 
     const createAgent = vi.fn().mockResolvedValue({ ok: true });
     const getConfig = vi.fn().mockResolvedValue({ raw: "{}", hash: "base-hash-3" });
@@ -1202,17 +1216,16 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
       appSecret: "dts"
     });
 
-    process.env.OPENCLAW_CONFIG_PATH = prev;
     process.env.OPENCLAW_ROOT_DIR = prevState;
   });
 
   it("createDigitalHuman replaces prior agent binding when two digital humans use the same Feishu app id", async () => {
-    const cfg = join(fakeHome, "openclaw-dup-feishu.json");
+    const stateDir = join(fakeHome, ".openclaw");
+    mkdirSync(stateDir, { recursive: true });
+    const cfg = join(stateDir, "openclaw.json");
     writeFileSync(cfg, "{}\n", "utf8");
-    const prev = process.env.OPENCLAW_CONFIG_PATH;
     const prevState = process.env.OPENCLAW_ROOT_DIR;
-    delete process.env.OPENCLAW_ROOT_DIR;
-    process.env.OPENCLAW_CONFIG_PATH = cfg;
+    process.env.OPENCLAW_ROOT_DIR = stateDir;
 
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const patchConfig = vi.fn().mockRejectedValue(new Error("use file"));
@@ -1251,17 +1264,16 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     ).toBe(acc);
 
     warnSpy.mockRestore();
-    process.env.OPENCLAW_CONFIG_PATH = prev;
     process.env.OPENCLAW_ROOT_DIR = prevState;
   });
 
   it("createDigitalHuman replaces prior agent binding when two digital humans use the same DingTalk app id", async () => {
-    const cfg = join(fakeHome, "openclaw-dup-ding.json");
+    const stateDir = join(fakeHome, ".openclaw");
+    mkdirSync(stateDir, { recursive: true });
+    const cfg = join(stateDir, "openclaw.json");
     writeFileSync(cfg, "{}\n", "utf8");
-    const prev = process.env.OPENCLAW_CONFIG_PATH;
     const prevState = process.env.OPENCLAW_ROOT_DIR;
-    delete process.env.OPENCLAW_ROOT_DIR;
-    process.env.OPENCLAW_CONFIG_PATH = cfg;
+    process.env.OPENCLAW_ROOT_DIR = stateDir;
 
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const patchConfig = vi.fn().mockRejectedValue(new Error("use file"));
@@ -1300,18 +1312,17 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     ).toBe(acc);
 
     warnSpy.mockRestore();
-    process.env.OPENCLAW_CONFIG_PATH = prev;
     process.env.OPENCLAW_ROOT_DIR = prevState;
   });
 
   it("createDigitalHuman writes openclaw.json when config.patch fails", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const cfg = join(fakeHome, "openclaw-fallback.json");
+    const stateDir = join(fakeHome, ".openclaw");
+    mkdirSync(stateDir, { recursive: true });
+    const cfg = join(stateDir, "openclaw.json");
     writeFileSync(cfg, "{}\n", "utf8");
-    const prev = process.env.OPENCLAW_CONFIG_PATH;
     const prevState = process.env.OPENCLAW_ROOT_DIR;
-    delete process.env.OPENCLAW_ROOT_DIR;
-    process.env.OPENCLAW_CONFIG_PATH = cfg;
+    process.env.OPENCLAW_ROOT_DIR = stateDir;
 
     const createAgent = vi.fn().mockResolvedValue({ ok: true });
     const getConfig = vi.fn().mockResolvedValue({ raw: "{}", hash: "h" });
@@ -1348,7 +1359,6 @@ describe("DefaultDigitalHumanLogic lifecycle (filesystem + adapter)", () => {
     expect(parsed.bindings.some((b) => b.agentId === result.id)).toBe(true);
 
     warnSpy.mockRestore();
-    process.env.OPENCLAW_CONFIG_PATH = prev;
     process.env.OPENCLAW_ROOT_DIR = prevState;
   });
 });

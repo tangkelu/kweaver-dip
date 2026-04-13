@@ -2,6 +2,7 @@ import type { FormInstance } from 'antd'
 import { Button, Form, Input, Spin } from 'antd'
 import Tooltip from 'antd/es/tooltip'
 import { memo } from 'react'
+import intl from 'react-intl-universal'
 import type { GuideInitializeRequest } from '@/apis/dip-studio/guide'
 import styles from './index.module.less'
 
@@ -19,12 +20,14 @@ function validateKweaverBaseUrl(_: unknown, value: string | undefined) {
   try {
     const u = new URL(v)
     if (!['http:', 'https:'].includes(u.protocol)) {
-      return Promise.reject(new Error('KWeaver 服务地址需使用 http 或 https 协议'))
+      return Promise.reject(
+        new Error(intl.get('initialConfiguration.connect.kweaverBaseUrlInvalidProtocol')),
+      )
     }
     return Promise.resolve()
   } catch {
     return Promise.reject(
-      new Error('请输入有效的 KWeaver 服务地址（需含协议，如 https://example.com）'),
+      new Error(intl.get('initialConfiguration.connect.kweaverBaseUrlInvalid')),
     )
   }
 }
@@ -43,14 +46,18 @@ const ConnectOpenClawStep = ({
     <div className="w-full h-full flex flex-col">
       {loading ? (
         <div className="flex-1 min-h-[260px] flex flex-col items-center justify-center">
-          <div className="text-black/50 mt-3 mb-8">正在读取 OpenClaw 配置，请稍等...</div>
+          <div className="text-black/50 mt-3 mb-8">
+            {intl.get('initialConfiguration.connect.loading')}
+          </div>
           <Spin />
         </div>
       ) : (
         <>
-          <div className="font-bold text-[--dip-text-color] text-[28px]">连接 OpenClaw</div>
+          <div className="font-bold text-[--dip-text-color] text-[28px]">
+            {intl.get('initialConfiguration.connect.title')}
+          </div>
           <div className="text-black/50 mt-3 mb-8">
-            请输入 OpenClaw Gateway 连接地址与 Token，用于初始化 DIP Studio 默认配置。
+            {intl.get('initialConfiguration.connect.subtitle')}
           </div>
           <Form
             form={form}
@@ -74,34 +81,43 @@ const ConnectOpenClawStep = ({
             className={styles.form}
           >
             <Form.Item
-              label="连接地址"
+              label={intl.get('initialConfiguration.connect.connectionAddressLabel')}
               name="openclaw_address"
               validateTrigger="onSubmit"
-              rules={[{ required: true, message: '请输入 OpenClaw Gateway 连接地址' }]}
+              rules={[
+                {
+                  required: true,
+                  message: intl.get('initialConfiguration.connect.connectionAddressRequired'),
+                },
+              ]}
             >
-              <Input placeholder="请输入 OpenClaw Gateway 连接地址" />
+              <Input
+                placeholder={intl.get('initialConfiguration.connect.connectionAddressPlaceholder')}
+              />
             </Form.Item>
 
             <Form.Item
-              label="Token"
+              label={intl.get('initialConfiguration.connect.tokenLabel')}
               name="openclaw_token"
               validateTrigger="onSubmit"
-              rules={[{ required: true, message: '请输入 OpenClaw Gateway Token' }]}
+              rules={[
+                { required: true, message: intl.get('initialConfiguration.connect.tokenRequired') },
+              ]}
             >
-              <Input placeholder="请输入 OpenClaw Gateway Token" />
+              <Input placeholder={intl.get('initialConfiguration.connect.tokenPlaceholder')} />
             </Form.Item>
 
             <Form.Item
-              label="KWeaver 服务地址（可选）"
+              label={intl.get('initialConfiguration.connect.kweaverBaseUrlLabel')}
               name="kweaver_base_url"
               validateTrigger="onSubmit"
               rules={[{ validator: validateKweaverBaseUrl }]}
             >
-              <Input placeholder="例如 https://example.com" />
+              <Input placeholder={intl.get('initialConfiguration.connect.kweaverBaseUrlPlaceholder')} />
             </Form.Item>
 
             <Form.Item
-              label="KWeaver Token"
+              label={intl.get('initialConfiguration.connect.kweaverTokenLabel')}
               name="kweaver_token"
               validateTrigger="onSubmit"
               rules={[
@@ -111,7 +127,9 @@ const ConnectOpenClawStep = ({
                     if (!baseUrl) return Promise.resolve()
                     if (value?.trim()) return Promise.resolve()
                     return Promise.reject(
-                      new Error('填写 KWeaver 服务地址后，KWeaver Token 为必填'),
+                      new Error(
+                        intl.get('initialConfiguration.connect.kweaverTokenRequiredWhenBaseUrl'),
+                      ),
                     )
                   },
                 }),
@@ -119,7 +137,9 @@ const ConnectOpenClawStep = ({
             >
               <Input
                 placeholder={
-                  hasKweaverBaseUrl ? '请输入 KWeaver Token' : '请先填写 KWeaver 服务地址'
+                  hasKweaverBaseUrl
+                    ? intl.get('initialConfiguration.connect.kweaverTokenPlaceholder')
+                    : intl.get('initialConfiguration.connect.kweaverTokenPlaceholderDisabled')
                 }
                 disabled={!hasKweaverBaseUrl}
               />
@@ -138,7 +158,7 @@ const ConnectOpenClawStep = ({
                 </div>
               </Tooltip>
               <Button type="primary" htmlType="submit" loading={submitting}>
-                下一步
+                {intl.get('initialConfiguration.connect.next')}
               </Button>
             </div>
           </Form>

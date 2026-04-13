@@ -4,7 +4,7 @@
 
 注意：
 1、若要在消息流中接收工具消息，必须：1）在建立 WebSocket 连接时声明能力 `{"caps": ["tool-events"]}` ；2）在 chat.send 之前发送 sessions.patch 来设定会话级的 verboseLevel 参数。
-2、Express 接收 x-openclaw-session-key 头，并填充到发起会话的 req 的 sessionKey 中。
+2、Express 接收 x-openclaw-session-key 头，并填充到发起会话的 req 的 key 中。
 3、Express 需要生成一个随机 UUID 作为 idempotencyKey，在向 OpenClaw 发送 "chat.send" 时通过 params.idempotencyKey 传递。
 
 ## 业务流程
@@ -43,28 +43,32 @@ end
 
 #### 1. method: "chat.patch"
 
-Express 侧首先向 OpenClaw 发起一个 patch 请求来设定会话级的 verboseLevel 参数，以便后续可以接收 tool 工具调用和结果消息。
+Express 侧首先向 OpenClaw 发起一个 patch 请求来设定会话级的 verboseLevel 参数以及会话 label，以便后续可以接收 tool 工具调用和结果消息。
 
 ```yaml
 type: req
 id: patch-1
 method: sessions.patch
 params:
-  sessionKey: main
+  key: main
   patch:
     verboseLevel: full
+    label?: <会话标题>
 ```
+注意：<会话标题> 仅在会话的第一轮发送，内容格式为：<用户消息>_<8位随机数字+字母>。例如 ：`今天天气怎么样？_3f9c2b6a`。
+(8位随机数字+字母是为了避免 OpenClaw 对重复 label 的限制)
+
 
 #### 2. method: "chat.send"
 
-Express 侧首先向 OpenClaw 发起一个 Chat 请求，例如：
+Express 侧向 OpenClaw 发起一个 Chat 请求，例如：
 
 ```yaml
 type: req
 id: req-1
 method: chat.send
 params:
-  sessionKey: main
+  key: main
   message: "hello"
   idempotencyKey: run-123
 ```
@@ -95,7 +99,7 @@ type: event
 event: chat
 payload:
   runId: run-123
-  sessionKey: main
+  key: main
   seq: 1
   state: delta
   message:
@@ -115,7 +119,7 @@ type: event
 event: agent
 payload:
   runId: run-123
-  sessionKey: main
+  key: main
   seq: 2
   stream: tool
   ts: 1710000000100
@@ -132,7 +136,7 @@ type: event
 event: agent
 payload:
   runId: run-123
-  sessionKey: main
+  key: main
   seq: 3
   stream: tool
   ts: 1710000000200
@@ -155,7 +159,7 @@ type: event
 event: chat
 payload:
   runId: run-123
-  sessionKey: main
+  key: main
   seq: 3
   state: final
   stopReason: stop
@@ -198,7 +202,7 @@ type: event
 event: chat
 payload:
   runId: run-123
-  sessionKey: main
+  key: main
   seq: 3
   state: error
   errorMessage: "model unavailable"
@@ -222,7 +226,7 @@ type: event
 event: chat
 payload:
   runId: run-123
-  sessionKey: main
+  key: main
   seq: 3
   state: aborted
   stopReason: rpc

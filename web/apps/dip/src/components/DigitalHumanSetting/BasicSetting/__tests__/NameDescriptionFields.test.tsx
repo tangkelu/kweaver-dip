@@ -1,8 +1,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { Form } from 'antd'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import NameDescriptionFields from '../NameDescriptionFields'
+
+vi.mock('@/stores/languageStore', () => ({
+  useLanguageStore: () => ({ language: 'zh-CN' }),
+}))
 
 const renderWithForm = () => {
   return render(
@@ -17,8 +21,8 @@ describe('DigitalHumanSetting/BasicSetting/NameDescriptionFields', () => {
   it('渲染名称和简介输入框，并带正确长度限制', () => {
     renderWithForm()
 
-    const nameInput = screen.getByPlaceholderText('请输入数字员工名称')
-    const descInput = screen.getByPlaceholderText('请输入数字员工简介')
+    const nameInput = screen.getByPlaceholderText('digitalHuman.basic.namePlaceholder')
+    const descInput = screen.getByPlaceholderText('digitalHuman.basic.bioPlaceholder')
 
     expect(nameInput).toHaveAttribute('maxlength', '128')
     expect(descInput).toHaveAttribute('maxlength', '400')
@@ -29,7 +33,7 @@ describe('DigitalHumanSetting/BasicSetting/NameDescriptionFields', () => {
     fireEvent.click(screen.getByRole('button', { name: '提交' }))
 
     await waitFor(() => {
-      expect(screen.getByText('请输入名称')).toBeInTheDocument()
+      expect(screen.getByText('digitalHuman.setting.nameRequired')).toBeInTheDocument()
     })
   })
 })

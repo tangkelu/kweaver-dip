@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef } from 'react'
+import intl from 'react-intl-universal'
 import { useSearchParams } from 'react-router-dom'
 import { getLoginUrl } from '@/apis'
 
@@ -33,7 +34,7 @@ function Content({ iframeHeight, width = 560 }: ContentProps) {
       ref={iframeRef}
       className="border-none"
       style={{ height: `${iframeHeight}px`, width: widthStyle }}
-      title="登录"
+      title={intl.get('oauthLogin.iframeTitle')}
     />
   )
 }

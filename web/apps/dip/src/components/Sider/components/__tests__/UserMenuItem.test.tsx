@@ -40,7 +40,7 @@ describe('Sider/UserMenuItem', () => {
     await waitFor(() => {
       expect(document.body.querySelector('.ant-dropdown-menu')).toBeTruthy()
     })
-    fireEvent.click(screen.getByText('退出登录'))
+    fireEvent.click(screen.getByText('sider.logout'))
     expect(logout).toHaveBeenCalledTimes(1)
   })
 })

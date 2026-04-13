@@ -129,7 +129,14 @@ describe("createDigitalHumanRouter", () => {
         {
           id: "__bkn_creator__",
           name: "BKN Creator",
-          description: "desc"
+          description: "desc",
+          created: false
+        }
+      ],
+      listDigitalHumans: async () => [
+        {
+          id: "__bkn_creator__",
+          name: "BKN Creator"
         }
       ]
     });
@@ -145,7 +152,8 @@ describe("createDigitalHumanRouter", () => {
       {
         id: "__bkn_creator__",
         name: "BKN Creator",
-        description: "desc"
+        description: "desc",
+        created: true
       }
     ]);
     expect(next).not.toHaveBeenCalled();

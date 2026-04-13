@@ -1,4 +1,5 @@
 import { Result } from 'antd'
+import intl from 'react-intl-universal'
 import NoAccessIcon from '@/assets/images/abnormal/403.svg?react'
 import GradientContainer from '@/components/GradientContainer'
 
@@ -8,7 +9,7 @@ const NoAccess = () => {
       <Result
         subTitle={
           <span className="text-base text-[--dip-text-color-65]">
-            哎呀！你没有权限访问这个页面...
+            {intl.get('error.noAccess')}
           </span>
         }
         // extra={

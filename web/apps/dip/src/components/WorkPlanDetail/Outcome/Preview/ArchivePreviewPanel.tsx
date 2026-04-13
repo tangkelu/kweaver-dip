@@ -3,6 +3,7 @@ import XMarkdown from '@ant-design/x-markdown'
 import { Spin } from 'antd'
 import classNames from 'classnames'
 import '@ant-design/x-markdown/dist/x-markdown.css'
+import intl from 'react-intl-universal'
 import Empty from '@/components/Empty'
 import ScrollBarContainer from '@/components/ScrollBarContainer'
 import ArchivePreviewNav from './ArchivePreviewNav'
@@ -124,7 +125,7 @@ const ArchivePreviewPanel = ({
           </div>
         ) : preview.error ? (
           <div className="flex min-h-[200px] flex-1 items-center justify-center py-10">
-            <Empty type="failed" title="预览失败" desc={preview.error} />
+            <Empty type="failed" title={intl.get('workPlan.detail.previewFailed')} desc={preview.error} />
           </div>
         ) : preview.viewer === 'pdf' && preview.blobUrl ? (
           <iframe
@@ -153,8 +154,7 @@ const ArchivePreviewPanel = ({
         ) : preview.viewer === 'office' && preview.blobUrl ? (
           <div className="flex flex-col gap-4 text-sm text-[--dip-text-color]">
             <p className="m-0 text-[var(--dip-text-color-65)]">
-              Office 文档（Word / Excel / PowerPoint
-              等）无法在浏览器内直接预览，请下载后使用本地应用打开。
+              {intl.get('workPlan.detail.officeNoPreview')}
             </p>
             {showInlineDownload ? (
               <a
@@ -162,14 +162,14 @@ const ArchivePreviewPanel = ({
                 download={preview.title}
                 className="inline-flex w-fit items-center rounded-md border border-[--dip-border-color] bg-[--dip-white] px-4 py-2 text-[--dip-text-color] transition-colors hover:bg-[--dip-hover-bg-color]"
               >
-                下载文件
+                {intl.get('workPlan.detail.downloadFile')}
               </a>
             ) : null}
           </div>
         ) : preview.viewer === 'download' && preview.blobUrl ? (
           <div className="flex flex-col gap-4 text-sm text-[--dip-text-color]">
             <p className="m-0 text-[var(--dip-text-color-65)]">
-              该文件类型暂不支持在线预览，请下载后使用对应软件打开。
+              {intl.get('workPlan.detail.unsupportedNoPreview')}
             </p>
             {showInlineDownload ? (
               <a
@@ -177,7 +177,7 @@ const ArchivePreviewPanel = ({
                 download={preview.title}
                 className="inline-flex w-fit items-center rounded-md border border-[--dip-border-color] bg-[--dip-white] px-4 py-2 text-[--dip-text-color] transition-colors hover:text-[--dip-primary-color]"
               >
-                下载文件
+                {intl.get('workPlan.detail.downloadFile')}
               </a>
             ) : null}
           </div>
@@ -197,7 +197,7 @@ const ArchivePreviewPanel = ({
           </div>
         ) : preview.body === '' ? (
           <div className="flex min-h-[200px] flex-1 items-center justify-center py-10">
-            <Empty title="暂无预览内容" />
+            <Empty title={intl.get('workPlan.detail.noPreview')} />
           </div>
         ) : (
           <pre className="m-0 whitespace-pre-wrap break-words text-[--dip-text-color]">

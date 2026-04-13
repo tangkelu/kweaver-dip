@@ -2,6 +2,7 @@ import { CompressOutlined, ExpandOutlined } from '@ant-design/icons'
 import { Button, Tooltip } from 'antd'
 import classNames from 'classnames'
 import { useState } from 'react'
+import intl from 'react-intl-universal'
 import IconFont from '@/components/IconFont'
 
 export type ArchivePreviewNavProps = {
@@ -43,7 +44,7 @@ const ArchivePreviewNav = ({
       <span className="min-w-0 flex-1 truncate text-base" title={title}>
         {title}
       </span>
-      <Tooltip title="下载">
+      <Tooltip title={intl.get('workPlan.detail.download')}>
         <Button
           type="text"
           icon={<IconFont type="icon-xiazai" />}
@@ -60,7 +61,13 @@ const ArchivePreviewNav = ({
         />
       </Tooltip>
       {onEnterPreviewFullscreen || onExitPreviewFullscreen ? (
-        <Tooltip title={isPreviewFullscreen ? '退出全屏预览' : '进入全屏预览'}>
+        <Tooltip
+          title={intl.get(
+            isPreviewFullscreen
+              ? 'workPlan.detail.exitFullscreen'
+              : 'workPlan.detail.enterFullscreen',
+          )}
+        >
           <Button
             type="text"
             icon={isPreviewFullscreen ? <CompressOutlined /> : <ExpandOutlined />}
@@ -76,7 +83,7 @@ const ArchivePreviewNav = ({
       ) : null}
       <div className="h-4 w-px bg-[--dip-border-color]" />
       {closable ? (
-        <Tooltip title="关闭预览">
+        <Tooltip title={intl.get('workPlan.detail.closePreview')}>
           <Button type="text" icon={<IconFont type="icon-close" />} onClick={() => onClose?.()} />
         </Tooltip>
       ) : null}

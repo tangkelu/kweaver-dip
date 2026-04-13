@@ -167,6 +167,29 @@ alt 有返回结果
 end
 ```
 
+## 编辑系统配置
+
+admin 在完成初始化之后，可以再次进入系统配置界面修改配置。
+
+```mermaid
+sequenceDiagram
+
+participant SW as Web
+participant BE as Studio Backend (Express)
+participant OC as OpenClaw
+
+SW ->> BE: 读取配置
+BE ->> BE: 读取 .env
+
+BE ->> SW: 返回 OpenClaw 连接信息和 KWeaver 连接信息
+
+SW ->> SW: 下一步
+
+BE ->> OC: 读取预置数字员工
+BE ->> SW: 返回预置数字员工列表（标记是否创建）
+
+```
+
 ## HTTP 接口
 
 Studio Backend 提供以下 HTTP 接口：

@@ -3,6 +3,7 @@ import type { MenuProps } from 'antd'
 import { Dropdown, Modal, message } from 'antd'
 import clsx from 'classnames'
 import { useState } from 'react'
+import intl from 'react-intl-universal'
 import type { CronJob } from '@/apis/dip-studio/plan'
 import IconFont from '@/components/IconFont'
 import { getPlanJobDisplayStatus } from '@/components/WorkPlanList/utils'
@@ -36,23 +37,33 @@ export const WorkPlanSection = ({
   const [isCollapsed, setIsCollapsed] = useState(false)
   const getPlanStatusMeta = (plan: CronJob): { prefix: string; colorClass: string } => {
     const status = getPlanJobDisplayStatus(plan)
-    if (status === 'running') return { prefix: '[执行中]', colorClass: 'text-[#497ED2]' }
-    if (status === 'ok') return { prefix: '[已完成]', colorClass: 'text-[#519B72]' }
-    if (status === 'error') return { prefix: '[失败]', colorClass: 'text-[#ff4d4f]' }
-    if (status === 'skipped') return { prefix: '[已跳过]', colorClass: 'text-[rgba(0,0,0,0.65)]' }
-    if (status === 'disabled') return { prefix: '[已暂停]', colorClass: 'text-[#D48806]' }
-    return { prefix: '[待执行]', colorClass: 'text-[rgba(0,0,0,0.65)]' }
+    if (status === 'running') {
+      return { prefix: intl.get('sider.workPlan.statusRunning'), colorClass: 'text-[#497ED2]' }
+    }
+    if (status === 'ok') {
+      return { prefix: intl.get('sider.workPlan.statusOk'), colorClass: 'text-[#519B72]' }
+    }
+    if (status === 'error') {
+      return { prefix: intl.get('sider.workPlan.statusError'), colorClass: 'text-[#ff4d4f]' }
+    }
+    if (status === 'skipped') {
+      return { prefix: intl.get('sider.workPlan.statusSkipped'), colorClass: 'text-[rgba(0,0,0,0.65)]' }
+    }
+    if (status === 'disabled') {
+      return { prefix: intl.get('sider.workPlan.statusDisabled'), colorClass: 'text-[#D48806]' }
+    }
+    return { prefix: intl.get('sider.workPlan.statusPending'), colorClass: 'text-[rgba(0,0,0,0.65)]' }
   }
 
   const handleDeletePlan = (id: string) => {
     modal.confirm({
-      title: '确认删除',
+      title: intl.get('sider.confirmDelete'),
       icon: <ExclamationCircleFilled />,
-      content: '删除计划后，相关配置和数据将被清除，用户将无法使用计划。是否继续？',
-      okText: '确定',
+      content: intl.get('sider.workPlan.deleteConfirmContent'),
+      okText: intl.get('global.ok'),
       okType: 'primary',
       okButtonProps: { danger: true },
-      cancelText: '取消',
+      cancelText: intl.get('global.cancel'),
       footer: (_, { OkBtn, CancelBtn }) => (
         <>
           <OkBtn />
@@ -62,7 +73,7 @@ export const WorkPlanSection = ({
       onOk: async () => {
         try {
           await onDeletePlan(id)
-          messageApi.success('删除成功')
+          messageApi.success(intl.get('sider.workPlan.deleteSuccess'))
         } catch (err: any) {
           if (err?.description) {
             messageApi.error(err.description)
@@ -84,7 +95,7 @@ export const WorkPlanSection = ({
             className="text-xs leading-[20px] text-[--dip-text-color-45] bg-transparent border-0 p-0 cursor-pointer flex flex-1 items-center"
             onClick={() => setIsCollapsed((prev) => !prev)}
           >
-            工作计划（{formatTotalDisplay(total)}）
+            {intl.get('sider.workPlan.sectionTitle', { count: formatTotalDisplay(total) })}
             {isCollapsed ? (
               <UpOutlined className="text-xs" />
             ) : (
@@ -97,14 +108,16 @@ export const WorkPlanSection = ({
               className="text-xs text-[--dip-primary-color] bg-transparent border-0 cursor-pointer hover:underline"
               onClick={onMore}
             >
-              更多
+              {intl.get('sider.workPlan.more')}
             </button>
           ) : null}
         </div>
         {isCollapsed ? null : (
           <div className="flex flex-col gap-0.5">
             {plans.length === 0 ? (
-              <div className="text-xs text-[--dip-text-color-45] px-2 py-2">暂无计划</div>
+              <div className="text-xs text-[--dip-text-color-45] px-2 py-2">
+                {intl.get('sider.workPlan.empty')}
+              </div>
             ) : (
               plans.map((plan) => {
                 const isActive = selectedPlanId === plan.id
@@ -112,7 +125,9 @@ export const WorkPlanSection = ({
                 const operationItems: MenuProps['items'] = [
                   {
                     key: plan.enabled ? 'pause' : 'resume',
-                    label: plan.enabled ? '暂停' : '启用',
+                    label: plan.enabled
+                      ? intl.get('sider.workPlan.actionPause')
+                      : intl.get('sider.workPlan.actionEnable'),
                     onClick: (e) => {
                       e.domEvent.stopPropagation()
                       if (plan.enabled) {
@@ -124,7 +139,7 @@ export const WorkPlanSection = ({
                   },
                   {
                     key: 'delete',
-                    label: '删除',
+                    label: intl.get('sider.workPlan.actionDelete'),
                     danger: true,
                     onClick: (e) => {
                       e.domEvent.stopPropagation()

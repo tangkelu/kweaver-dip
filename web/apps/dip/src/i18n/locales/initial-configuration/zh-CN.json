@@ -1,0 +1,52 @@
+{
+  "initialConfiguration": {
+    "stepTitles": {
+      "connect": "连接 OpenClaw",
+      "checkEnv": "检测环境",
+      "selectPreset": "选择预置数字员工",
+      "done": "完成初始化"
+    },
+    "errors": {
+      "missingConnectInfo": "请先在第一步填写连接信息",
+      "initFailed": "初始化失败"
+    },
+    "connect": {
+      "loading": "正在读取 OpenClaw 配置，请稍等...",
+      "title": "连接 OpenClaw",
+      "subtitle": "请输入 OpenClaw Gateway 连接地址与 Token，用于初始化 DIP Studio 默认配置。",
+      "connectionAddressLabel": "连接地址",
+      "connectionAddressRequired": "请输入 OpenClaw Gateway 连接地址",
+      "connectionAddressPlaceholder": "请输入 OpenClaw Gateway 连接地址",
+      "tokenLabel": "Token",
+      "tokenRequired": "请输入 OpenClaw Gateway Token",
+      "tokenPlaceholder": "请输入 OpenClaw Gateway Token",
+      "kweaverBaseUrlLabel": "KWeaver 服务地址（可选）",
+      "kweaverBaseUrlInvalidProtocol": "KWeaver 服务地址需使用 http 或 https 协议",
+      "kweaverBaseUrlInvalid": "请输入有效的 KWeaver 服务地址（需含协议，如 https://example.com）",
+      "kweaverBaseUrlPlaceholder": "例如 https://example.com",
+      "kweaverTokenLabel": "KWeaver Token",
+      "kweaverTokenRequiredWhenBaseUrl": "填写 KWeaver 服务地址后，KWeaver Token 为必填",
+      "kweaverTokenPlaceholder": "请输入 KWeaver Token",
+      "kweaverTokenPlaceholderDisabled": "请先填写 KWeaver 服务地址",
+      "next": "下一步"
+    },
+    "check": {
+      "title": "OpenClaw 服务连接",
+      "subtitle": "系统正在尝试与 OpenClaw 建立安全隧道。"
+    },
+    "selectPreset": {
+      "listLoadFailed": "预置模板列表加载失败",
+      "createFailed": "创建预置数字员工失败",
+      "title": "选择预置数字员工",
+      "subtitle": "数字员工将作为您的第二大脑，协助处理复杂任务",
+      "loadFailedTitle": "加载失败",
+      "emptyTitle": "暂无预置数字员工模板",
+      "skip": "跳过",
+      "installNow": "立即安装"
+    },
+    "result": {
+      "title": "连接成功",
+      "subtitle": "您的系统现在已就绪，开始创建属于你的数字员工吧。"
+    }
+  }
+}

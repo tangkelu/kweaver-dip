@@ -95,7 +95,7 @@ components:
         file:
           type: string
           format: binary
-          description: 本地上传文件（二进制）
+          description: 本地上传文件（二进制）；服务端会修正常见的 multipart UTF-8 文件名乱码
       required:
         - file
 
@@ -104,10 +104,14 @@ components:
       type: object
       additionalProperties: false
       properties:
+        name:
+          type: string
+          description: 原始文件名，供前端展示使用
         path:
           type: string
-          description: 工作区相对路径，可用于后续 `POST /chat/agent` attachments
+          description: 内部存储路径，可用于后续 `POST /chat/agent` attachments
       required:
+        - name
         - path
 
     ChatAgentRequest:

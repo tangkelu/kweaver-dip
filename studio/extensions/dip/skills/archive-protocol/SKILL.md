@@ -1,6 +1,6 @@
 ---
 name: archive-protocol
-version: "1.0.1"
+version: "1.1.0"
 description: 全局归档协议。只要任务需要写入任何文件（含 PLAN.md、报告、JSON 等归档物），必须按本技能执行 Session→ARCHIVE_ID、TIMESTAMP、双轨路径（根段须为 archives/）、回读校验与状态回执；WebUI 的 archive_grid 必须用 Markdown 中语言标识为 json 的围栏代码块输出。
 metadata:
   {
@@ -25,72 +25,61 @@ metadata:
 
 未确认可读或已注入上下文前，不得声称「已成功读取」。
 
-## 【ARCHIVE_ID 规则】
+# 归档协议 (Archive Protocol)
 
-`ARCHIVE_ID` 的唯一来源是 `session_status` 工具返回结果中的 `Session`。
+## 【核心规则：必须全量归档】
 
-必须执行：
+**所有生成的成果性内容（无论是单个文件还是整个目录/文件夹），在任务完成后必须彻底搬移（Move）至归档区。**
 
-1. 调用 `session_status`, 并且不允许传递任何参数
-2. 读取 `Session`
-3. 使用 `:` 作为分隔符切分 `Session`
-4. 取切分结果的最后一段作为 `ARCHIVE_ID`
-
-禁止：
-
-- 禁止从其他来源生成或推断 `ARCHIVE_ID`
-- 禁止在 `Session` 为空、缺失或无法切分时伪造 `ARCHIVE_ID`
-- 若`session_status`工具调用失败，立即重试，不允许捏造`ARCHIVE_ID`
-- 若持续失败，立即中止归档并返回：`ARCHIVE_STATUS: BLOCKED` / `ARCHIVE_REASON: invalid Session`
-
-## 【TIMESTAMP 规则】
-
-生成归档文件前，必须执行：`date "+%Y-%m-%d-%H-%M-%S"`
-
-时间格式必须固定为：`YYYY-MM-DD-HH-MM-SS`（禁止带空格或冒号）。
+工作区（Workspace）仅作为临时加工场，任务结束后的合规状态是：**工作区不留任何生成物，全部进入 `archives/`。**
 
 ## 【归档路径规则】
 
-路径执行双轨制，严禁混淆：
+路径执行双轨制，严禁混淆，并且**只能**由 `archive` 工具写入。**注意：归档操作会将文件或目录从工作区物理搬移（Move）至归档区，原位置将不再存在。**
 
-1. **计划文件（PLAN.md 专属）**：`archives/{ARCHIVE_ID}/PLAN.md`
-2. **普通归档物（其他所有生成物）**：`archives/{ARCHIVE_ID}/{TIMESTAMP}/{ORIGIN_NAME}`
+1. **计划文件（PLAN.md 专属）**：工具参数 `{"kind":"plan","sourcePath":"PLAN.md"}`。归档后，如需修改计划，应**直接编辑** `archives/{ARCHIVE_ID}/PLAN.md`。
+2. **普通归档物（单个文件或整个目录）**：工具参数 `{"kind":"file","sourcePath":"result_dir"}`。支持归档单个文件或包含多个文件的目录。
 
-**根段必须为 `archives`（禁止多一层 `arch`）**
+## 【目录归档模式】
 
-- 所有上述路径在会话工作区内均为**相对根**，且**必须以**字面量 **`archives/`** 作为归档树的第一段（小写完整单词 `archives`，不是 `arch`）。
-- **禁止**在 `archives` 前再拼 `arch/`、`archive/` 或其它目录，形成错误形态如：`arch/archives/...`、`.../arch/archives/{ARCHIVE_ID}/...`。
-- **禁止**用 `arch` 当作 `archives` 的缩写；写路径时心中核对：第一段只能是 `archives`，紧接 `{ARCHIVE_ID}`。
+当你的输出包含多个文件（如前端项目、代码包、多份分析报告）时，**必须执行以下流程**：
+1. 在工作区创建一个专用文件夹（如 `output/`）。
+2. 将所有相关文件放入该文件夹。
+3. **调用 `archive` 工具对整个文件夹进行归档**（`sourcePath` 指向文件夹路径）。
+4. 归档成功后，整个文件夹及其内容将移入 `archives/{ARCHIVE_ID}/{TIMESTAMP}/`。
 
 ## 【写入后强制校验】
 
-任何归档文件写入后，必须立即回读校验。未完成校验前，不得声称「已成功归档」。
+任何归档文件写入后，必须立即回读校验。未完成校验前，不得声称「已成功归档」。调度 `archive` 工具会在写入后自动回读并输出状态卡片。
 
-校验内容：文件存在、路径正确、内容非空、关键字段存在、内容与当前任务一致；**路径正确**须包含：相对归档树以 `archives/` 起头，**不得**含 `arch/archives/` 等错误多段。
+## 输出
+请在最终输出的结尾，把archive工具的输出卡片也输出出来。必须以markdown的json代码块输出。
 
-## 【状态回执与 WebUI 卡片渲染】
+## 【工具执行指引】
 
-归档结束后，必须按以下格式返回状态，并提供用于 WebUI 渲染的 JSON。
+**所有归档物生成都必须通过 `archive` 工具** 完成；禁止直接写 `archives/` 目录。推荐流程：
 
-**JSON 输出形式（强制）**
-
-- 承载 `archive_grid` 的 JSON **必须**以 Markdown **围栏代码块**输出：起始行为三个反引号紧跟语言标识 **`json`**，结束行为单独一行的三个反引号（即标准的 ` ```json` … ` ``` ` 结构）。
-- 禁止：裸 JSON（无围栏）、无语言标签的围栏、语言标签不是 `json`（如 `text`、`plaintext`、留空）。
-- 每有一个待渲染的归档文件，对应**一个**上述 ` ```json` 代码块（块内为合法 JSON 对象，含 `type: "archive_grid"` 等字段）。
-
-- **失败**：`ARCHIVE_STATUS: BLOCKED` | `ARCHIVE_REASON: <原因>`（失败时若无卡片数据，可不输出 JSON 围栏块；若有结构化回执，仍须遵守上文围栏规则。）
-- **成功**：
-  1. 输出文本行：`ARCHIVE_STATUS: OK` | `ARCHIVE_ROOT: archives/{ARCHIVE_ID}/`
-  2. 按【JSON 输出形式（强制）】输出 `archive_grid`，每一个归档的文件对应一个独立的 ` ```json` 代码块，示例形态如下：
-
-```json
-{
-  "type": "archive_grid",
-  "data": {
-    "type": "file",
-    "archive_root": "archives/{ARCHIVE_ID}",
-    "subpath": "{TIMESTAMP}/{ORIGIN_NAME}",
-    "name": "{ORIGIN_NAME}"
-  }
-}
-```
+1. **准备源文件**：在工作区临时目录编写内容。
+2. **调用工具**（工具会自动解析 session，生成 `TIMESTAMP`）：
+   - **单个文件归档**：
+     ```json
+     {
+       "name": "archive",
+       "arguments": {
+         "kind": "file",
+         "sourcePath": "result.json"
+       }
+     }
+     ```
+   - **整个目录归档（推荐用于多文件结果）**：
+     ```json
+     {
+       "name": "archive",
+       "arguments": {
+         "kind": "file",
+         "sourcePath": "my_results_folder"
+       }
+     }
+     ```
+3. **后续操作**：归档成功后，工作区原文件/目录已删除。若需再次查看或编辑，**必须使用工具返回的 JSON 卡片中的 `subpath` 或 `archive_root` 拼接出的完整路径** 访问归档区文件。
+4. **异常处理**：工具返回错误提示（如 `Archive blocked`）时须立刻停止归档流程，引用错误原因告知用户并等待下一步指示；禁止在失败后自行补写文件或回执。

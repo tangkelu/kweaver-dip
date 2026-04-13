@@ -2,6 +2,7 @@ import type { ModalProps } from 'antd'
 import { Button, Modal, Spin } from 'antd'
 import clsx from 'clsx'
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+import intl from 'react-intl-universal'
 import { type DigitalHumanSkill, type GetEnabledSkillsParams, getEnabledSkills } from '@/apis'
 import type { AiPromptSubmitPayload } from '@/components/DipChatKit/components/AiPromptInput/types'
 import Empty from '@/components/Empty'
@@ -27,6 +28,13 @@ export interface SelectSkillModalProps extends Omit<ModalProps, 'onCancel' | 'on
   showMask?: boolean
 }
 
+/** 列表行标签：openclaw-managed 为自定义，否则为官方 */
+const skillTypeTag = (item: DigitalHumanSkill) =>
+  item.type === 'openclaw-managed'
+    ? intl.get('digitalHuman.skill.tagCustom')
+    : intl.get('digitalHuman.skill.tagOfficial')
+
+/** 选择技能弹窗（含会话创建、导入技能包入口） */
 const SelectSkillModal = ({
   open,
   onOk,
@@ -98,14 +106,19 @@ const SelectSkillModal = ({
     }
 
     if (listError) {
-      return <Empty type="failed" title={typeof listError === 'string' ? listError : '加载失败'} />
+      return (
+        <Empty
+          type="failed"
+          title={typeof listError === 'string' ? listError : intl.get('digitalHuman.skillModal.loadFailed')}
+        />
+      )
     }
 
     if (allSkills.length === 0) {
       if (searchValue.trim()) {
-        return <Empty type="search" desc="抱歉，没有找到相关内容" />
+        return <Empty type="search" desc={intl.get('global.noResult')} />
       }
-      return <Empty title="暂无技能" />
+      return <Empty title={intl.get('digitalHuman.skillModal.emptyNoSkills')} />
     }
 
     return null
@@ -138,7 +151,7 @@ const SelectSkillModal = ({
                   <p className="mb-1.5 flex items-center gap-2 break-words text-sm font-bold leading-[22px]">
                     <span className="truncate">{item.name}</span>
                     <span className="text-xs text-[#A0A0A9] font-normal flex-shrink-0">
-                      @{item.type === 'openclaw-managed' ? '自定义' : '官方'}
+                      @{skillTypeTag(item)}
                     </span>
                   </p>
                   <p
@@ -153,10 +166,10 @@ const SelectSkillModal = ({
                     <button
                       type="button"
                       className="h-7 min-w-16 cursor-pointer rounded-md border border-[--dip-border-color] bg-[] px-3 text-[13px] leading-5 text-[--dip-text-color-45] transition-colors hover:bg-[var(--dip-hover-bg-color)]"
-                      title="点击取消选择"
+                      title={intl.get('digitalHuman.skillModal.toggleDeselectTitle')}
                       onClick={() => toggleSelect(item)}
                     >
-                      已添加
+                      {intl.get('digitalHuman.skillModal.added')}
                     </button>
                   ) : (
                     <button
@@ -164,7 +177,7 @@ const SelectSkillModal = ({
                       className="h-7 min-w-16 rounded-md border border-[--dip-border-color] bg-[--dip-white] px-3 text-[13px] leading-5 text-[--dip-text-color-85] transition-colors hover:bg-[var(--dip-hover-bg-color)]"
                       onClick={() => toggleSelect(item)}
                     >
-                      添加
+                      {intl.get('digitalHuman.skillModal.add')}
                     </button>
                   )}
                 </div>
@@ -193,9 +206,12 @@ const SelectSkillModal = ({
     <Modal
       title={
         <div className="flex items-center gap-2 px-6">
-          添加技能
+          {intl.get('digitalHuman.skillModal.title')}
           <span className="text-xs text-[#6A7282] font-normal">
-            已选 {selectedCount}/{maxSelectCount}
+            {intl.get('digitalHuman.skillModal.selectedCount', {
+              selected: selectedCount,
+              max: maxSelectCount,
+            })}
           </span>
         </div>
       }
@@ -237,11 +253,17 @@ const SelectSkillModal = ({
               }
               onClick={() => handleSubmit()}
             >
-              会话创建
+              {intl.get('digitalHuman.skillModal.sessionCreate')}
             </Button>
-            <Button onClick={() => setUploadModalOpen(true)}>导入创建</Button>
+            <Button onClick={() => setUploadModalOpen(true)}>
+              {intl.get('digitalHuman.skillModal.importCreate')}
+            </Button>
           </div>
-          <SearchInput placeholder="搜索技能" className="!w-[220px]" onSearch={handleSearch} />
+          <SearchInput
+            placeholder={intl.get('digitalHuman.skillModal.searchPlaceholder')}
+            className="!w-[220px]"
+            onSearch={handleSearch}
+          />
         </div>
         <div className="flex flex-col h-0 flex-1 mx-6">
           <ScrollBarContainer className="h-full min-h-0 pr-6 -mr-6 flex flex-col">

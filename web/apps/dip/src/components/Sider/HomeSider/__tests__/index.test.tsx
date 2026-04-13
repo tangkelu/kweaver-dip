@@ -119,7 +119,7 @@ describe('Sider/HomeSider', () => {
     locationState.pathname = '/studio/conversation'
 
     render(<HomeSider collapsed={false} onCollapse={vi.fn()} />)
-    fireEvent.click(screen.getByRole('button', { name: /会话/ }))
+    fireEvent.click(screen.getByRole('button', { name: /sider\.chat/ }))
     expect(navigateMock).toHaveBeenCalledWith('/home')
   })
 })

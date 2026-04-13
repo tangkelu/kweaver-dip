@@ -1,5 +1,6 @@
 import { ClockCircleOutlined } from '@ant-design/icons'
 import { memo, type ReactNode } from 'react'
+import intl from 'react-intl-universal'
 import IconFont from '@/components/IconFont'
 import type { PlanListItemProps } from './types'
 import { formatPlanRelativeDayTime, getSessionTitle } from './utils'
@@ -13,7 +14,7 @@ function HistoryMetaColumn({ value }: { icon: ReactNode; label: string; value: s
       </div> */}
       <div
         className="truncate text-xs leading-[18px] text-[--dip-text-color-45]"
-        title={value === '—' ? undefined : value}
+        title={value === intl.get('history.common.dash') ? undefined : value}
       >
         {value}
       </div>
@@ -39,12 +40,18 @@ function HistoryListItemInner({ session, onClick, onDelete, digitalHumanName }: 
           </span>
         </div>
         <span className="text-[--dip-text-color-45] text-xs">
-          来自数字员工：{digitalHumanName ?? '—-'}
+          {intl.get('history.list.fromDigitalHuman', {
+            name: digitalHumanName ?? intl.get('history.common.dash'),
+          })}
         </span>
       </div>
 
       <div className="flex shrink-0 flex-wrap items-start justify-end gap-6 gap-y-2 max-w-[min(100%,420px)]">
-        <HistoryMetaColumn icon={<ClockCircleOutlined />} label="更新时间" value={updatedAtText} />
+        <HistoryMetaColumn
+          icon={<ClockCircleOutlined />}
+          label={intl.get('history.list.updateTime')}
+          value={updatedAtText}
+        />
       </div>
 
       {onDelete ? (
@@ -55,7 +62,7 @@ function HistoryListItemInner({ session, onClick, onDelete, digitalHumanName }: 
             event.stopPropagation()
             onDelete?.(session)
           }}
-          aria-label="删除历史会话"
+          aria-label={intl.get('history.list.deleteSessionAria')}
         >
           <IconFont type="icon-trash" />
         </button>

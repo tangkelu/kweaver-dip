@@ -43,6 +43,11 @@ export interface BuiltInDigitalHuman {
    * Human-readable built-in template description.
    */
   description?: string;
+
+  /**
+   * Whether a digital human with the same id already exists in OpenClaw.
+   */
+  created: boolean;
 }
 
 /**

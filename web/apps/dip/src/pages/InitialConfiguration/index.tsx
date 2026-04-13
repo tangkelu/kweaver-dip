@@ -1,5 +1,6 @@
 import { Form } from 'antd'
 import { memo, useEffect, useState } from 'react'
+import intl from 'react-intl-universal'
 import { useNavigate } from 'react-router-dom'
 import {
   type GuideInitializeRequest,
@@ -16,7 +17,12 @@ import InitializeResultStep from './components/InitializeResultStep'
 import SelectPresetDigitalHumanStep from './components/SelectPresetDigitalHumanStep'
 import type { StepKey } from './types'
 
-const stepTitles = ['连接 OpenClaw', '检测环境', '选择预置数字员工', '完成初始化']
+const stepTitles = [
+  'initialConfiguration.stepTitles.connect',
+  'initialConfiguration.stepTitles.checkEnv',
+  'initialConfiguration.stepTitles.selectPreset',
+  'initialConfiguration.stepTitles.done',
+]
 const MIN_STEP2_STAY_MS = 3000
 
 const InitialConfiguration = () => {
@@ -62,6 +68,8 @@ const InitialConfiguration = () => {
     form.setFieldsValue({
       openclaw_address: `${detectedConfig.protocol}://${detectedConfig.host}:${detectedConfig.port}`,
       openclaw_token: detectedConfig.token,
+      kweaver_base_url: detectedConfig.kweaver_base_url,
+      kweaver_token: detectedConfig.kweaver_token,
     })
   }, [detectedConfig, form])
 
@@ -100,7 +108,7 @@ const InitialConfiguration = () => {
   const handleInitialize = async (payload?: GuideInitializeRequest) => {
     const requestValues = payload ?? openClawValues
     if (!requestValues) {
-      setSubmitError('请先在第一步填写连接信息')
+      setSubmitError(intl.get('initialConfiguration.errors.missingConnectInfo'))
       return
     }
 
@@ -116,7 +124,7 @@ const InitialConfiguration = () => {
       setInitResult(res)
       setStep(2)
     } catch (e: any) {
-      setSubmitError(e?.description || '初始化失败')
+      setSubmitError(e?.description || intl.get('initialConfiguration.errors.initFailed'))
       setStep(0)
     } finally {
       setSubmitting(false)
@@ -163,9 +171,9 @@ const InitialConfiguration = () => {
           </div>
           <div className="w-full max-w-[180px] flex-shrink-0 mt-6">
             <div className="flex items-center gap-2">
-              {stepTitles.map((title, index) => (
+              {stepTitles.map((titleKey, index) => (
                 <div
-                  key={title}
+                  key={titleKey}
                   className="h-1.5 flex-1 rounded"
                   style={{
                     backgroundColor: index === step ? '#126EE3' : '#126EE333',

@@ -151,12 +151,41 @@ describe("createOpenClawSkillInstallFormData", () => {
 });
 
 describe("createOpenClawSkillInstallStatusError", () => {
-  it("returns a 502 error with upstream details", async () => {
-    const response = new Response("bad", { status: 400 });
+  it("maps known upstream business errors to public Studio codes", async () => {
+    const response = new Response(
+      JSON.stringify({
+        error: "SKILL.md is missing required front matter metadata",
+        code: "BAD_LAYOUT"
+      }),
+      {
+        status: 400,
+        headers: { "content-type": "application/json" }
+      }
+    );
 
     await expect(createOpenClawSkillInstallStatusError(response)).resolves.toMatchObject({
-      statusCode: 502,
-      message: "OpenClaw /v1/config/agents/skills/install returned HTTP 400: bad"
+      statusCode: 400,
+      code: "DipStudio.SkillBadLayout",
+      message: "SKILL.md is missing required front matter metadata"
+    });
+  });
+
+  it("maps upstream conflicts to a skill-specific conflict code", async () => {
+    const response = new Response(
+      JSON.stringify({
+        error: "skill already exists",
+        code: "CONFLICT"
+      }),
+      {
+        status: 409,
+        headers: { "content-type": "application/json" }
+      }
+    );
+
+    await expect(createOpenClawSkillInstallStatusError(response)).resolves.toMatchObject({
+      statusCode: 409,
+      code: "DipStudio.SkillAlreadyExists",
+      message: "skill already exists"
     });
   });
 });
@@ -167,8 +196,21 @@ describe("normalizeOpenClawSkillInstallError", () => {
     expect(normalizeOpenClawSkillInstallError(new HttpError(502, "x"))).toMatchObject({
       statusCode: 502
     });
+    expect(normalizeOpenClawSkillInstallError(new Error("fetch failed"))).toMatchObject({
+      statusCode: 502,
+      code: "DipStudio.UpstreamUnavailable"
+    });
+    expect(
+      normalizeOpenClawSkillInstallError(Object.assign(new Error("Request timed out"), {
+        name: "AbortError"
+      }))
+    ).toMatchObject({
+      statusCode: 504,
+      code: "DipStudio.UpstreamTimeout"
+    });
     expect(normalizeOpenClawSkillInstallError(new Error("down"))).toMatchObject({
       statusCode: 502,
+      code: "DipStudio.UpstreamServiceError",
       message: "Failed to communicate with OpenClaw /v1/config/agents/skills/install: down"
     });
   });

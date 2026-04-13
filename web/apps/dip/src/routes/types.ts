@@ -51,6 +51,8 @@ export interface RouteConfig {
   path?: string
   element?: ReactNode | null
   key?: string
+  /** i18n 文案键，形如 `routes.home`；优先于 `label` 展示 */
+  labelKey?: string
   label?: string
   /** 侧边栏图标资源路径（用于在 Sider 中做填充/渐变等处理） */
   iconUrl?: string

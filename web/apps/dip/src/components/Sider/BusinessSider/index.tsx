@@ -1,6 +1,7 @@
 import type { MenuProps } from 'antd'
 import { Menu, Tooltip } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
+import intl from 'react-intl-universal'
 import { useLocation, useNavigate } from 'react-router-dom'
 import IconFont from '../../IconFont'
 import { UserMenuItem } from '../components/UserMenuItem'
@@ -88,7 +89,7 @@ const BusinessSider = ({ collapsed, onCollapse }: BusinessSiderProps) => {
       {collapsed ? (
         <div className="dip-sider-footer-stack shrink-0">
           <div className="dip-sider-footer-row">
-            <Tooltip title="展开" placement="right">
+            <Tooltip title={intl.get('sider.expand')} placement="right">
               <span className="flex min-w-0 flex-1">
                 <button
                   type="button"
@@ -109,7 +110,7 @@ const BusinessSider = ({ collapsed, onCollapse }: BusinessSiderProps) => {
           <div className="min-w-0 flex-1">
             <UserMenuItem collapsed={collapsed} />
           </div>
-          <Tooltip title="收起" placement="right">
+          <Tooltip title={intl.get('sider.collapse')} placement="right">
             <button
               type="button"
               className="flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-[var(--dip-text-color)] hover:text-[var(--dip-primary-color)]"

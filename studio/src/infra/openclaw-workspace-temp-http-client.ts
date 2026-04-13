@@ -60,7 +60,7 @@ export interface OpenClawWorkspaceTempUploadResult {
   name: string;
 
   /**
-   * Workspace-relative file path, such as `tmp/chat-1/x.txt`.
+   * Workspace-relative file path, such as `tmp/chat-1/<hash>/x.txt`.
    */
   path: string;
 

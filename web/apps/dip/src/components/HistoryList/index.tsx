@@ -1,5 +1,6 @@
 import { Button, Modal, Spin } from 'antd'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import intl from 'react-intl-universal'
 import { List } from 'react-window'
 import { type DigitalHuman, getDigitalHumanList } from '@/apis'
 import { getDigitalHumanSessionsList, type SessionSummary } from '@/apis/dip-studio/sessions'
@@ -61,12 +62,12 @@ function HistoryListInner({
   const handleDelete = useCallback(
     (session: SessionSummary) => {
       Modal.confirm({
-        title: '确认删除',
-        content: '删除后将无法恢复，是否继续？',
-        okText: '确定',
+        title: intl.get('history.common.deleteConfirmTitle'),
+        content: intl.get('history.common.deleteConfirmContent'),
+        okText: intl.get('global.ok'),
         okType: 'primary',
         okButtonProps: { danger: true },
-        cancelText: '取消',
+        cancelText: intl.get('global.cancel'),
         onOk: async () => {
           await deleteHistorySession(session.key)
         },
@@ -155,7 +156,7 @@ function HistoryListInner({
 
   const stateContent = (() => {
     if (isNoDigitalHumanId) {
-      return <Empty title="暂无数据" />
+      return <Empty title={intl.get('history.common.noData')} />
     }
 
     if (initialLoading) {
@@ -164,9 +165,9 @@ function HistoryListInner({
 
     if (isError) {
       return (
-        <Empty type="failed" title="加载失败">
+        <Empty type="failed" title={intl.get('history.common.loadFailed')}>
           <Button className="mt-1" type="primary" onClick={handleRetry}>
-            重试
+            {intl.get('history.common.retry')}
           </Button>
         </Empty>
       )
@@ -174,9 +175,9 @@ function HistoryListInner({
 
     if (filteredListData.length === 0) {
       if (trimmedSearchValue) {
-        return <Empty type="search" desc="抱歉，没有找到相关内容" />
+        return <Empty type="search" desc={intl.get('history.common.searchNoResult')} />
       }
-      return <Empty title="暂无数据" />
+      return <Empty title={intl.get('history.common.noData')} />
     }
 
     return null

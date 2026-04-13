@@ -57,7 +57,7 @@ paths:
         `Content-Type` 不强制；常见 `application/zip`、`application/octet-stream`。
         可选 **`overwrite`** 为 `true` 或 `1` 时若目标技能目录已存在则覆盖；
         可选 **`skillName`**（技能名称）；不传时按上传文件名（basename、去 `.skill`/`.zip` 后缀）推导为目录名。
-        `SKILL.md` front matter 中的 `name` 必须与 `skillName`/目录名完全一致。
+        `SKILL.md` 必须包含 front matter 元数据头，且其中的 `name` 必须与 `skillName`/目录名完全一致。
         扁平包（根含 **`SKILL.md`**）时若无法从文件名得到合法名称，须显式传 **`skillName`**。
         Studio 将文件读入内存后转发至 OpenClaw 网关 `dip` 插件 `POST /v1/config/agents/skills/install`（`name` 以查询参数传递）。
         单文件大小上限 32MB。
@@ -93,10 +93,14 @@ paths:
           $ref: '../common.schemas.yaml#/errors/Unauthorized'
         "403":
           $ref: '../common.schemas.yaml#/errors/Forbidden'
+        "409":
+          $ref: '../common.schemas.yaml#/errors/Conflict'
         "413":
-          description: 请求体超过大小限制
+          $ref: '../common.schemas.yaml#/errors/PayloadTooLarge'
         "502":
           $ref: '../common.schemas.yaml#/errors/BadGateway'
+        "504":
+          $ref: '../common.schemas.yaml#/errors/GatewayTimeout'
         "500":
           $ref: '../common.schemas.yaml#/errors/InternalServerError'
 

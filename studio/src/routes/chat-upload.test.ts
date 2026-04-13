@@ -76,9 +76,69 @@ describe("createChatUploadRouter", () => {
     });
     expect(response.status).toHaveBeenCalledWith(200);
     expect(response.json).toHaveBeenCalledWith({
+      name: "a.txt",
       path: "tmp/chat-1/a.txt"
     });
     expect(next).not.toHaveBeenCalled();
+  });
+
+  it("repairs mojibake filenames before forwarding upstream", async () => {
+    const response = createJsonResponseDouble();
+    const next = vi.fn<NextFunction>();
+    const uploadTempFile = vi.fn().mockResolvedValue({
+      path: "tmp/chat-1/测试.txt"
+    });
+    const router = createChatUploadRouter({
+      uploadTempFile
+    }) as {
+      stack: Array<{
+        route?: {
+          path: string;
+          stack: Array<{
+            handle: (
+              request: Request,
+              response: Response,
+              next: NextFunction
+            ) => Promise<void>;
+          }>;
+        };
+      }>;
+    };
+    const layer = router.stack.find(
+      (entry) => entry.route?.path === "/api/dip-studio/v1/chat/upload"
+    );
+    const handler = layer?.route?.stack[1]?.handle;
+    const request = {
+      file: {
+        fieldname: "file",
+        originalname: "æµ\x8Bè¯\x95.txt",
+        encoding: "7bit",
+        mimetype: "text/plain",
+        buffer: Buffer.from("hello"),
+        size: 5,
+        destination: "",
+        filename: "",
+        path: "",
+        stream: null as never
+      },
+      body: {},
+      headers: {
+        "x-openclaw-session-key": "agent:agent-1:user:user-1:direct:chat-1"
+      }
+    } as unknown as Request;
+
+    await handler?.(request, response, next);
+
+    expect(uploadTempFile).toHaveBeenCalledWith({
+      agentId: "agent-1",
+      sessionKey: "agent:agent-1:user:user-1:direct:chat-1",
+      filename: "测试.txt",
+      body: expect.any(Buffer)
+    });
+    expect(response.json).toHaveBeenCalledWith({
+      name: "测试.txt",
+      path: "tmp/chat-1/测试.txt"
+    });
   });
 
   it("fails when multipart file is missing", async () => {

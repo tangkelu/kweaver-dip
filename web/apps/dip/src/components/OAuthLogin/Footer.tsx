@@ -1,4 +1,5 @@
 import { useOEMConfigStore } from '@/stores/oemConfigStore'
+import intl from 'react-intl-universal'
 
 function Footer() {
   const { getOEMBasicConfig } = useOEMConfigStore()
@@ -18,7 +19,7 @@ function Footer() {
 
   return (
     <div className="mt-1.5 flex items-center justify-center text-[13px] text-[rgba(127,131,145,0.7)] leading-[23px]">
-      <div>登录即表示同意</div>
+      <div>{intl.get('oauthLogin.footer.agreePrefix')}</div>
       {showUserAgreement && (
         <a
           href="/Agreement/UserAgreement/ServiceAgreement-CN.html"
@@ -26,7 +27,7 @@ function Footer() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          用户协议
+          {intl.get('oauthLogin.footer.userAgreement')}
         </a>
       )}
       {showSeparator && <div>、</div>}
@@ -37,7 +38,7 @@ function Footer() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          隐私政策
+          {intl.get('oauthLogin.footer.privacyPolicy')}
         </a>
       )}
     </div>

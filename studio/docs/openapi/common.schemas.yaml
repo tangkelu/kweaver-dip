@@ -58,8 +58,22 @@ errors:
         schema:
           $ref: '#/schemas/ErrorResponse'
 
+  PayloadTooLarge:
+    description: 请求体超过大小限制
+    content:
+      application/json:
+        schema:
+          $ref: '#/schemas/ErrorResponse'
+
   BadGateway:
     description: 上游 OpenClaw Gateway 不可用、RPC 失败或 OpenClaw 返回错误（如创建 agent 失败）
+    content:
+      application/json:
+        schema:
+          $ref: '#/schemas/ErrorResponse'
+
+  GatewayTimeout:
+    description: 上游 OpenClaw Gateway 请求超时
     content:
       application/json:
         schema:

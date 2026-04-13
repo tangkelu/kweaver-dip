@@ -2,6 +2,7 @@ import type { ModalProps } from 'antd'
 import { Checkbox, Modal, Spin, Tabs } from 'antd'
 import clsx from 'clsx'
 import { useEffect, useState } from 'react'
+import intl from 'react-intl-universal'
 import { type BknKnowledgeNetworkInfo, getBknKnowledgeNetworks } from '@/apis'
 import AppIcon from '@/components/AppIcon'
 import Empty from '@/components/Empty'
@@ -14,7 +15,7 @@ export interface SelectKnowledgeModalProps extends Omit<ModalProps, 'onCancel' |
   onOk: (result: BknKnowledgeNetworkInfo[]) => void
   /** 取消回调 */
   onCancel: () => void
-  /** 默认选中的知识网络IDs */
+  /** 默认选中的知识网络 IDs */
   defaultSelectedIds?: string[]
 }
 
@@ -75,11 +76,11 @@ const SelectKnowledgeModal = ({
     }
 
     if (status === LoadStatus.Failed) {
-      return <Empty type="failed" title="加载失败" />
+      return <Empty type="failed" title={intl.get('digitalHuman.knowledgeModal.loadFailed')} />
     }
 
     if (status === LoadStatus.Empty) {
-      return <Empty title="暂无知识" />
+      return <Empty title={intl.get('digitalHuman.knowledgeModal.emptyNoKnowledge')} />
     }
 
     return null
@@ -105,10 +106,10 @@ const SelectKnowledgeModal = ({
                 <div className="w-12 h-12 rounded-xl flex-shrink-0 flex overflow-hidden">
                   <AppIcon name={item.name} size={48} className="w-full h-full" shape="square" />
                 </div>
-                <div className="flex flex-col gap-y-2 flex-1">
-                  <div className="flex items-center gap-x-2">
+                <div className="flex min-w-0 flex-1 flex-col gap-y-2">
+                  <div className="flex min-w-0 items-center gap-x-2">
                     <span
-                      className="text-base font-bold leading-[22px] text-[--dip-text-color-85] truncate flex-1"
+                      className="min-w-0 flex-1 truncate text-base font-bold text-[--dip-text-color-85]"
                       title={item.name}
                     >
                       {item.name}
@@ -123,7 +124,7 @@ const SelectKnowledgeModal = ({
                     className="mt-2 line-clamp-2 text-xs text-[--dip-text-color-65]"
                     title={item.comment}
                   >
-                    {item.comment?.trim() || '[暂无描述]'}
+                    {item.comment?.trim() || intl.get('global.notDes')}
                   </div>
                 </div>
               </div>
@@ -131,7 +132,8 @@ const SelectKnowledgeModal = ({
               <div className="flex flex-col justify-end flex-1 h-0">
                 <div className="h-px bg-[--dip-line-color-10] my-2" />
                 <div className="text-right mt-2 text-xs text-[--dip-text-color-65]">
-                  更新：{formatTimeSlash(item.update_time || '') || '--'}
+                  {intl.get('digitalHuman.knowledgeModal.updatedPrefix')}
+                  {formatTimeSlash(item.update_time || '') || '--'}
                 </div>
               </div>
             </button>
@@ -153,7 +155,7 @@ const SelectKnowledgeModal = ({
 
   return (
     <Modal
-      title="添加知识"
+      title={intl.get('digitalHuman.knowledgeModal.title')}
       open={open}
       onOk={handleOk}
       onCancel={onCancel}
@@ -162,8 +164,8 @@ const SelectKnowledgeModal = ({
       mask={{ closable: false }}
       destroyOnHidden
       width={744}
-      okText="确定"
-      cancelText="取消"
+      okText={intl.get('global.ok')}
+      cancelText={intl.get('global.cancel')}
       footer={(_, { OkBtn, CancelBtn }) => (
         <>
           <OkBtn />
@@ -183,7 +185,7 @@ const SelectKnowledgeModal = ({
           items={[
             {
               key: 'all',
-              label: '全部业务知识网络',
+              label: intl.get('digitalHuman.knowledgeModal.tabAllNetworks'),
             },
           ]}
           activeKey="all"

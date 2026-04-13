@@ -7,6 +7,7 @@ import {
 import type { MenuProps } from 'antd'
 import { Dropdown, Modal } from 'antd'
 import { memo, type ReactNode } from 'react'
+import intl from 'react-intl-universal'
 import IconFont from '@/components/IconFont'
 import type { PlanListItemProps } from './types'
 import { formatPlanRelativeDayTime, planExecutionConditionText, planJobDescription } from './utils'
@@ -20,7 +21,7 @@ function PlanMetaColumn({ icon, label, value }: { icon: ReactNode; label: string
       </div>
       <div
         className="truncate text-xs leading-[18px] text-[--dip-text-color-45]"
-        title={value === '—' ? undefined : value}
+        title={value === intl.get('workPlan.common.dash') ? undefined : value}
       >
         {value}
       </div>
@@ -46,7 +47,7 @@ function PlanListItemInner({
   const operationItems: MenuProps['items'] = [
     {
       key: job.enabled ? 'pause' : 'resume',
-      label: job.enabled ? '暂停' : '启动',
+      label: job.enabled ? intl.get('workPlan.common.pause') : intl.get('workPlan.common.start'),
       onClick: (e) => {
         e.domEvent.stopPropagation()
         if (job.enabled) {
@@ -58,7 +59,7 @@ function PlanListItemInner({
     },
     {
       key: 'edit',
-      label: '编辑',
+      label: intl.get('workPlan.common.edit'),
       onClick: (e) => {
         e.domEvent.stopPropagation()
         onEdit?.(job)
@@ -66,18 +67,18 @@ function PlanListItemInner({
     },
     {
       key: 'delete',
-      label: '删除',
+      label: intl.get('workPlan.common.delete'),
       danger: true,
       onClick: (e) => {
         e.domEvent.stopPropagation()
         modal.confirm({
-          title: '确认删除',
+          title: intl.get('workPlan.common.deleteConfirmTitle'),
           icon: <ExclamationCircleFilled />,
-          content: '删除计划后，相关配置和数据将被清除，用户将无法使用计划。是否继续？',
-          okText: '确定',
+          content: intl.get('workPlan.common.deleteConfirmContent'),
+          okText: intl.get('global.ok'),
           okType: 'primary',
           okButtonProps: { danger: true },
-          cancelText: '取消',
+          cancelText: intl.get('global.cancel'),
           footer: (_, { OkBtn, CancelBtn }) => (
             <>
               <OkBtn />
@@ -114,11 +115,11 @@ function PlanListItemInner({
             </span>
             {isPeriodic ? (
               <span className="inline-flex shrink-0 items-center rounded bg-[#F9F0FF] px-1.5 py-0.5 text-xs font-normal leading-[18px] text-[#722ED1]">
-                周期任务
+                {intl.get('workPlan.list.periodicTask')}
               </span>
             ) : (
               <span className="inline-flex shrink-0 items-center rounded bg-[#E6FFFB] px-1.5 py-0.5 text-xs font-normal leading-[18px] text-[#08979C]">
-                定时计划
+                {intl.get('workPlan.list.timedPlan')}
               </span>
             )}
           </div>
@@ -133,9 +134,21 @@ function PlanListItemInner({
         </div>
 
         <div className="flex shrink-0 flex-wrap items-start justify-end gap-6 gap-y-2 max-w-[min(100%,420px)]">
-          <PlanMetaColumn icon={<CalendarOutlined />} label="执行条件" value={conditionText} />
-          <PlanMetaColumn icon={<ClockCircleOutlined />} label="最近执行" value={lastRun} />
-          <PlanMetaColumn icon={<ClockCircleOutlined />} label="下次执行" value={nextRun} />
+          <PlanMetaColumn
+            icon={<CalendarOutlined />}
+            label={intl.get('workPlan.list.executionCondition')}
+            value={conditionText}
+          />
+          <PlanMetaColumn
+            icon={<ClockCircleOutlined />}
+            label={intl.get('workPlan.list.lastExecution')}
+            value={lastRun}
+          />
+          <PlanMetaColumn
+            icon={<ClockCircleOutlined />}
+            label={intl.get('workPlan.list.nextExecution')}
+            value={nextRun}
+          />
         </div>
 
         <Dropdown menu={{ items: operationItems }} trigger={['click']} placement="bottomRight">

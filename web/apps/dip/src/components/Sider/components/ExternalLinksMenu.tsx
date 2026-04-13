@@ -1,6 +1,7 @@
 import type { MenuProps } from 'antd'
 import { Menu } from 'antd'
 import { useMemo } from 'react'
+import intl from 'react-intl-universal'
 import SidebarSystemIcon from '@/assets/images/sider/proton.svg?react'
 import { BUSINESS_NETWORK_BASE_PATH } from '@/components/Sider/BusinessSider/menus'
 import { getFullPath } from '@/utils/config'
@@ -50,7 +51,7 @@ export const ExternalLinksSection = ({ collapsed, roleIds }: ExternalLinksMenuPr
     return [
       {
         key: 'data-platform',
-        title: '全局业务知识网络',
+        title: intl.get('sider.externalBusinessNetwork'),
         label: (
           <a
             href={businessNetworkHref}
@@ -58,7 +59,7 @@ export const ExternalLinksSection = ({ collapsed, roleIds }: ExternalLinksMenuPr
             rel="noopener noreferrer"
             className="flex items-center gap-1 justify-between"
           >
-            <span>全局业务知识网络</span>
+            <span>{intl.get('sider.externalBusinessNetwork')}</span>
             <IconFont type="icon-arrowup" rotate={45} />
           </a>
         ),
@@ -66,7 +67,7 @@ export const ExternalLinksSection = ({ collapsed, roleIds }: ExternalLinksMenuPr
       },
       {
         key: 'system',
-        title: '系统工作台',
+        title: intl.get('sider.externalSystemWorkbench'),
         label: (
           <a
             href={getExternalUrl('/deploy')}
@@ -74,7 +75,7 @@ export const ExternalLinksSection = ({ collapsed, roleIds }: ExternalLinksMenuPr
             rel="noopener noreferrer"
             className="flex items-center gap-1 justify-between"
           >
-            <span>系统工作台</span>
+            <span>{intl.get('sider.externalSystemWorkbench')}</span>
             <IconFont type="icon-arrowup" rotate={45} />
           </a>
         ),

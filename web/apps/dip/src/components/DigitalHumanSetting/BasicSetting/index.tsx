@@ -1,11 +1,13 @@
 import { Form } from 'antd'
 import { memo, useEffect } from 'react'
+import intl from 'react-intl-universal'
 import ScrollBarContainer from '@/components/ScrollBarContainer'
 import { useLanguageStore } from '@/stores/languageStore'
 import AdPromptInput from '../AdPromptInput'
 import { useDigitalHumanStore } from '../digitalHumanStore'
 import NameDescriptionFields from './NameDescriptionFields'
 
+/** 基本设置：名称、简介、角色设定（创建 / 编辑 / 只读详情共用） */
 const BasicSetting = ({ readonly }: { readonly?: boolean }) => {
   const { language } = useLanguageStore()
   const { basic, skills, updateBasic } = useDigitalHumanStore()
@@ -38,43 +40,53 @@ const BasicSetting = ({ readonly }: { readonly?: boolean }) => {
 为了实现目标，角色需要具备的技能3（可使用@调用技能）
 `,
 
-    'zh-TW': `設定 AI 應答規範請參照以下格式指南：
-  
-  # 角色任務
-  描述Decision Agent的角色人設，期望完成的主要任務或目標。
-  # 使用技能
-  描述Decision Agent可用的元件，並說明如何使用這些技能。
-  # 要求與限制
-  指定回答的輸入格式、結果內容、風格要求或字數限制等。`,
+    'zh-TW': `# 角色
+角色名稱
+# 角色描述
+角色概述與主要職責的一句話描述
+## 目標
+角色的工作目標，若有多個目標可分點列出
+## 技能
+為達成目標，角色需要具備的技能1（可使用@調用技能）
+為達成目標，角色需要具備的技能2（可使用@調用技能）
+為達成目標，角色需要具備的技能3（可使用@調用技能）
+`,
 
-    'en-US': `To set AI response specifications, please refer to the following format guide:
-  
-  # Role Task
-  Describe the Decision Agent's persona and the main tasks or goals it is expected to accomplish.
-  # Skill Usage
-  Describe the components available to the Decision Agent and explain how to use these skills.
-  # Requirements and Restrictions
-  Specify the input format, result content, style requirements, word count limits, etc. for the responses.`,
+    'en-US': `# Role
+Role name
+# Role description
+One-sentence overview of the role and its main responsibilities
+## Goals
+The role's work goals; if there are multiple goals, list them as separate points
+## Skills
+Skill 1 the role needs to meet its goals (invoke skills with @)
+Skill 2 the role needs to meet its goals (invoke skills with @)
+Skill 3 the role needs to meet its goals (invoke skills with @)
+`,
   }
 
   if (readonly) {
     return (
       <ScrollBarContainer className="h-full flex flex-col p-6 flex-1">
-        <div className="text-xl">基本信息</div>
+        <div className="text-xl">{intl.get('digitalHuman.basic.infoSectionTitle')}</div>
         <div className="h-px w-full bg-[--dip-border-color] my-4 flex-shrink-0" />
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-4">
-            <span className="text-base font-medium">名称</span>
+            <span className="text-base font-medium">
+              {intl.get('digitalHuman.basic.fieldName')}
+            </span>
             <span className="text-sm break-words">{basic.name}</span>
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-base font-medium">简介</span>
+            <span className="text-base font-medium">{intl.get('digitalHuman.basic.fieldBio')}</span>
             <span className="text-sm whitespace-pre-wrap break-words">
               {basic.creature || '--'}
             </span>
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-base font-medium">角色设定</span>
+            <span className="text-base font-medium">
+              {intl.get('digitalHuman.basic.fieldSoul')}
+            </span>
             <AdPromptInput
               bordered={false}
               transparent
@@ -97,9 +109,11 @@ const BasicSetting = ({ readonly }: { readonly?: boolean }) => {
 
   return (
     <ScrollBarContainer className="h-full flex flex-col p-6 flex-1">
-      <div className="font-medium text-[--dip-text-color]">基本设定</div>
+      <div className="font-medium text-[--dip-text-color]">
+        {intl.get('digitalHuman.setting.menuBasic')}
+      </div>
       <div className="mt-1 text-[--dip-text-color-45]">
-        定义数字员工的名称、简介和核心职责描述。
+        {intl.get('digitalHuman.basic.editIntro')}
       </div>
       <Form
         form={form}
@@ -115,7 +129,11 @@ const BasicSetting = ({ readonly }: { readonly?: boolean }) => {
       >
         <NameDescriptionFields />
 
-        <Form.Item label="角色设定" name="soul" style={{ marginBottom: 0 }}>
+        <Form.Item
+          label={intl.get('digitalHuman.basic.soulLabel')}
+          name="soul"
+          style={{ marginBottom: 0 }}
+        >
           <AdPromptInput
             style={{ minHeight: '240px', maxHeight: 'calc(100vh - 476px)' }}
             placeholder={ROLE_INSTRUCTION_PLACEHOLDER[language]}

@@ -1,20 +1,32 @@
 import { Form, Input } from 'antd'
+import { useMemo } from 'react'
+import intl from 'react-intl-universal'
+import { useLanguageStore } from '@/stores/languageStore'
 
 const NAME_MAX_LENGTH = 128
 const DESCRIPTION_MAX_LENGTH = 400
 
-const NAME_RULES = [{ required: true, message: '请输入名称' }]
-
+/** 名称、简介表单项（与 `BasicSetting` 中「角色设定」拆分） */
 const NameDescriptionFields = () => {
+  const { language } = useLanguageStore()
+  const nameRules = useMemo(
+    () => [{ required: true, message: intl.get('digitalHuman.setting.nameRequired') }],
+    [language],
+  )
+
   return (
     <>
-      <Form.Item label="名称" name="name" rules={NAME_RULES}>
-        <Input placeholder="请输入数字员工名称" maxLength={NAME_MAX_LENGTH} />
+      <Form.Item
+        label={intl.get('digitalHuman.basic.fieldName')}
+        name="name"
+        rules={nameRules}
+      >
+        <Input placeholder={intl.get('digitalHuman.basic.namePlaceholder')} maxLength={NAME_MAX_LENGTH} />
       </Form.Item>
 
-      <Form.Item label="简介" name="creature">
+      <Form.Item label={intl.get('digitalHuman.basic.fieldBio')} name="creature">
         <Input.TextArea
-          placeholder="请输入数字员工简介"
+          placeholder={intl.get('digitalHuman.basic.bioPlaceholder')}
           rows={4}
           maxLength={DESCRIPTION_MAX_LENGTH}
           showCount

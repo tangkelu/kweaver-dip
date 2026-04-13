@@ -1,0 +1,38 @@
+{
+  "sider": {
+    "chat": "Chat",
+    "confirmDelete": "Confirm delete",
+    "confirmDeleteCommon": "This action cannot be undone. Continue?",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "logout": "Log out",
+    "defaultUser": "User",
+    "aiStoreWenshu": "Smart BI",
+    "unpin": "Unpin",
+    "externalBusinessNetwork": "Global business knowledge network",
+    "externalSystemWorkbench": "System workbench",
+    "systemSettings": "System settings",
+    "workPlan": {
+      "sectionTitle": "Work plans ({count})",
+      "more": "More",
+      "empty": "No plans yet",
+      "deleteConfirmContent": "After deleting a plan, related configuration and data will be removed, and users can no longer use the plan. Continue?",
+      "deleteSuccess": "Deleted successfully",
+      "actionPause": "Pause",
+      "actionEnable": "Enable",
+      "actionDelete": "Delete",
+      "statusRunning": "[Running]",
+      "statusOk": "[Completed]",
+      "statusError": "[Failed]",
+      "statusSkipped": "[Skipped]",
+      "statusDisabled": "[Paused]",
+      "statusPending": "[Pending]"
+    },
+    "history": {
+      "sectionTitle": "History ({count})",
+      "more": "More",
+      "empty": "No history yet",
+      "deleteAria": "Delete history session"
+    }
+  }
+}

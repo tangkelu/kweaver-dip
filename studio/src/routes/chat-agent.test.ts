@@ -228,6 +228,7 @@ describe("createChatAgentRouter", () => {
           "ATTACHMENT_INSTRUCTION:",
           "You must read every listed file path using available file-reading tools before answering the user.",
           "If any file cannot be read, explicitly report which path failed and why.",
+          "When you output file information to the user (summaries, citations, lists), show only each file's name (the final path segment), never the full original path.",
           HIDDEN_ATTACHMENT_CONTEXT_END
         ].join("\n"),
         attachments: [

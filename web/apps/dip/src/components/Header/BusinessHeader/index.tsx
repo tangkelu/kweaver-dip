@@ -1,10 +1,12 @@
 import { useCallback, useMemo } from 'react'
+import intl from 'react-intl-universal'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   BUSINESS_NETWORK_BASE_PATH,
   businessLeafMenuItems,
 } from '@/components/Sider/BusinessSider/menus'
 import type { RouteConfig } from '@/routes/types'
+import { getRouteLabel, routeHasDisplayLabel } from '@/routes/utils'
 import { useLanguageStore, useOEMConfigStore } from '@/stores'
 import { useGlobalLayoutStore } from '@/stores/globalLayoutStore'
 import type { BreadcrumbItem } from '@/utils/micro-app/globalState'
@@ -59,15 +61,15 @@ const BusinessHeader = () => {
     const items: BreadcrumbItem[] = [
       {
         key: 'section-business',
-        name: '全局业务知识网络',
+        name: intl.get('routes.businessNetwork'),
         path: BUSINESS_NETWORK_BASE_PATH,
       },
     ]
 
-    if (currentRoute?.label) {
+    if (currentRoute && routeHasDisplayLabel(currentRoute)) {
       items.push({
         key: currentRoute.key || `route-${currentRoute.path}`,
-        name: currentRoute.label,
+        name: getRouteLabel(currentRoute),
         path: currentRoute.path ? `/${currentRoute.path}` : undefined,
       })
     }
@@ -80,7 +82,7 @@ const BusinessHeader = () => {
     }
 
     return items
-  }, [currentRoute, businessHeaderCustomBreadcrumbLabel])
+  }, [currentRoute, businessHeaderCustomBreadcrumbLabel, language])
 
   const handleBreadcrumbNavigate = useCallback(
     (item: BreadcrumbItem) => {

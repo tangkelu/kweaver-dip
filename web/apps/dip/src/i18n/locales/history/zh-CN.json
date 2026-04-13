@@ -1,0 +1,23 @@
+{
+  "history": {
+    "common": {
+      "all": "全部",
+      "searchPlaceholder": "搜索历史对话",
+      "deleteConfirmTitle": "确认删除",
+      "deleteConfirmContent": "删除后将无法恢复，是否继续？",
+      "noData": "暂无数据",
+      "loadFailed": "加载失败",
+      "retry": "重试",
+      "searchNoResult": "抱歉，没有找到相关内容",
+      "dash": "—"
+    },
+    "list": {
+      "fromDigitalHuman": "来自数字员工：{name}",
+      "updateTime": "更新时间",
+      "deleteSessionAria": "删除历史会话",
+      "today": "今天 {time}",
+      "tomorrow": "明天 {time}",
+      "yesterday": "昨天 {time}"
+    }
+  }
+}

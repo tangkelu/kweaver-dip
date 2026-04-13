@@ -1,0 +1,19 @@
+{
+  "routes": {
+    "home": "首页",
+    "myApp": "应用",
+    "appStore": "应用商店",
+    "digitalHuman": "我的数字员工",
+    "skills": "技能管理",
+    "skillDetail": "技能详情",
+    "conversation": "会话",
+    "workPlan": "工作计划",
+    "workPlanDetail": "工作计划详情",
+    "history": "历史记录",
+    "dhSettingNew": "新建数字员工",
+    "dhSettingItem": "数字员工配置",
+    "dhDetail": "数字员工详情",
+    "initialConfiguration": "系统初始化配置",
+    "businessNetwork": "全局业务知识网络"
+  }
+}

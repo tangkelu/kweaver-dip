@@ -1,0 +1,22 @@
+{
+  "login": {
+    "failed": {
+      "subtitle": "Your current account is not bound to any role and cannot sign in",
+      "backToLogin": "Back to login page"
+    }
+  },
+  "oauthLogin": {
+    "iframeTitle": "Sign in",
+    "about": {
+      "title": "About",
+      "versionInfo": "Version information",
+      "currentVersion": "Current version: {version}",
+      "copyright": "Copyright © 2011-2026 Shanghai eISOO Information Technology Co., Ltd."
+    },
+    "footer": {
+      "agreePrefix": "By signing in, you agree to the",
+      "userAgreement": "User Agreement",
+      "privacyPolicy": "Privacy Policy"
+    }
+  }
+}

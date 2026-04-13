@@ -169,11 +169,17 @@ export function installSkillFromZipBuffer(
         );
       }
 
-      const displayName = readSkillNameFromFrontMatter(rootSkillMdPath);
-      if (displayName !== undefined && displayName.trim() !== installName) {
+      const frontMatter = readSkillFrontMatter(rootSkillMdPath);
+      if (!frontMatter.hasFrontMatter) {
+        throw new SkillInstallError(
+          "BAD_LAYOUT",
+          "SKILL.md is missing required front matter metadata"
+        );
+      }
+      if (frontMatter.name === undefined || frontMatter.name.trim() !== installName) {
         throw new SkillInstallError(
           "INVALID_NAME",
-          `SKILL.md name "${displayName}" must match slug "${installName}"`
+          `SKILL.md name "${frontMatter.name ?? ""}" must match slug "${installName}"`
         );
       }
 
@@ -193,7 +199,7 @@ export function installSkillFromZipBuffer(
       fs.mkdirSync(repoSkillsDir, { recursive: true });
       fs.cpSync(extractRoot, dest, { recursive: true });
 
-      return { name: installName, skillPath: dest, displayName };
+      return { name: installName, skillPath: dest, displayName: frontMatter.name };
     }
 
     if (topLevel.length > 1) {
@@ -228,11 +234,17 @@ export function installSkillFromZipBuffer(
       );
     }
 
-    const displayName = readSkillNameFromFrontMatter(skillMdPath);
-    if (displayName !== undefined && displayName.trim() !== skillName) {
+    const frontMatter = readSkillFrontMatter(skillMdPath);
+    if (!frontMatter.hasFrontMatter) {
+      throw new SkillInstallError(
+        "BAD_LAYOUT",
+        "SKILL.md is missing required front matter metadata"
+      );
+    }
+    if (frontMatter.name === undefined || frontMatter.name.trim() !== skillName) {
       throw new SkillInstallError(
         "INVALID_NAME",
-        `SKILL.md name "${displayName}" must match slug "${skillName}"`
+        `SKILL.md name "${frontMatter.name ?? ""}" must match slug "${skillName}"`
       );
     }
 
@@ -252,7 +264,7 @@ export function installSkillFromZipBuffer(
     fs.mkdirSync(repoSkillsDir, { recursive: true });
     fs.cpSync(extractedRoot, dest, { recursive: true });
 
-    return { name: skillName, skillPath: dest, displayName };
+    return { name: skillName, skillPath: dest, displayName: frontMatter.name };
   } finally {
     fs.rmSync(workDir, { recursive: true, force: true });
   }
@@ -304,25 +316,38 @@ export function skillInstallErrorHttpStatus(code: SkillInstallErrorCode): number
       return 400;
   }
 }
-function readSkillNameFromFrontMatter(skillMdPath: string): string | undefined {
+/**
+ * Reads the YAML-like front matter header from one `SKILL.md`.
+ *
+ * @param skillMdPath Absolute `SKILL.md` path.
+ * @returns Whether front matter exists and the parsed `name` when present.
+ */
+function readSkillFrontMatter(
+  skillMdPath: string
+): { hasFrontMatter: boolean; name?: string } {
   try {
     const contents = fs.readFileSync(skillMdPath, "utf8");
     const lines = contents.split(/\r?\n/);
     if (lines[0]?.trim() !== "---") {
-      return undefined;
+      return { hasFrontMatter: false };
     }
+    let hasClosingFence = false;
+    let parsedName: string | undefined;
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
       if (line.trim() === "---") {
+        hasClosingFence = true;
         break;
       }
       const match = line.match(/^name:\s*(.+)$/);
       if (match) {
-        return match[1].trim().replace(/^["']|["']$/g, "");
+        parsedName = match[1].trim().replace(/^["']|["']$/g, "");
       }
     }
+    return hasClosingFence
+      ? { hasFrontMatter: true, ...(parsedName !== undefined ? { name: parsedName } : {}) }
+      : { hasFrontMatter: false };
   } catch {
-    return undefined;
+    return { hasFrontMatter: false };
   }
-  return undefined;
 }

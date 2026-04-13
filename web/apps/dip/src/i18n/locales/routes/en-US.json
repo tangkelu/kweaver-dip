@@ -1,0 +1,19 @@
+{
+  "routes": {
+    "home": "Home",
+    "myApp": "My Apps",
+    "appStore": "App Store",
+    "digitalHuman": "My Digital Humans",
+    "skills": "Skills",
+    "skillDetail": "Skill details",
+    "conversation": "Chat",
+    "workPlan": "Work plans",
+    "workPlanDetail": "Work plan details",
+    "history": "History",
+    "dhSettingNew": "New digital human",
+    "dhSettingItem": "Digital human settings",
+    "dhDetail": "Digital human details",
+    "initialConfiguration": "Initial setup",
+    "businessNetwork": "Global business knowledge network"
+  }
+}

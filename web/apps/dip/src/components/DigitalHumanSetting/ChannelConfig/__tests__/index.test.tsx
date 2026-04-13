@@ -6,6 +6,10 @@ import ChannelConfig from '../index'
 const mockUpdateChannel = vi.fn()
 const mockDeleteChannel = vi.fn()
 
+vi.mock('@/stores/languageStore', () => ({
+  useLanguageStore: () => ({ language: 'zh-CN' }),
+}))
+
 vi.mock('../../digitalHumanStore', () => ({
   useDigitalHumanStore: vi.fn(),
 }))
@@ -34,6 +38,8 @@ vi.mock('@/assets/icons/feishu.svg', () => ({
 
 const mockedUseDigitalHumanStore = vi.mocked(useDigitalHumanStore)
 
+const addChannelBtnName = 'digitalHuman.channel.addButton'
+
 describe('DigitalHumanSetting/ChannelConfig', () => {
   it('应该正确渲染空状态，显示添加按钮', () => {
     mockedUseDigitalHumanStore.mockReturnValue({
@@ -44,10 +50,10 @@ describe('DigitalHumanSetting/ChannelConfig', () => {
 
     render(<ChannelConfig />)
 
-    expect(screen.getByText('通道接入')).toBeInTheDocument()
-    expect(screen.getByText('配置数字员工可接入的通信通道，如钉钉、飞书等。')).toBeInTheDocument()
-    expect(screen.getByText('暂无通道')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /通道/ })).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.setting.menuChannel')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.channel.sectionDesc')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.channel.emptyNoChannel')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: addChannelBtnName })).toBeInTheDocument()
   })
 
   it('只读模式不显示添加按钮', () => {
@@ -59,7 +65,7 @@ describe('DigitalHumanSetting/ChannelConfig', () => {
 
     render(<ChannelConfig readonly />)
 
-    expect(screen.queryByRole('button', { name: /通道/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: addChannelBtnName })).not.toBeInTheDocument()
   })
 
   it('已有通道时应该正确渲染表格', () => {
@@ -75,12 +81,11 @@ describe('DigitalHumanSetting/ChannelConfig', () => {
 
     render(<ChannelConfig />)
 
-    expect(screen.getByText('飞书')).toBeInTheDocument()
-    expect(screen.getByText('用于在飞书客户端接收消息，处理事务')).toBeInTheDocument()
-    // 移除按钮只有图标没有文字，通过获取所有按钮找到它
+    expect(screen.getByText('digitalHuman.channel.typeFeishu')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.channel.descFeishu')).toBeInTheDocument()
     const buttons = screen.getAllByRole('button')
-    expect(buttons).toHaveLength(2) // 移除按钮 + 添加通道按钮
-    expect(screen.getByRole('button', { name: /通道/ })).toBeInTheDocument()
+    expect(buttons).toHaveLength(2)
+    expect(screen.getByRole('button', { name: addChannelBtnName })).toBeInTheDocument()
   })
 
   it('只读模式不显示操作列', () => {
@@ -96,9 +101,9 @@ describe('DigitalHumanSetting/ChannelConfig', () => {
 
     render(<ChannelConfig readonly />)
 
-    expect(screen.getByText('飞书')).toBeInTheDocument()
-    expect(screen.queryByText('操作')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /移除/ })).not.toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.channel.typeFeishu')).toBeInTheDocument()
+    expect(screen.queryByText('digitalHuman.common.columnAction')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /digitalHuman.common.remove/ })).not.toBeInTheDocument()
   })
 
   it('钉钉类型应该显示正确标签和描述', () => {
@@ -114,8 +119,8 @@ describe('DigitalHumanSetting/ChannelConfig', () => {
 
     render(<ChannelConfig />)
 
-    expect(screen.getByText('钉钉')).toBeInTheDocument()
-    expect(screen.getByText('用于在钉钉客户端接收消息，处理事务')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.channel.typeDingtalk')).toBeInTheDocument()
+    expect(screen.getByText('digitalHuman.channel.descDingtalk')).toBeInTheDocument()
   })
 
   it('点击添加通道按钮应该打开弹窗', () => {
@@ -130,7 +135,7 @@ describe('DigitalHumanSetting/ChannelConfig', () => {
     })
 
     render(<ChannelConfig />)
-    fireEvent.click(screen.getByRole('button', { name: /通道/ }))
+    fireEvent.click(screen.getByRole('button', { name: addChannelBtnName }))
 
     expect(screen.getByTestId('add-channel-modal')).toBeInTheDocument()
   })
@@ -147,7 +152,6 @@ describe('DigitalHumanSetting/ChannelConfig', () => {
     })
 
     render(<ChannelConfig />)
-    // 移除按钮在第一个位置（操作列）
     const buttons = screen.getAllByRole('button')
     const removeBtn = buttons.find((btn) => !btn.textContent)
     if (removeBtn === undefined) {
