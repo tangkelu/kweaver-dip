@@ -63,7 +63,7 @@ describe("chat agent helpers", () => {
     expect(
       createSessionsPatchRequest(
         "req-patch-1",
-        createSessionPatchParams("main")
+        createSessionPatchParams("main", "hello_ab12cd34")
       )
     ).toEqual({
       type: "req",
@@ -71,7 +71,8 @@ describe("chat agent helpers", () => {
       method: "sessions.patch",
       params: {
         key: "main",
-        verboseLevel: "full"
+        verboseLevel: "full",
+        label: "hello_ab12cd34"
       }
     });
     expect(
@@ -400,6 +401,16 @@ describe("DefaultOpenClawChatAgentClient", () => {
     }));
 
     const chatSendFrame = JSON.parse(socket.sentMessages[2] ?? "{}") as { id: string };
+
+    expect(chatSendFrame).toMatchObject({
+      method: "chat.send",
+      params: {
+        sessionKey: "agent:agent-1:user:user-1:direct:chat-1",
+        message: "hello",
+        idempotencyKey: "run-1"
+      }
+    });
+    expect((chatSendFrame as { params?: Record<string, unknown> }).params?.sessionLabel).toBeUndefined();
 
     socket.emit("message", JSON.stringify({
       type: "res",

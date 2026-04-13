@@ -1,7 +1,14 @@
 import type { NextFunction, Request, Response } from "express";
 import { describe, expect, it, vi } from "vitest";
 
-import { createChatRouter, readChatHistoryParams } from "./chat";
+import { HttpError } from "../errors/http-error";
+import {
+  buildFirstTurnSessionLabel,
+  createChatRouter,
+  isFirstChatTurn,
+  readChatHistoryParams,
+  resolveChatAgentSessionLabel
+} from "./chat";
 
 /**
  * Creates a minimal response double with chainable methods.
@@ -84,6 +91,72 @@ describe("readChatHistoryParams", () => {
     expect(() => readChatHistoryParams({}, {})).toThrow(
       "x-openclaw-session-key header is required"
     );
+  });
+});
+
+describe("chat agent session labels", () => {
+  it("builds the first-turn label using the required format", () => {
+    expect(buildFirstTurnSessionLabel("  今天天气怎么样？ \n", "3f9c2b6a-xxxx")).toBe(
+      "今天天气怎么样？_3f9c2b6a"
+    );
+  });
+
+  it("treats a missing session as the first turn", async () => {
+    await expect(
+      isFirstChatTurn(
+        {
+          getChatMessages: vi.fn().mockRejectedValue(new HttpError(404, "not found")),
+          getSession: vi.fn(),
+          listSessions: vi.fn(),
+          deleteSession: vi.fn(),
+          getSessionSummary: vi.fn(),
+          getSessionArchives: vi.fn(),
+          getSessionArchiveSubpath: vi.fn(),
+          previewSessions: vi.fn()
+        },
+        "agent:demo:user:user-1:direct:chat-1"
+      )
+    ).resolves.toBe(true);
+  });
+
+  it("returns a label only for the first chat turn", async () => {
+    const sessionsLogic = {
+      getChatMessages: vi.fn().mockResolvedValueOnce({
+        sessionKey: "agent:demo:user:user-1:direct:chat-1",
+        messages: []
+      }).mockResolvedValueOnce({
+        sessionKey: "agent:demo:user:user-1:direct:chat-1",
+        messages: [
+          {
+            role: "user",
+            content: [{ type: "text", text: "hello" }]
+          }
+        ]
+      }),
+      getSession: vi.fn(),
+      listSessions: vi.fn(),
+      deleteSession: vi.fn(),
+      getSessionSummary: vi.fn(),
+      getSessionArchives: vi.fn(),
+      getSessionArchiveSubpath: vi.fn(),
+      previewSessions: vi.fn()
+    };
+
+    await expect(
+      resolveChatAgentSessionLabel(
+        sessionsLogic,
+        "agent:demo:user:user-1:direct:chat-1",
+        "hello world"
+      )
+    ).resolves.toMatch(/^hello world_[0-9a-fA-F]{8}$/);
+
+    await expect(
+      resolveChatAgentSessionLabel(
+        sessionsLogic,
+        "agent:demo:user:user-1:direct:chat-1",
+        "hello world"
+      )
+    ).resolves.toBeUndefined();
   });
 });
 

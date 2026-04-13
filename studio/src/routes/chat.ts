@@ -147,6 +147,11 @@ export function createChatRouter(
         const requestBody = readChatAgentRequestBody(request.body);
         const sessionKey = readRequiredSessionKeyHeader(request.headers);
         const agentId = readAgentIdFromSessionKey(sessionKey);
+        const sessionLabel = await resolveChatAgentSessionLabel(
+          sessionsLogic,
+          sessionKey,
+          requestBody.message
+        );
         const message = appendAttachmentHintsToMessage(
           requestBody.message,
           requestBody.attachments
@@ -156,7 +161,8 @@ export function createChatRouter(
             sessionKey,
             message,
             attachments: requestBody.attachments,
-            idempotencyKey: randomUUID()
+            idempotencyKey: randomUUID(),
+            sessionLabel
           },
           agentId,
           abortController.signal
@@ -502,6 +508,74 @@ export function appendAttachmentHintsToMessage(
   const hiddenBlock = buildHiddenAttachmentContextBlock(paths);
 
   return [message, "", hiddenBlock].join("\n");
+}
+
+/**
+ * Resolves the optional first-turn session label for one chat agent request.
+ *
+ * @param sessionsLogic The sessions service used to inspect existing chat history.
+ * @param sessionKey The target OpenClaw session key.
+ * @param message The raw user message before attachment hints are appended.
+ * @returns The generated label on the first turn, otherwise `undefined`.
+ */
+export async function resolveChatAgentSessionLabel(
+  sessionsLogic: SessionsLogic,
+  sessionKey: string,
+  message: string
+): Promise<string | undefined> {
+  const firstTurn = await isFirstChatTurn(sessionsLogic, sessionKey);
+
+  if (!firstTurn) {
+    return undefined;
+  }
+
+  return buildFirstTurnSessionLabel(message);
+}
+
+/**
+ * Returns whether the current chat request starts a new session without prior messages.
+ *
+ * @param sessionsLogic The sessions service used to inspect existing chat history.
+ * @param sessionKey The target OpenClaw session key.
+ * @returns `true` when the session has no persisted messages yet.
+ */
+export async function isFirstChatTurn(
+  sessionsLogic: SessionsLogic,
+  sessionKey: string
+): Promise<boolean> {
+  try {
+    const history =
+      sessionsLogic.getChatMessages === undefined
+        ? await sessionsLogic.getSession({ key: sessionKey, limit: 1 })
+        : await sessionsLogic.getChatMessages({ sessionKey, limit: 1 });
+
+    return (history.messages?.length ?? 0) === 0;
+  } catch (error) {
+    if (error instanceof HttpError && error.statusCode === 404) {
+      return true;
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * Builds the first-turn session label expected by the OpenClaw chat design.
+ *
+ * Format: `<user message>_<8-char random suffix>`.
+ *
+ * @param message The raw user message.
+ * @param suffixSource Optional source string used to derive the suffix in tests.
+ * @returns The formatted session label.
+ */
+export function buildFirstTurnSessionLabel(
+  message: string,
+  suffixSource: string = randomUUID()
+): string {
+  const normalizedMessage = message.replace(/\s+/g, " ").trim();
+  const suffix = suffixSource.replace(/[^0-9a-zA-Z]/g, "").slice(0, 8);
+
+  return `${normalizedMessage}_${suffix}`;
 }
 
 /**
