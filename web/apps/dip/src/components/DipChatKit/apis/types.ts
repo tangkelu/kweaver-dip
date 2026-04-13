@@ -65,7 +65,6 @@ export interface DipChatKitDigitalHumanDetail {
 
 export interface DipChatKitResponseSSEOptions {
   sessionKey: string
-  timeout?: number
   signal?: AbortSignal
 }
 
